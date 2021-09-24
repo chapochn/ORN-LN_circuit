@@ -1,9 +1,9 @@
 Steps to reproduce the figures in the paper:
 
-Nikolai M Chapochnikov, Cengiz Pehlevan, Dmitri B Chklovskii
 
-Normative and mechanistic model of an adaptive circuit for efficient encoding and feature extraction
 
+## Normative and mechanistic model of an adaptive circuit for efficient encoding and feature extraction
+### Nikolai M Chapochnikov, Cengiz Pehlevan, Dmitri B Chklovskii
 
 
 Install Python 3 and the following packages (e.g., via Anaconda):
@@ -32,12 +32,12 @@ Put the folder "ORN-LN_circuit" in your home directory.
 
 
 Run the following files in the "ORN-LN_circuit/bin" folder (this step may be skipped):
-act_preprocess.py
-con_preprocess.py
-act_odors_ORN_vs_con_ORN-LN.py
-act_ORN_vs_con_ORN-LN.py
-act_ORN_whitening.py
-olf_circ_offline_sims.py
+- act_preprocess.py
+- con_preprocess.py
+- act_odors_ORN_vs_con_ORN-LN.py
+- act_ORN_vs_con_ORN-LN.py
+- act_ORN_whitening.py
+- olf_circ_offline_sims.py
 
 This will regenerate files that are already present in the "results" folder.
 
