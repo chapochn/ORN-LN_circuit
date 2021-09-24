@@ -3,7 +3,7 @@
 """
 Created on Tue Mar 26 11:56:59 2019
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 """
 
 # %%

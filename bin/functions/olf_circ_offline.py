@@ -1,3 +1,9 @@
+"""
+@author: Nikolai M Chapochnikov
+
+"""
+
+
 import numpy as np
 from scipy import linalg as LA
 from functions.nmf import get_init_matrix

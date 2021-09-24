@@ -3,7 +3,7 @@
 """
 Created on Thu Nov 30 14:24:44 2017
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 """
 
 file_L = 'data/Berck_2016/elife-14859-supp1-v2_no_blanks.xlsx'

@@ -3,7 +3,7 @@
 """
 Created on Thu Jun 20 22:15:11 2019
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 
 
 In this file are functions to simulate the original/default similarity

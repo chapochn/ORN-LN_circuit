@@ -1,6 +1,6 @@
 """
 Created Aug 28 2019
-N Chapochnikov
+@author: Nikolai M Chapochnikov
 
 This file has as goal to compare the NMF and SNMF decompositions for the
 olfactory data

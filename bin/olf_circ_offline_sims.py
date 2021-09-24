@@ -1,7 +1,7 @@
 """
 Created on Aug 5 2019
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 
 
 """

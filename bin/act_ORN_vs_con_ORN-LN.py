@@ -1,7 +1,7 @@
 """
 Created on Tue Dec 19 14:55:23 2017
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 
 
 This is what is present in this file:

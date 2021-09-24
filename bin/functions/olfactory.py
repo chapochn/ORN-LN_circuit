@@ -1,6 +1,6 @@
 """
 Contains functions and classes that are olfactory-specific.
-
+@author: Nikolai M Chapochnikov
 """
 # ################################# IMPORTS ###################################
 

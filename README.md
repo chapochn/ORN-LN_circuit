@@ -1,10 +1,9 @@
-Steps to reproduce the figures in the paper:
-
-
-
 ## Normative and mechanistic model of an adaptive circuit for efficient encoding and feature extraction
 ### Nikolai M Chapochnikov, Cengiz Pehlevan, Dmitri B Chklovskii
 
+Code author: Nikolai M. Chapochnikov
+
+Steps to reproduce the figures of the paper:
 
 Install Python 3 and the following packages (e.g., via Anaconda):
 - numpy

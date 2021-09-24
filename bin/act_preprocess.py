@@ -3,7 +3,7 @@
 """
 Created on Fri Nov  9 17:45:19 2018
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 
 functions to import and preprocess the activity data, like the ORN data,
 the LN data, the additional odors data, the EC50 etc.. and export them here

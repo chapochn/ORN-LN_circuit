@@ -1,5 +1,6 @@
 """
 containing general use functions
+@author: Nikolai M Chapochnikov
 """
 
 

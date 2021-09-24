@@ -1,5 +1,6 @@
 """
 Contains functions that are for NMF and SNMF
+@author: Nikolai M Chapochnikov
 
 """
 import itertools

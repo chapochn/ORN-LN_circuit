@@ -3,7 +3,7 @@
 """
 Created on Thu Nov  8 18:12:28 2018
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 
 better would be to create some functions here to make to code clearer
 but will leave for later if needed

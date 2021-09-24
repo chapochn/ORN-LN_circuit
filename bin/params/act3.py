@@ -3,7 +3,7 @@
 """
 Created on Mon Oct 29 15:27:11 2018
 
-@author: nchapochnikov
+@author: Nikolai M Chapochnikov
 """
 
 file_hdf = 'results/act3.hdf'
