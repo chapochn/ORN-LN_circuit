@@ -1,6 +1,6 @@
 This repository contains all the code to reproduce the analysis and figures
 of the following paper, which analyses and models the ORN-LN circuit in the 
-olfactory lobe of the Drosophila larva:
+antennal lobe of the Drosophila larva:
 
 ## Normative and mechanistic model of an adaptive circuit for efficient encoding and feature extraction
 ### Nikolai M Chapochnikov, Cengiz Pehlevan, Dmitri B Chklovskii
