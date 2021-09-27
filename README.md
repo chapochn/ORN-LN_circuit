@@ -1,33 +1,26 @@
+This repository contains all the code to reproduce the analysis and figures
+of the following paper, which analyses and models the ORN-LN circuit in the 
+olfactory lobe of the Drosophila larva:
+
 ## Normative and mechanistic model of an adaptive circuit for efficient encoding and feature extraction
 ### Nikolai M Chapochnikov, Cengiz Pehlevan, Dmitri B Chklovskii
 
+
+https://www.biorxiv.org/content/10.1101/2021.09.24.461723v1
+
+Please cite this paper if you use the code.
+
 Code author: Nikolai M. Chapochnikov
 
-Steps to reproduce the figures of the paper:
 
-Install Python 3 and the following packages (e.g., via Anaconda):
-- numpy
-- matplotlib
-- pandas
-- pathlib
-- importlib
-- seaborn
-- pymupdf
-- typing
-- itertools
-- statsmodels
-- scipy
-- os
-- abc
-- openpyxl
-- datetime
-- sklearn
-- copy
-- hdf5storage
-- ast
+##  Steps to reproduce the analysis and figures of the paper
+
+Install Python 3 and the required packages (e.g., via Anaconda) in the file
+"required_packages.txt"
 
 
-Put the folder "ORN-LN_circuit" in your home directory.
+
+Put the folder root folder "ORN-LN_circuit" in your home directory.
 
 
 Run the following files in the "ORN-LN_circuit/bin" folder (this step may be skipped):
