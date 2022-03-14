@@ -5,10 +5,6 @@ Created on Tue Dec 19 14:55:23 2017
 
 
 This is what is present in this file:
-- plotting connections (not sure is that at all useful here, i feel we already)
-have it in many other places...
-- plotting activity, and the activity correlation, and activity for the new
-odors
 - calculating the PCA, NMF
 - calculating the correlations and the significance tests for each correlation
 coefficient independently (no multi-hypothesis testing in the first place)
@@ -90,6 +86,10 @@ importlib.reload(FP)
 # ########################  CLASS INITIALIZATION  #############################
 # #############################################################################
 
+OLF_PATH = FO.OLF_PATH
+RESULTS_PATH = OLF_PATH / 'results'
+# RESULTS_PATH = OLF_PATH / 'results2'
+
 dataset = 3
 
 cell_type = 'ORN'
@@ -140,22 +140,6 @@ ORNA = FO.NeurActConAnalysis(dataset, cell_type, con_dirs, con_pps_k,
                              neur_order=None, odor_order=None,
                              path_plots=path_plots, reduce=True)
 
-# the cn pps is useful to calculate the SVD of the ctr-norm activity data
-# importantly the cn is in the direction of each ORN, meaning the average
-# activity of each ORN becomes 0 and the norm of each ORN activity is 1.
-
-ORNA.add_act_pps('cn', lambda x: FG.get_pps(x, pps='cn')['cn'])
-# this function adds the preprocessing defined in the function to the variable
-# self.act_sels[k], where k is the key for a certain concentration selection
-
-
-# because of the normalization, this creates NaN, so i will put 0 instead
-# i imagine we should need to iterate over all the conc to have this everywhere
-ORNA.act_sels['all']['cn'] = ORNA.act_sels['all']['cn'].fillna(0)
-# ORNA.act_sels['4']['cn'] = ORNA.act_sels['4']['cn'].fillna(0)
-act_SVD = FG.get_svd_df(ORNA.act_sels['all']['cn'])
-
-
 with open(ORNA.path_plots / 'params.txt', 'w') as f:
     f.write(f'dataset: {dataset}\n'
             f'con_pps_k: {con_pps_k}\n'
@@ -176,11 +160,11 @@ with open(ORNA.path_plots / 'params.txt', 'w') as f:
 N_PCA = 5
 ORNA.calc_act_PCA(act_sel_ks, 'o', k=N_PCA)
 
-file = FO.OLF_PATH / f'results/NNC-W_act-all.hdf'
+file = FO.OLF_PATH / f'{RESULTS_PATH}/NNC-W_act-all.hdf'
 Ws = pd.read_hdf(file)
 Ws_sel = Ws.drop(columns=['0.1o'], level=1)
 # # for scaling in [1,2, 10]:
-# #     # file = f'../results/W_NNOC_act{scaling}.hdf'
+# #     # file = f'../{RESULTS_PATH}/W_NNOC_act{scaling}.hdf'
 # #     Ws_sel = Ws.loc[:, ('all', f'{scaling}o')]
 # #     # Ws_sel.rename(columns={'o': f'{scaling}o'}, inplace=True)
 ORNA.act_W = pd.concat([ORNA.act_W, Ws_sel], axis=1)
@@ -254,7 +238,7 @@ ORNA.cc_pv['f'] = FG.combine_pval2(ORNA.cc_pv['o'], ORNA.cc_pv['l'],
 
 # exporting with added NMF and SNMF and NNOC results
 for conc_sel in ['all']:
-    file = FO.OLF_PATH / (f'results/corr_sign/act{dataset}-{act_pps_k1}-{act_pps_k2}_conc-'
+    file = FO.OLF_PATH / (f'{RESULTS_PATH}/corr_sign/act{dataset}-{act_pps_k1}-{act_pps_k2}_conc-'
             f'{conc_sel}_SVD-NNC_vs_con-ORN-all_')
     to_export = ORNA.cc.loc[conc_sel]
     to_export.to_hdf(f'{file}cc.hdf', 'cc')

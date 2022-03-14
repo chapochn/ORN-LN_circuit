@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Dec 19 14:55:23 2017
+Created on March 4th 2022
 
 @author: Nikolai M Chapochnikov
 
+This file is similar to act_odors_ORN_vs_con_ORN-LN,
+but with the connections arising from the NNC instead of the real connections
+from the data.
 
 """
 
@@ -38,8 +41,6 @@ import params.act3 as par_act3
 from functions import general as FG, olfactory as FO, plotting as FP
 
 
-
-
 # %%
 # ################################  RELOADS  ##################################
 # =============================================================================
@@ -59,6 +60,8 @@ exec(f'par_act = par_act{DATASET}')
 
 cell_type = 'ORN'
 # cell_type = 'PN'
+
+ORN_order = par_act.ORN_order
 
 strms = [0, 1, 2, 3]
 con_pps_k = 'cn'  # options: 'cn', 'n'; c and o also possible, but not really
@@ -94,38 +97,10 @@ ORNA = FO.NeurActConAnalysis(DATASET, cell_type, strms, con_pps_k,
                              save_plots, plot_plots, act_sel_ks,
                              act_pps_k1, act_pps_k2,
                              odor_sel=odor_sel,
-                             neur_order=None, odor_order=None,
+                             neur_order=ORN_order, odor_order=None,
                              path_plots=path_plots, reduce=True,
                              subfolder='act_ORN_odors_vs_con_ORN-LN/')
 
-
-# getting only the real cells, i think they are the same independent
-# of the stream
-STRM = 0
-CELLS_REAL =  ['Broad T1 L',
-                 'Broad T2 L',
-                 'Broad T3 L',
-                 'Broad T1 R',
-                 'Broad T2 R',
-                 'Broad T3 R',
-                 'Broad T M M',
-                 'Broad D1 L',
-                 'Broad D2 L',
-                 'Broad D1 R',
-                 'Broad D2 R',
-                 'Broad D M M',
-                 'Keystone L L',
-                 'Keystone L R',
-                 'Keystone R R',
-                 'Keystone R L',
-                 'Keystone M M',
-                 'Picky 0 [dend] L',
-                 'Picky 0 [dend] R',
-                 'Picky 0 [dend] M'
-                 ]
-# decomment this line if you don't want the "fake" cells", which are
-# the average of categories
-# CELLS_REAL = [name for name in CELLS_REAL if ' M' not in name]
 
 xmin = -1
 xmax = 1
@@ -138,24 +113,53 @@ with open(ORNA.path_plots / f'params.txt', 'w') as f:
     f.write(f'\nact_pps1: {act_pps_k1}')
     f.write(f'\nact_pps2: {act_pps_k2}')
     f.write(f'\nodor_subset: {odor_sel}')
-    f.write(f'\nstrm: {STRM}')
     f.write(f'\nACT_PPS: {ACT_PPS}')
     f.write(f'\nCONC: {CONC}')
     f.write(f'\nact_sel_ks: {act_sel_ks}')
 
 png_opts = {'dpi': 250, 'transparent': True}
 
+
+# %%
+# #############################################################################
+# ###########  Importing the W of NNC-4 cells  ################################
+# #############################################################################
+
+OLF_PATH = FO.OLF_PATH
+
+RESULTS_PATH = OLF_PATH / 'results'
+file = RESULTS_PATH / 'NNC-W_act-all.hdf'
+Ws = pd.DataFrame(pd.read_hdf(file))
+
+conc = 'all'
+scal = 1  # so this is the same as in the figure 3 of the paper
+pps = f'{scal}o'
+
+K = 4
+meth = f'NNC_{K}'
+# Y[k] = Ys[conc, pps, meth, '', '']/scal
+# Y[k] = Y[k].loc[:, ORN_order].reindex(odor_order, level='odor').T
+# # Y[k] = Y[k].values
+# Z[k] = Zs[conc, pps, meth, '', '']
+# Z[k] = Z[k].reindex(odor_order, level='odor').T
+# # Z[k] = Z[k].values
+# W2[k] = Y[k] @ Z[k].T / N
+W = Ws[conc, pps, meth, '', '']/scal
+W = W.loc[ORN_order]
 # %%
 # #############################################################################
 # ###########  GLOBAL STUFF USED LATER  #######################################
 # #############################################################################
 act_cn = FG.get_ctr_norm(ORNA.act_sels[CONC][ACT_PPS].T, opt=0)
+W_cn = FG.get_ctr_norm(W, opt=0)
 
-# calculating the corr/CS and signifiance each odor vs each cell
+#%%
+# calculating the corr and signifiance each odor vs each W from NNC
 
-# getting the corr and CS for the true data
-con_sel_cn = ORNA.con_strms2[STRM]['cn'].loc[:, CELLS_REAL].copy()
-con_sel_cn = con_sel_cn.dropna(axis=1)
+con_sel_cn = W_cn
+
+
+# the corr(should be) the same as the one obtained below
 
 cor0 = con_sel_cn.T @ act_cn
 
@@ -176,7 +180,7 @@ cdf_true = pd.DataFrame(cdf_true, index=cor0.index)
 # before explorting this, be sure what is the CELL_LIST, if you want
 # the M cells to be there or not
 
-file_begin = (FO.OLF_PATH / f'results/{cell_type}_con{STRM}_vs_'
+file_begin = (FO.OLF_PATH / f'results/NNC-{K}_con-W_vs_'
               f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_corr_')
 cdf_true.to_hdf(f'{file_begin}cdf-true.hdf', 'cdf_true')
 
@@ -249,7 +253,7 @@ cdf_shfl_std = pd.DataFrame(cdfs_shfl.std(axis=0), index=CELL_LIST)
 # before explorting this, be sure what is the CELL_LIST, if you want
 # the M cells to be there or not
 # =============================================================================
-file_begin = (f'results/{cell_type}_con{STRM}_vs_'
+file_begin = (f'results/NNC-{K}_con-W_vs_'
               f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_corr_')
 cdf_shfl_m.to_hdf(FO.OLF_PATH / f'{file_begin}cdf-shfl-m.hdf', 'cdf_shfl_m')
 cdf_shfl_std.to_hdf(FO.OLF_PATH / f'{file_begin}cdf-shfl-std.hdf',
@@ -284,7 +288,7 @@ cdf_diff_min_pv2 = cdf_diff_min_pv2.replace(0, 1./N).T
 # %%
 
 # =============================================================================
-file_begin = (f'results/{cell_type}_con{STRM}_vs_'
+file_begin = (f'results/NNC-{K}_con-W_vs_'
               f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_corr_'
               f'cdf-shfl-diff-min')
 cdf_diff_min2.to_hdf(FO.OLF_PATH / f'{file_begin}.hdf', 'cdf_diff_min')

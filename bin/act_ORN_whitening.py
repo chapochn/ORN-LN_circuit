@@ -4,7 +4,6 @@ Created Aug 28 2019
 
 This file has as goal to compare the NMF and SNMF decompositions for the
 olfactory data
-I could also include selections of different parts of the dataset
 
 """
 

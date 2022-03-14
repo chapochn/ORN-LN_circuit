@@ -1165,7 +1165,7 @@ class NeurActConAnalysis:
         """
         after the initialization con_strms, con_strms2 and act will
         all have the same ordering of neurons, and it will be ordered by
-        neur_order, if neur_order is empty, the order will me imposed by
+        neur_order, if neur_order is empty, the order will be imposed by
         the order that is already in the activity matrix
 
         the reduce option is for the case when the 2 act_pps options are

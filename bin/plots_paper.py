@@ -56,6 +56,7 @@ OLF_PATH = FO.OLF_PATH
 
 DATASET = 3
 RESULTS_PATH = OLF_PATH / 'results'
+# RESULTS_PATH = OLF_PATH / 'results2'
 
 SAVE_PLOTS = True
 PLOT_PLOTS = False
@@ -313,6 +314,10 @@ ft_s_lb = 7  # fontsize labels
 png_opts = {'dpi': 400, 'transparent': True}
 pdf_opts = {'dpi': 800, 'transparent': True}
 
+# I wonder if something like this is needed in the save_plot:
+# bbox_inches='tight', pad_inches = 0
+# it seems not, then it doesn't respect the size you've put
+
 CB_W = 0.1
 CB_DX = 0.11
 SQ = 0.07
@@ -459,6 +464,13 @@ for s in ['L', 'R']:
     file = f'{PP_CONN}/con_ORN_{s}_all.'
     FP.save_plot(f, file + 'png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f, file + 'pdf', SAVE_PLOTS, **pdf_opts)
+
+    # this seems to try to make it even tighter than what you set it up for
+    # pdf_opts1 = {'dpi': 800, 'transparent': True, 'bbox_inches':'tight',
+    #              'pad_inches': 0}
+    # file1 = f'{PP_CONN}/con_ORN_{s}_all2.'
+    # FP.save_plot(f, file1 + 'pdf', SAVE_PLOTS, **pdf_opts1)
+
 
 
 # %%
@@ -891,7 +903,9 @@ con_ff_sel = con_strms3.loc[:, strm]
 con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
 con_ff_sel.columns = LNs_sel_short
 con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
+# con_ff_sel_n = FG.get_norm(con_ff_sel)
 df1 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
+# df1 = FG.get_CS(con_ff_sel_n, con_ff_sel_n)
 side = 'R'
 # Correlation coefficient per category
 LNs_sel1 = LNs_sel_d_side[side]
@@ -1103,7 +1117,8 @@ df2.columns = LNs_sel_short
 
 print(np.max(df1.values), np.max(df2.values))
 
-pads = [0.5, 0.5, 0.41, 0.45]
+# pads = [0.5, 0.5, 0.41, 0.45]
+pads = [0.5, 0.5, 0.41, 0.32]
 d_h = 0.15  # delta height between the 2 imshows
 fs, axs1, axs2, axs_cb = FP.calc_fs_ax_2plts(df1, df2, pads, d_h, SQ, CB_DX,
                                              CB_W)
@@ -1577,7 +1592,7 @@ for k in [4, 5]:
     W[k] = W[k].loc[ORN_order]
 # %%
 if scal == 1:
-    order_LN = {4: [4, 2, 3, 1], 5: [1, 5, 2, 3, 4]}
+    order_LN = {4: [3, 4, 1, 2], 5: [3, 1, 4, 5, 2]}
 else:
     order_LN = {4: [4, 2, 1, 3], 5: [2, 5, 3, 4, 1]}
 
@@ -1794,7 +1809,7 @@ act_vect = SVD['U'].loc[:, 1]
 ORN_order = par_act.ORN_order
 act_vect = -act_vect.loc[ORN_order]
 ylims = [(-2, 45), (-0.02, 0.55)]
-plot_2lines(LN, 'BT', act_vect, 'PCA 1', ylims, 'PCA1', PP=PP_COMP_CON)
+plot_2lines(LN, 'BT       ', act_vect, 'PCA 1', ylims, 'PCA1', PP=PP_COMP_CON)
 
 # ########## scatter plot ##########
 
@@ -1820,7 +1835,7 @@ ax = f.add_axes(axs)
 
 FP.plot_scatter(ax, con_w.values, act_vect.values,
                 r'# of syn. ORNs$\rightarrow$BT',
-                'ORN activity PCA 1', c1, c2, xticks=[0, 20, 40],
+                'ORN activity PCA 1     ', c1, c2, xticks=[0, 20, 40],
                 yticks=[0, 0.5], show_cc=False,
                 pca_line_scale1=scl1, pca_line_scale2=scl2,
                 c='indigo', s=5)
@@ -1859,17 +1874,135 @@ cdfs_shfl_std = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-std.hdf'))
 xmin = -1
 xmax = 1
 n_bins_cdf = 100
+n_bins_cdf = 500
 bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
+
+
+# also adding the pvalue on the graph directly
+
+file_begin = (f'{RESULTS_PATH}/{CELL_TYPE}_con{STRM}_vs_act-{act_pps1}'
+              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-shfl-diff-min')
+
+cdf_diff_min = pd.DataFrame(pd.read_hdf(f'{file_begin}.hdf'))
+cdf_diff_min_pv = pd.DataFrame(pd.read_hdf(f'{file_begin}_pv.hdf'))
+
+LN_idx = LNs_MM
+pvals = cdf_diff_min_pv.loc[LN_idx].squeeze()  # converts into a series
+alpha = 0.05
+reject, pvals_corrected, _, _ = smsm.multipletests(pvals, method='fdr_bh',
+                                                   alpha=alpha)
+
 
 # %%
 # #########################  PLOTTING   #######################################
 # ########################  CDFs with a cdf from shuffling  ###################
-# for the paper i will use the graph that shows all lines: mean, true, fake
+# for the paper I will use the graph that shows all lines: mean, true, fake
 # also i will separate the 2 graphs, just for simplicity.
 
 # side = 'L'
 # LN = f'Broad T1 {side}'
+# LN = f'Broad T M M'
+LNs_m = {'BT': 'Broad T M M',
+         'BD': 'Broad D M M',
+         'KS': 'Keystone M M',
+         'P0': 'Picky 0 [dend] M'}
+
+# adding the gaussian fitting:
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+
+
+
+for LN_i, LN_m in enumerate(LNs_m):
+    LN = LNs_m[LN_m]
+    pval_crt = pvals_corrected[LN_i]
+
+    cdf_mean = cdfs_shfl_m.loc[LN]
+    cdf_std = cdfs_shfl_std.loc[LN]
+    lw = 1
+
+    # Plotting the 2 plots separately
+
+    pads = (0.52, 0.05, 0.35, 0.1)
+    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+
+    ax.plot(bins_cdf, cdf_mean, drawstyle='steps-post', label='mean', lw=lw,
+            color='k')
+    ax.fill_between(bins_cdf, cdf_mean - cdf_std, cdf_mean + cdf_std,
+                    facecolor='grey', step='post', label='s.d.')
+    # this might not be exactly correct, to verify
+    dbin = bins_cdf[1] - bins_cdf[0]
+    mu, sigma = curve_fit(norm.cdf, bins_cdf[:-1] + dbin/2, cdf_mean[:-1],
+                          p0=[0, 0.3])[0]
+    print(mu, sigma)
+    ax.plot(bins_cdf, norm.cdf(bins_cdf, mu, sigma), label='gauss', lw=0.5,
+            color='c')
+
+    ax.plot(bins_cdf, cdfs_true.loc[LN], drawstyle='steps-post', c='r',
+            label='true', lw=lw)
+
+
+
+    ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency '+
+                                             r'($RCF$)',
+           xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    # legend
+    handles, labels = ax.get_legend_handles_labels()
+    order = [0, 3, 2, 1]
+    # order = [0, 2, 1]
+    ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
+              frameon=False, bbox_to_anchor=(-0.04, 1.1), loc='upper left',
+              handlelength=1, handletextpad=0.4)
+
+    ax.text(0.4, 0.12, f'LN type: {LN_m}', transform=ax.transAxes)
+    ax.text(0.4, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
+
+    file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std1'
+    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+    # pads = (0.5, 0.05, 0.35, 0.1)
+    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+
+    cdf_diff = cdfs_true.loc[LN] - cdf_mean
+    ax.plot([-1, 1], [0, 0], label='mean', lw=lw, c='k')
+    ax.fill_between(bins_cdf, - cdf_std, + cdf_std, facecolor='grey', step='post',
+                    label='s.d.')
+    ax.plot(bins_cdf, cdf_diff, drawstyle='steps-post', c='r', label='true',
+            lw=lw)
+
+    ax.set(xlabel=r'corr. coef. $r$', ylabel=r'$RC F - \overline{RCF}$',
+           xticks=[-1, 0, 1], yticks=[-0.4, -0.2, 0, 0.2], xlim=(-1, 1))
+
+    i_min = np.argmin(cdf_diff.values)
+    col_ann = 'magenta'
+    plt.annotate('', xy=(bins_cdf[i_min], 0), xycoords='data',
+                 xytext=(bins_cdf[i_min], cdf_diff[i_min]), textcoords='data',
+                 arrowprops={'arrowstyle': '<->', 'color': col_ann})
+    plt.text(bins_cdf[i_min] + 0.05, cdf_diff[i_min]/2, 'max dev.',
+             color=col_ann)
+    ax.text(0.4, 0.12, f'LN type: {LN_m}', transform=ax.transAxes)
+    ax.text(0.4, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std2'
+    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+
+LN_m = 'BT'
 LN = f'Broad T M M'
+
 cdf_mean = cdfs_shfl_m.loc[LN]
 cdf_std = cdfs_shfl_std.loc[LN]
 lw = 1
@@ -1885,10 +2018,14 @@ ax.plot(bins_cdf, cdf_mean, drawstyle='steps-post', label='mean', lw=lw,
         color='k')
 ax.fill_between(bins_cdf, cdf_mean - cdf_std, cdf_mean + cdf_std,
                 facecolor='grey', step='post', label='s.d.')
+
 ax.plot(bins_cdf, cdfs_true.loc[LN], drawstyle='steps-post', c='r',
         label='true', lw=lw)
 
-ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency (RCF)',
+
+
+ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency '+
+                                         r'($RCF$)',
        xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
@@ -1900,37 +2037,154 @@ ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
           frameon=False, bbox_to_anchor=(-0.04, 1.1), loc='upper left',
           handlelength=1, handletextpad=0.4)
 
-file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std1'
+ax.text(0.4, 0.025, f'LN type: {LN_m}', transform=ax.transAxes)
+
+file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std1_nofit'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
 
-# pads = (0.5, 0.05, 0.35, 0.1)
-fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
+# %%
+# #############################################################################
+# ##################  CDF OF 1 NNC-4 W AND OF MEAN FROM SHUFFLED  #############
+# #############################################################################
+# basically same as above, but for the W of NNC-4
+# ###################         IMPORTING                      ##################
 
-cdf_diff = cdfs_true.loc[LN] - cdf_mean
-ax.plot([-1, 1], [0, 0], label='mean', lw=lw, c='k')
-ax.fill_between(bins_cdf, - cdf_std, + cdf_std, facecolor='grey', step='post',
-                label='s.d.')
-ax.plot(bins_cdf, cdf_diff, drawstyle='steps-post', c='r', label='true', lw=lw)
+K = 4
+CONC = 'all'
 
-ax.set(xlabel=r'corr. coef. $r$', ylabel='RCF - <RCF>', xticks=[-1, 0, 1],
-       yticks=[-0.4, -0.2, 0, 0.2], xlim=(-1, 1))
+file_begin = (f'{RESULTS_PATH}/NNC-{K}_con-W_vs_act-{act_pps1}'
+              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-')
 
-i_min = np.argmin(cdf_diff.values)
-col_ann = 'magenta'
-plt.annotate('', xy=(bins_cdf[i_min], 0), xycoords='data',
-             xytext=(bins_cdf[i_min], cdf_diff[i_min]), textcoords='data',
-             arrowprops={'arrowstyle': '<->', 'color': col_ann})
-plt.text(bins_cdf[i_min] + 0.05, cdf_diff[i_min]/2, 'max dev.', color=col_ann)
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
+cdfs_true = pd.DataFrame(pd.read_hdf(f'{file_begin}true.hdf'))
+cdfs_shfl_m = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-m.hdf'))
+cdfs_shfl_std = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-std.hdf'))
 
-file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std2'
-FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+xmin = -1
+xmax = 1
+n_bins_cdf = 100
+n_bins_cdf = 500
+bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
+
+
+# also importing p-values to put them directly in the graph:
+CONC = 'all'
+
+file_begin = (f'{RESULTS_PATH}/NNC-{K}_con-W_vs_act-{act_pps1}'
+              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-shfl-diff-min')
+
+cdf_diff_min = pd.DataFrame(pd.read_hdf(f'{file_begin}.hdf'))
+cdf_diff_min_pv = pd.DataFrame(pd.read_hdf(f'{file_begin}_pv.hdf'))
+
+pvals = cdf_diff_min_pv.squeeze()  # converts into a series
+alpha = 0.05
+reject, pvals_corrected, _, _ = smsm.multipletests(pvals, method='fdr_bh',
+                                                   alpha=alpha)
+pvals_fdr = pvals.copy()
+pvals_fdr[:] = pvals_corrected
+
+
+# %%
+# #########################  PLOTTING   #######################################
+# ########################  CDFs with a cdf from shuffling  ###################
+# for the paper I will use the graph that shows all lines: mean, true, fake
+# also i will separate the 2 graphs, just for simplicity.
+
+# adding the gaussian fitting:
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+
+LN_order = [3, 4, 1, 2]
+LN_text = {1:r'$\mathbf{w}_1$', 2: r'$\mathbf{w}_2$',
+           3:r'$\mathbf{w}_3$', 4: r'$\mathbf{w}_4$'}
+
+for LN_i in range(1, K+1):
+    LN_i_new = LN_order[LN_i-1]
+    LN_text_crt = f'NNC-{K}, ' + LN_text[LN_i_new]
+    pval_crt = pvals_fdr[LN_i]
+    cdf_mean = cdfs_shfl_m.loc[LN_i]
+    cdf_std = cdfs_shfl_std.loc[LN_i]
+    lw = 1
+
+    # Plotting the 2 plots separately
+
+    pads = (0.52, 0.05, 0.35, 0.1)
+    pads = (0.52, 0.15, 0.35, 0.1)
+    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+
+    ax.plot(bins_cdf, cdf_mean, drawstyle='steps-post', label='mean', lw=lw,
+            color='k')
+    ax.fill_between(bins_cdf, cdf_mean - cdf_std, cdf_mean + cdf_std,
+                    facecolor='grey', step='post', label='s.d.')
+    # this might not be exactly correct, to verify
+    dbin = bins_cdf[1] - bins_cdf[0]
+    mu, sigma = curve_fit(norm.cdf, bins_cdf[:-1] + dbin/2, cdf_mean[:-1],
+                          p0=[0, 0.3])[0]
+    print(mu, sigma)
+    ax.plot(bins_cdf, norm.cdf(bins_cdf, mu, sigma), label='gauss', lw=0.5,
+            color='c')
+
+    ax.plot(bins_cdf, cdfs_true.loc[LN_i], drawstyle='steps-post', c='r',
+            label='true', lw=lw)
+
+
+
+    ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency '+
+                                             r'($RCF$)',
+           xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    # legend
+    handles, labels = ax.get_legend_handles_labels()
+    order = [0, 3, 2, 1]
+    # order = [0, 2, 1]
+    ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
+              frameon=False, bbox_to_anchor=(-0.04, 1.1), loc='upper left',
+              handlelength=1, handletextpad=0.4)
+
+    ax.text(0.5, 0.12, LN_text_crt, transform=ax.transAxes)
+    ax.text(0.5, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
+
+    file = f'{PP_ODOR_CON}/cors_W{LN_i_new}_rcf-m-std1'
+    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+    # pads = (0.5, 0.05, 0.35, 0.1)
+    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+
+    cdf_diff = cdfs_true.loc[LN_i] - cdf_mean
+    ax.plot([-1, 1], [0, 0], label='mean', lw=lw, c='k')
+    ax.fill_between(bins_cdf, - cdf_std, + cdf_std, facecolor='grey', step='post',
+                    label='s.d.')
+    ax.plot(bins_cdf, cdf_diff, drawstyle='steps-post', c='r', label='true',
+            lw=lw)
+
+    ax.set(xlabel=r'corr. coef. $r$', ylabel=r'$RC F - \overline{RCF}$',
+           xticks=[-1, 0, 1], yticks=[-0.4, -0.2, 0, 0.2], xlim=(-1, 1))
+
+    i_min = np.argmin(cdf_diff.values)
+    col_ann = 'magenta'
+    plt.annotate('', xy=(bins_cdf[i_min], 0), xycoords='data',
+                 xytext=(bins_cdf[i_min], cdf_diff[i_min]), textcoords='data',
+                 arrowprops={'arrowstyle': '<->', 'color': col_ann})
+    plt.text(bins_cdf[i_min] + 0.05, cdf_diff[i_min]/2, 'max dev.',
+             color=col_ann)
+    ax.text(0.5, 0.12, LN_text_crt, transform=ax.transAxes)
+    ax.text(0.5, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    file = f'{PP_ODOR_CON}/cors_W{LN_i_new}_rcf-m-std2'
+    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
 
 
 # %%
@@ -2252,7 +2506,7 @@ FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 # NMF_n = 4
 # NMF_name = f'NMF_{NMF_n}'
 # SVD_n = 6
-
+RESULTS_PATH = OLF_PATH / 'results'
 # file = (f'{RESULTS_PATH}/corr_sign/act{DATASET}-{act_pps1}-{act_pps2}'
 #        f'_conc-all_NMF{NMF_n}-SVD{SVD_n}_vs_con-ORN-all_')
 file = (f'{RESULTS_PATH}/corr_sign/act{DATASET}-{act_pps1}-{act_pps2}'
@@ -2299,7 +2553,7 @@ idy = {}
 ylabels_new = {}
 
 if scal == 1:
-    order_LN = {4: [4, 2, 3, 1], 5: [1, 5, 2, 3, 4]}
+    order_LN = {4: [3, 4, 1, 2], 5: [3, 1, 4, 5, 2]}
 else:
     order_LN = {4: [4, 2, 1, 3], 5: [2, 5, 3, 4, 1]}
 
@@ -2880,7 +3134,8 @@ FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
 
-
+# here I am calculating the transformation from x to y with
+# the above generated dataset and rho = 1
 s_y = s.copy()
 s_y[0] = FOC.damp_sx(s[0], len(x.T), 1)
 y = U @ np.diag(s_y)@ Vt
@@ -3238,7 +3493,7 @@ if SCAL_W == 2:
 # ######################  change in the X-Y cross correlation #################
 # #####################  with the absence of M  ###############################
 # #############################################################################
-# %%
+
 
 # only change is cross correlation on the diagonal
 def plot_XYcrosscorr_diag(data):
@@ -3307,7 +3562,6 @@ datas = [[X, [Y_lc[k2], Y_lc_noM[k2]], [c_l2, c_l2],
 if SCAL_W == 2:
     for data in datas:
         plot_XYcrosscorr_diag(data)
-# %%
 
 
 
@@ -3630,7 +3884,7 @@ legend_opt = {'handletextpad':0., 'frameon':False, 'loc':'upper left',
               'borderpad':0, 'bbox_to_anchor': (-0.07, 1.04)}
 
 def scatter_norm_plot(datas, axis, xmax, ticks, lab, do_fit=False):
-    pads = (0.4, 0.15, 0.35, 0.2)
+    pads = (0.5, 0.15, 0.35, 0.2)
     fs, axs = FP.calc_fs_ax(pads, 14 * SQ, 14 * SQ)
     x_lin = np.linspace(0, xmax, 50)
     # title = 'norm of activity patterns  '
@@ -3638,7 +3892,7 @@ def scatter_norm_plot(datas, axis, xmax, ticks, lab, do_fit=False):
     # xlab = r'||$X_{:, i}$||'
     # ylab = r'||$Y_{:, i}$||'
     xlab = f'input {Xtstex} {lab} norm'
-    ylab = f'output {Ytex} {lab} norm'
+    ylab = f'output {Ytex}\n{lab} norm'
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
 
@@ -4226,7 +4480,8 @@ y = corr_W_nnc_s.groupby('rho').mean()
 e = corr_W_nnc_s.groupby('rho').std()
 
 pads = (0.4, 0.1, 0.35, 0.1)
-fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*10)  # pads, gw, gh
+# fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*10)
+fs, axs = FP.calc_fs_ax(pads, SQ*12, SQ*12)  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 ax.plot(x, y, lw=1, c='k')
@@ -4239,7 +4494,7 @@ ax.set_yticks([0, 0.2, 0.4])
 ax.set_xticks([-1, x_special, 0, 1])
 ax.set_xticklabels([0.1, rho_special, 1, 10])
 ax.set_ylim(0, 0.4)
-ax.set_ylabel(r'$\langle r_+ \rangle$')
+ax.set_ylabel(r'$\overline{r}_+$')
 ax.set_xlabel(r'$\rho$')
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)

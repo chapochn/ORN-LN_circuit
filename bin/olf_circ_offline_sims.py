@@ -21,6 +21,7 @@ import pandas as pd
 import matplotlib.pylab as plt
 import scipy.linalg as LA
 import importlib
+import matplotlib.pyplot as plt
 
 # %%
 
@@ -94,3 +95,67 @@ for p in np.arange(-10, 10.1, 0.5):
             Ws.loc[:, (p, i, j)] = W[:, j]
 
 Ws.to_hdf(FO.OLF_PATH / f'results/W_NNC-{K}.hdf', 'Ws')
+
+#%%
+# the goal here is to create plots for understanding the influence
+# of changeing rho and having multiple LNs, more than the number of clusters
+
+# First let's create a dataset we want to work with:
+# we will have 2 clusters
+ctr1 = np.array([0.5, 2])
+ctr2 = np.array([2, 0.5])
+
+
+divide = 10
+cl1 = np.random.randn(len(ctr1), 500)/divide + ctr1[:, np.newaxis]
+cl2 = np.random.randn(len(ctr1), 500)/divide + ctr2[:, np.newaxis]
+
+
+
+f, ax = plt.subplots()
+plt.scatter(*cl1, s=0.5)
+plt.scatter(*cl2, s=0.5)
+plt.xlim(0, 3)
+plt.ylim(0, 3)
+ax.set_aspect(1)
+
+plt.show()
+
+#%%
+X = np.concatenate([cl1, cl2], axis=1)
+N = len(X.T)
+K = 4
+rect = True
+rho = 0.1
+
+alpha = 50  # seems to be a bit faster
+# alpha = 1
+Y, Z, _ = FOC.olf_gd_offline(X, K, max_iter=10000, rectY=rect,
+                             rectZ=rect,
+                             alpha=50, cycle=500, rho=rho, beta=0.2)
+#%%
+W = Y @ Z.T / N
+W_n = FG.get_norm_np(W)
+W_plot = W/np.max(W)*2
+
+
+f, axx = plt.subplots(2, 1)
+ax = axx[0]
+ax.scatter(*cl1)
+ax.scatter(*cl2)
+ax.scatter(*W_plot)
+ax.set_xlim(0, 3)
+ax.set_ylim(0, 3)
+ax.set_aspect(1)
+
+ax = axx[1]
+CS = W_n.T@W_n
+im = ax.imshow(np.arccos(CS), cmap='viridis', vmax=np.pi/2, vmin=-0.1)
+plt.colorbar(im)
+
+plt.show()
+
+
+#%%
+CS[1,1]
+#%%
