@@ -84,7 +84,7 @@ def set_aspect_ratio(ax, alpha):
     y0, y1 = ax.get_ylim()
     ax.set_aspect((x1-x0)/(y1-y0)/alpha)
 
-
+# could be replaced by vlines
 def add_x_splits(ax, splits, n, **plot_args):
     for s in splits:
         ax.plot([s-0.5, s-0.5], [-0.5, n-0.5], **plot_args)
@@ -801,3 +801,48 @@ def plot_cov(data: pd.DataFrame, cell_sort=None, norm: bool = False,
                               cmap=plt.cm.bwr, title=title, tight=True)
     return f, ax, clb
 
+
+# #############################################################################
+# ####################  ACTIVITY PLOTS  #######################################
+# #############################################################################
+# definition used for actiivty plots
+def get_div_color_map(vmin_col, vmin_to_show, vmax):
+    colors_neg = plt.cm.PuBu(np.linspace(vmin_to_show / vmin_col, 0, 256))
+    colors_pos = plt.cm.Oranges(np.linspace(0, 1, 256))
+    all_colors = np.vstack((colors_neg, colors_pos))
+    act_map = matplotlib.colors.LinearSegmentedColormap.from_list('act_map',
+                                                                  all_colors)
+    divnorm = matplotlib.colors.TwoSlopeNorm(vmin=vmin_to_show, vcenter=0,
+                                             vmax=vmax)
+    return act_map, divnorm
+
+
+def plot_full_activity(df, act_map, divnorm, title, cb_title,
+                       cb_ticks, pads=[0.55, 0.4, 0.2, 0.2], extend='max',
+                       squeeze=0.4, do_vert_spl=True, set_ticks_params=True,
+                       SQ=0.07, CB_W=0.1, CB_DX=0.11):
+    # _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
+    fs, axs = calc_fs_ax(pads, SQ * len(df.T) * squeeze, SQ * len(df))  # pads, gw, gh
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+
+    if do_vert_spl:
+        splx = np.arange(5, len(df.T), 5)
+    else:
+        splx = []
+    cp = imshow_df2(df, ax, vlim=None, show_lab_y=True,
+                       title=title,
+                       cmap=act_map, splits_x=splx,
+                       show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
+                       **{'norm': divnorm})
+    ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
+                        CB_W / fs[0], axs[3]])
+    # FP.add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend='max')
+    clb = plt.colorbar(cp, cax=ax_cb, extend=extend)
+    clb.outline.set_linewidth(0.00)
+    clb.ax.tick_params(size=2, direction='in', pad=1.5)
+    clb.ax.set_title(cb_title, pad=None)
+    if set_ticks_params:
+        clb.set_ticks(cb_ticks)
+        clb.set_ticklabels(cb_ticks)
+    return f, ax, clb

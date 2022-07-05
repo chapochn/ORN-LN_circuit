@@ -217,14 +217,15 @@ def snmf_via_nmf_best_np(A: np.ndarray, k: int = 2, beta=2,
     """
     # different initializations
     inits = ['nndsvd', 'nndsvda', 'nndsvdar'] + list(range(n_rnd))
-
-    mi = pd.MultiIndex(levels=[[], []], codes=[[], []],
-                       names=['init', 'n'])
+    inits_s = [str(i) for i in inits]
+    # mi = pd.MultiIndex(levels=[[], []], codes=[[], []],
+    #                    names=['init', 'n'])
+    mi = pd.MultiIndex.from_product([inits_s, range(k)],
+                                    names=['init', 'n'])
     SNMFs_S = pd.DataFrame(columns=mi)
-    err = pd.Series()
+    err = pd.Series(dtype=float, index=inits_s)
 
-    for init in inits:
-        init_s = str(init)
+    for init, init_s in zip(inits, inits_s):
         if isinstance(init, int):
             init = 'random'
         S, e, n_iter = snmf_via_nmf_np(A, k=k, beta=beta, init=init,
@@ -558,6 +559,15 @@ def my_costA(A: np.ndarray, Y: np.ndarray):
 
 
 def my_costX(X: np.ndarray, Y: np.ndarray):
+    """
+    It seems this gives a slightly different results that when
+    calculating thought LN.norm, not sure which one to trust more...
+    One could actually drop XXT because it doesn't contribute to the
+    cost change...
+    :param X:
+    :param Y:
+    :return:
+    """
     XXT = mat_mul(X, X.T)
     YYT = mat_mul(Y, Y.T)
     YXT = mat_mul(Y, X.T)
@@ -678,7 +688,7 @@ def snmf_kuang_offline(X: np.ndarray, n_y: int, rtol: float = 1e-7,
             break
 
     message = (f'init: {init}, i: {i}, alpha: {alpha}, '
-              f'costs: {cost0}, {cost1}')
+              f'initial and final errors: {np.sqrt(cost0)}, {np.sqrt(cost1)}')
     if verbose:
         print(message)
     return Y, cost1, message
@@ -766,7 +776,7 @@ def get_snmf_best_np(X: np.ndarray, k: int, rtol: float = 1e-6,
     assert err0a == LA.norm(Y0.T @ Y0 - A_NN), 'Problem'
     # here this assetion works because in the function get_snmf_best_np we were
     # really actually using the LA.norm function
-    message += f'error to beat {err0}, init: {init}\n'
+    message += f'calculated SNMF via NMF function, error {err0}, init: {init}\n'
     # print(message)
 
     inits = ['pre_init', 'pre_init', 'full_rand', 'random', 'random']
@@ -787,6 +797,7 @@ def get_snmf_best_np(X: np.ndarray, k: int, rtol: float = 1e-6,
 
         err1 = LA.norm(Y.T @ Y - A) # not sure if this one is to be trusted
         # more than the one done by mat_mul from blas
+        print('sqrt(cost), error', np.sqrt(cost), err1)
         errs[i] = err1
         Ys[i] = Y
         message += mes + '\n'

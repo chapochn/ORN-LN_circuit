@@ -8,7 +8,7 @@ Created on Thu Jun 20 22:15:11 2019
 
 In this file are functions to simulate the original/default similarity
 matching circuit sa well as the olfactory circuit.
-There there are classes for the default similarity matching and the
+There are classes for the default similarity matching and the
 olfactory circuit that keep the values of W and M and have functions that
 update their values.
 
@@ -282,6 +282,25 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
         raise ValueError('Matrix M is not positive definite, thus the circuit '
                          'dynamics will not converge to a stable fix point')
 
+    if method in ['GD', 'GD_NN', 'Jacobi']:
+        # probably a quite conservative estimate for eta
+        est = (np.max([1, np.max(np.abs(Wff))]) *
+               np.max([1, np.max(np.abs(M))]) *
+               np.max([1, np.max(np.abs(x))]))
+        if est < 1.01:
+            est = np.max([np.max(np.abs(Wff.T @ x)),
+                          np.max(np.abs(M @ Wff.T @ x))])
+
+        print('estimate ', est)
+        # eta1 = 1. / est
+        eta1 =  0.001  # this usually works, but depends on the dataset unfortunately
+        # if i make delta larger, y often goes in the wrong direction and
+        # diverges
+        # y = Wx.copy()
+        y2 = np.zeros(len(x), dtype=M.dtype)
+        # y2 = x
+        z2 = np.zeros(len(M), dtype=M.dtype)
+
     if method == 'inv':
         # could use LA.solve instead of the inverse, i guess
         # would be faster/cleaner/more exact...
@@ -293,22 +312,6 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
         z2 = rho**2 * Minv @ Wff.T @ y2
 
     elif method == 'GD':
-        # probably a quite conservative estimate for eta
-        est = (np.max([1, np.max(np.abs(Wff))]) *
-               np.max([1, np.max(np.abs(M))]) *
-               np.max([1, np.max(np.abs(x))]))
-        if est < 1.01:
-            est = np.max([np.max(np.abs(Wff.T @ x)),
-                          np.max(np.abs(M @ Wff.T @ x))])
-
-        print('estimate ', est)
-        eta1 = 1. / est
-        # if i make delta larger, y often goes in the wrong direction and
-        # diverges
-        # y = Wx.copy()
-        y2 = np.zeros(len(x), dtype=M.dtype)
-        # y2 = x
-        z2 = np.zeros(len(M), dtype=M.dtype)
         for i in range(n_iter_max):
             eta = 1000*eta1 / (i+1000)
             # if i % 1000 == 0:
@@ -325,23 +328,29 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
             #         tol_test(z, z2, atol=atol, rtol=rtol)):
                 # print('converged at ', i)
                 break
+        print('converged at ', i, 'of max', n_iter_max)
+
+    elif method == 'Jacobi':  # does not seem to converge as GD
+        for i in range(n_iter_max):
+            # eta = 1000*eta1 / (i+1000)
+            eta = eta1
+            # if i % 1000 == 0:
+            #     print(y2)
+            #     print(z2)
+            y = y2.copy()
+            z = z2.copy()
+            y2 = (1-eta)*y2 + eta * (x - y - Wfb.dot(z))
+            z2 = (1-eta)*z2 + eta * (rho ** 2 * Wff.T.dot(y) - M.dot(z))
+            # TODO: for checking the convergence, it would make sense that the
+            # tol is multiplited by eta
+            if (test_rtol(y, y2, rtol) and (test_rtol(z, z2, rtol))):
+            # if (tol_test(y, y2, atol=atol, rtol=rtol) and
+            #         tol_test(z, z2, atol=atol, rtol=rtol)):
+                # print('converged at ', i)
+                break
+        print('converged at ', i, 'of max', n_iter_max)
 
     elif method == 'GD_NN':
-        # probably a quite conservative estimate for eta
-        est = (np.max([1, np.max(np.abs(Wff))]) *
-               np.max([1, np.max(np.abs(M))]) *
-               np.max([1, np.max(np.abs(x))]))
-        if est < 1.01:
-            est = np.max([np.max(np.abs(Wff.T @ x)),
-                          np.max(np.abs(M @ Wff.T @ x))])
-        print('estimate ', est)
-        eta1 = 1./est
-        # if i make delta larger, y often goes in the wrong direction and
-        # diverges
-        # y = Wx.copy()
-        y2 = np.zeros(len(x), dtype=M.dtype)
-        # y2 = x
-        z2 = np.zeros(len(M), dtype=M.dtype)
         for i in range(n_iter_max):
             eta = 1000*eta1 / (i+1000)
             # if i % 1000 == 0:
@@ -355,7 +364,7 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
             # if (tol_test(y, y2, atol=atol, rtol=rtol) and
             #         tol_test(z, z2, atol=atol, rtol=rtol)):
                 break
-        print('converged at ', i)
+        print('converged at ', i, 'of max', n_iter_max)
 
     else:
         raise ValueError(f'circ_alg {method} is not implemented. Use inv, GD'
@@ -511,7 +520,7 @@ class Circuit(ABC):
                                  " must be (K,D)=({K},{D})")
             W = W0
         else:
-            W = np.random.normal(0, 1.0 / np.sqrt(D), size=(K, D))
+            W = np.random.normal(0, 1.0 / np.sqrt(D), size=(D, K))
 
         self.eta = learning_rate
         self.t = 0
@@ -616,7 +625,7 @@ class Circuit(ABC):
 
     def get_perp(self):
         Minv = np.linalg.inv(self.M)
-        return LA.norm(Minv @ self.W @ self.W.T @ Minv - np.eye(self.K))
+        return LA.norm(Minv @ self.W.T @ self.W @ Minv - np.eye(self.K))
 
     @abstractmethod
     def transform_1(self, x):
@@ -725,7 +734,7 @@ class OlfSim(Circuit):
     """
 
     def transform_1(self, x):
-        y, z = olf_output_online(x, self.W, self.M, method=self.method,
+        y, z = olf_output_online(x, self.W, self.W, self.M, method=self.method,
                                  NN=self.NN, atol=1e-9, rtol=0, verbose=False,
                                  n_iter_max=int(1e6), check_M=False)
         return y, z
@@ -853,7 +862,7 @@ def run_simulation(circ, W, M, dataset:np.ndarray, n_epoch: int,
     """
     X = dataset
     N = dataset.shape[1]
-    K, D = W.shape
+    D, K = W.shape
     if M.shape != (K, K):
         raise ValueError(f"The shape of M must be (K,K)=({K},{K})")
     sequence = np.arange(N)
@@ -1039,15 +1048,24 @@ def display_sm_results(circ: Circuit, X: np.ndarray, Z_off: np.ndarray, monitors
 
 
 def get_initial_W_M(X, K, scale=100, type='random'):
+    """
     # Initial guess for the W and the M matrices so that Uhat0 @ M0 = Qs
     # scal is used to fix initial values for W and M
+    :param X:
+    :param K:
+    :param scale:
+    :param type:
+    :return:
+    W is be of shape X.shape[0] x K = D x K
+    """
+
     if type == 'X':
-        W = X[:, :K].T / np.sqrt((X[:, :K] ** 2).sum(0)) / scale
+        W = X[:, :K] / np.sqrt((X[:, :K] ** 2).sum(0)) / scale
     elif type == 'random':
-        W = np.random.normal(0, 1, (K, X.shape[0])) /scale
+        W = np.random.normal(0, 1, (X.shape[0], K)) /scale
     elif type == 'svd':
         U, _, _ = LA.svd(X[:1000], full_matrices=False)
-        W = U[:, 0:K].T/scale
+        W = U[:, 0:K]/scale
     else:
         raise ValueError('no such type for initializing W and M')
     # w is a matrix of shape D x K

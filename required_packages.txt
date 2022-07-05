@@ -17,3 +17,7 @@
 - copy
 - hdf5storage
 - ast
+
+
+quick install with conda/mamba:
+mamba create -n olfaction -c conda-forge jupyter scikit-learn openpyxl statsmodels seaborn pandas matplotlib

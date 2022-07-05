@@ -19,7 +19,7 @@ def mat_mul(A, B, alpha=1):
 
 def damp_sx(sx, T, rho=1):
     """
-    dampening the singular values as expected in the linear circuit
+    dampening the singular values as expected in the linear whitening circuit
     Parameters
     ----------
     sx
@@ -30,36 +30,21 @@ def damp_sx(sx, T, rho=1):
     -------
 
     """
-    root = np.sqrt(12 * T**3 + 81 * T**2 *rho**2 * sx**2) + 9 * T * rho * sx
-    return 1/rho * ((root / 18)**(1 / 3) - (2 / 3 * T **3 / root)**(1 / 3))
+    max_value = np.sqrt(T)/rho
+    return np.minimum(sx, max_value)
 
-# Unused
-# def olf_cost_slow(X, Y, Z, rho=1., gamma=1.):
-#     """
-#     slower version that calculates the large grammains, which is not necessary
-#     Parameters
-#     ----------
-#     X
-#     Y
-#     Z
-#
-#     Returns
-#     the cost
-#     -------
-#
-#     """
-#     N = X.shape[1]
-#     XmY = X-Y
-#     ret1 = 1/(2*N) * np.sum(XmY**2)
-#
-#     YTY = mat_mul(Y.T, Y)
-#     ZTZ = mat_mul(Z.T, Z)
-#     YmZ = rho*YTY - gamma**2 * ZTZ/rho
-#     ret2 = -1/(4 * N**2) * np.sum(YmZ**2)
-#
-#     ret3 = rho**2/(4 * N**2) * np.sum(YTY**2)
-#
-#     return ret1 + ret2 + ret3
+def sz_from_sx(sx, T, rho=1, gamma=1):
+    """
+
+    :param sx:
+    :param T:
+    :param rho:
+    :param gamma:
+    :return:
+    """
+    value = (sx * rho/np.sqrt(T) - 1) * T/gamma**2
+    sz2 = np.maximum(value, 0)
+    return np.sqrt(sz2)
 
 
 def olf_cost(X, Y, Z, rho=1, gamma=1.):
@@ -68,35 +53,21 @@ def olf_cost(X, Y, Z, rho=1, gamma=1.):
     ret1 = 1/(2*N) * np.sum(XmY**2)
 
     YZT = mat_mul(Y, Z.T)
-    ZZT = mat_mul(Z, Z.T)
+    # ZZT = mat_mul(Z, Z.T)
     ret2 = 1/(2 * N**2) * gamma**2 * np.sum(YZT**2)
-    ret3 = -1/(4 * N**2 * rho**2) * gamma**4 * np.sum(ZZT**2)
+    ret3 = -1/(2 * N * rho**2) * gamma**2 * np.sum(Z**2)
     return ret1 + ret2 + ret3
-
-
-# def get_grad_Y_slow(X, Y, Z, eye, gamma=1):
-#     ZTZ = mat_mul(Z.T, Z)
-#     N = X.shape[1]
-#     return -X / N + mat_mul(Y, (gamma**2 * ZTZ / (N ** 2) + eye))
-
 
 def get_grad_Y(X, Y, Z, gamma=1):
     N = X.shape[1]
     return (Y-X) / N + gamma**2 * mat_mul(mat_mul(Y, Z.T), Z) / (N ** 2)
 
 
-# def get_grad_Z_slow(Y, Z, rho=1, gamma=1):
-#     YTY = mat_mul(Y.T, Y)
-#     N = Z.shape[1]
-#     ZTZ = mat_mul(Z.T, Z)
-#     return 1 / (N ** 2) * mat_mul(Z, (gamma**2 * YTY - gamma**4 * ZTZ/rho**2))
-
-
 def get_grad_Z(Y, Z, rho=1, gamma=1):
     ZYT = mat_mul(Z, Y.T)
     N = Z.shape[1]
-    ZZT = mat_mul(Z, Z.T)
-    return gamma**2 / (N ** 2) * (mat_mul(ZYT, Y) - gamma**2 * mat_mul(ZZT, Z)/rho**2)
+    return gamma**2 / (N ** 2) * (mat_mul(ZYT, Y)) \
+           - gamma**2 * Z/(N * rho**2)
 
 
 def gd_step_Y(X, Y_old, Z, cost_old, sigma, beta, alpha=1, rect=False, rho=1,
@@ -318,12 +289,11 @@ def olf_cost2(X, Z, rho=1) -> float:
     N = X.shape[1]
     ZTZ = mat_mul(Z.T, Z)
     inv = LA.inv(ZTZ/N + np.eye(N))
-    ret1 = 1/2 * mat_mul(X.T, X) @ inv
-    ret2 = 1/(4 * N * rho**2) * np.sum(ZTZ **2)
-    # np.sum(ZTZ**2) is equivalent to Tr(ZTZZTZ) as
-    # ||A||^2 = Tr(A^TA) = np.sum(A**2)
+    ret1 =  mat_mul(X.T, X) @ inv
+    ret2 =  ZTZ
 
-    return np.trace(ret1) + ret2
+    return 1/2 * np.trace(ret1) + 1/(2 * rho**2) * np.trace(ret2)
+#TODO:check this formula
 
 
 def get_grad_Z2(X, Z, rho=1):
@@ -342,7 +312,8 @@ def get_grad_Z2(X, Z, rho=1):
     N = X.shape[1]
     ZTZ = mat_mul(Z.T, Z)
     inv = LA.inv(ZTZ/N + np.eye(N))
-    grad = - Z @ inv @ mat_mul(X.T, X) @ inv/N + Z @ ZTZ/(N * rho**2)
+    grad = - Z @ inv @ mat_mul(X.T, X) @ inv/N + Z /(rho**2)
+    #TODO: check this formula
     return grad
 
 
@@ -389,7 +360,8 @@ def gd_step_Z2(X, Z_old, cost_old: float, sigma: float, beta: float,
         Z_new = func(Z_old - alpha * grad_Z)
         expected_cost_decrease = sigma * np.sum(grad_Z * (Z_new - Z_old))
         cost_new = olf_cost2(X, Z_new, rho)
-        print('cost decrease: expected, actual:', expected_cost_decrease, cost_new - cost_old)
+        print('alpha, cost decrease: expected, actual:', alpha, expected_cost_decrease,
+              cost_new - cost_old)
         if cost_new - cost_old < expected_cost_decrease:
             success = True
             break
@@ -405,7 +377,7 @@ def olf_gd_offline2(X: np.ndarray, k: int, rtol: float = 1e-6,
                     max_iter: int = 100000,
                     init: str = 'random', verbose: bool = False,
                     rect: bool=False, alpha: float = 1, cycle: int = 500,
-                    rho: float = 1) -> Tuple[np.ndarray, np.ndarray]:
+                    rho: float = 1, sigma=0.1) -> Tuple[np.ndarray, np.ndarray]:
     """
     Gradient descent to calculate the solution of the olfactory
     cost function when it only depends on Z, and where the dependence on
@@ -442,10 +414,11 @@ def olf_gd_offline2(X: np.ndarray, k: int, rtol: float = 1e-6,
     D, N = X.shape  # n_s is the number of samples
 
     Z = get_init_matrix(k, N, method=init, A=X, rect=rect)
+    # Z = np.ones((k, N))/1000#get_init_matrix(k, N, method=init, A=X, rect=rect)
     cost0 = olf_cost2(X, Z)
     cost1 = cost0
     # print(f'initial reconstruction error {LA.norm(A - Y.T @ Y)}')
-    sigma = 0.1
+    # sigma = 0.1
     beta = 0.1
 
     costs = np.zeros(max_iter)
@@ -460,12 +433,17 @@ def olf_gd_offline2(X: np.ndarray, k: int, rtol: float = 1e-6,
 
         conv1 = np.amax(np.abs(Z-Z_old) / np.abs(Z_old + 1e-2))
         # conv as convergence
-        print(f'convergences {conv1}\n')
+        print(f'convergences in Z {conv1}\n')
 
         if not success:
+            print('stopped because the gradient descent was not successful')
             break
 
-        if np.abs(cost_old - cost1)/ np.abs(cost_old) < rtol:
+        # d_Z = np.max(np.abs(Z_old - Z))
+        # print('change in Z:', d_Z)
+        d_cost = np.abs(cost_old - cost1) / np.abs(cost_old)
+        if  d_cost < rtol:
+            print('stopped because the decrease in cost was too small:', d_cost)
             break
 
         # This is actually a very important part of the algorithm, otherwise

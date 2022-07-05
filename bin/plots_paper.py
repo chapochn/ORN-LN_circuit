@@ -17,8 +17,9 @@ import pandas as pd
 import pathlib
 import importlib
 import seaborn as sns
-import fitz # to rotate a pdf page, packaged needed to install: pymupdf
+# import fitz # to rotate a pdf page, packaged needed to install: pymupdf
 # -> pip install pymupdf
+# could be replaced by PyPDF2
 from typing import Union
 
 import itertools
@@ -28,6 +29,7 @@ import statsmodels.stats.multitest as smsm  # for the multihypothesis testing
 import scipy.linalg as LA
 
 import scipy.stats as SS
+import scipy.cluster.hierarchy as sch
 from scipy.optimize import curve_fit
 
 
@@ -84,6 +86,9 @@ if SAVE_PLOTS:
     # PP_WHITE.mkdir()
     PP_Z = PATH_PLOTS / 'clusteringZ'
     PP_Z.mkdir(exist_ok=True)
+
+    PP_WrhoK = PATH_PLOTS / 'W_vs_rho_K'
+    PP_WrhoK.mkdir(exist_ok=True)
 
 
 FP.set_plotting(PLOT_PLOTS)
@@ -903,9 +908,7 @@ con_ff_sel = con_strms3.loc[:, strm]
 con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
 con_ff_sel.columns = LNs_sel_short
 con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
-# con_ff_sel_n = FG.get_norm(con_ff_sel)
 df1 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
-# df1 = FG.get_CS(con_ff_sel_n, con_ff_sel_n)
 side = 'R'
 # Correlation coefficient per category
 LNs_sel1 = LNs_sel_d_side[side]
@@ -958,6 +961,83 @@ plt.suptitle(r'corr. among $\mathbf{w}_\mathrm{LN}}$ on each side')
 file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+#%%
+# #############################################################################
+# #############################################################################
+# not used in paper
+# plot above with angle instead of correlation coefficient...:
+#
+# # left and right side separately, but on same figure
+# d_h = 0.15
+# strm = 0
+# # xlabel = 'from ORNs to'
+# xlabel = r'$\mathbf{w}_\mathrm{LN}$'
+# # ylabel = 'from\nORNs\nto'
+# ylabel = xlabel
+# pads = [0.40, 0.45, 0.37, 0.35]  # l, r, b, t
+# title = {'L': 'left', 'R': 'right'}
+# side = 'L'
+# # Correlation coefficient per category
+# LNs_sel1 = LNs_sel_d_side[side]
+#
+# con_ff_sel = con_strms3.loc[:, strm]
+# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
+# con_ff_sel.columns = LNs_sel_short
+# # con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
+# con_ff_sel_n = FG.get_norm(con_ff_sel)
+# # df1 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
+# df1 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
+# # this makes sure that there is no numerical problem with any
+# # number larger than 1.
+# df1[:] = np.minimum.reduce([df1.values, np.ones((len(df1), len(df1)))])
+# df1 = np.arccos(df1)
+# side = 'R'
+# # Correlation coefficient per category
+# LNs_sel1 = LNs_sel_d_side[side]
+#
+# con_ff_sel = con_strms3.loc[:, strm]
+# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
+# con_ff_sel.columns = LNs_sel_short
+# # con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
+# con_ff_sel_n = FG.get_norm(con_ff_sel)
+# # df2 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
+# df2 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
+# df2[:] = np.minimum.reduce([df2.values, np.ones((len(df2), len(df2)))])
+# df2 = np.arccos(df2)
+# d_x = 0.15  # delta height between the 2 imshows
+# fs, axs1, axs2, axs_cb = FP.calc_fs_ax_2plts_side(df1, df2, pads, d_h, SQ,
+#                                                   CB_DX, CB_W)
+#
+# f = plt.figure(figsize=fs)
+# ax1 = f.add_axes(axs1)
+# ax2 = f.add_axes(axs2)
+# ax_cb = f.add_axes(axs_cb)
+#
+# cp = FP.imshow_df2(df1, ax1, cmap=plt.cm.magma, vlim=[0,np.pi/2],
+#                    show_lab_x=True, show_lab_y=True)
+# ax1.set_title('left side', pad=2, fontsize=ft_s_lb)
+# ax1.set_xticks(np.arange(len(df1.T)) + 0.5)
+# ax1.set_xticklabels(list(df1.columns), rotation=70, ha='right')
+# ax1.set_ylabel(ylabel)
+#
+# cp = FP.imshow_df2(df2, ax2, cmap=plt.cm.magma, vlim=[0,np.pi/2],
+#                    show_lab_x=True, show_lab_y=False)
+# ax2.set_title('right side', pad=2, fontsize=ft_s_lb)
+# ax2.set_xticks(np.arange(len(df2.T)) + 0.5)
+# ax2.set_xticklabels(list(df2.columns), rotation=70, ha='right')
+#
+# f.text(0.5, 0., xlabel, rotation=0, fontsize=ft_s_lb, va='bottom',
+#        ha='center')
+#
+#
+# FP.add_colorbar(cp, ax_cb, r'$r$', [-1, 0, 1])
+# plt.suptitle(r'corr. among $\mathbf{w}_\mathrm{LN}}$ on each side')
+# file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian_CS'
+# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+#
+# print(np.mean(FG.get_entries(df1, diag=False)))
+# print(np.mean(FG.get_entries(df2, diag=False)))
 
 # %%
 # #############################################################################
@@ -1148,7 +1228,7 @@ f.text(0.1, 0.5, xylabel, rotation=90, fontsize=ft_s_lb, va='center',
 
 clb = FP.add_colorbar(cp, ax_cb, '', [0, 40, 80])
 clb.ax.set_title('# syn.', pad=2, fontsize=ft_s_tk)
-plt.suptitle(r'$\sqrt{\mathbf{W}^\mathrm{\top} \mathbf{W}}$')
+plt.suptitle(r'$(\mathbf{W}^\mathrm{\top} \mathbf{W})^{1/2}$')
 
 file = f'{PP_CONN}/con_sqrtWtW_d.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -1159,20 +1239,22 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 # #####################  SCATTER  PLOTS AND    ################################
 # #####################     SIGNIFICANCE       ################################
 
-# this is not used in the paper, it doesn't even correspond to the theory
-
-# scatter plot between WTW and M
-
+# this is not used in the paper
+#
+# scatter plot between WTW and M^2
+#
 # importlib.reload(FP)
 #
 # power = 1
 #
 # s = 'L'
-# ML = con_S[s].loc[LNs_sel_a_side[s], LNs_sel_d_side[s]].copy()**power
+# ML = con_S[s].loc[LNs_sel_a_side[s], LNs_sel_d_side[s]].values
+# ML2 = ML @ ML
 # WL = con_S[s].loc[ORNs_side[s], LNs_sel_d_side[s]]
 # WTW_L = WL.T @ WL
 # s = 'R'
-# MR = con_S[s].loc[LNs_sel_a_side[s], LNs_sel_d_side[s]].copy()**power
+# MR = con_S[s].loc[LNs_sel_a_side[s], LNs_sel_d_side[s]].values
+# MR2 = MR @ MR
 # WR = con_S[s].loc[ORNs_side[s], LNs_sel_d_side[s]]
 # WTW_R = WR.T @ WR
 #
@@ -1180,8 +1262,8 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 # W_entries = np.concatenate([FG.get_entries(WTW_L, diag=diag),
 #                             FG.get_entries(WTW_R, diag=diag)])
 #
-# M_entries = np.concatenate([FG.get_entries(ML, diag=diag),
-#                             FG.get_entries(MR, diag=diag)])
+# M_entries = np.concatenate([FG.get_entries(ML2, diag=diag),
+#                             FG.get_entries(MR2, diag=diag)])
 # n_pts = int(len(M_entries)/2)
 #
 # cc_real = np.corrcoef(W_entries, M_entries)[0, 1]
@@ -1197,11 +1279,11 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 # fs, ax1 = FP.calc_fs_ax(pads, 15*SQ, 15*SQ)
 # f = plt.figure(figsize=fs)
 # ax = f.add_axes(ax1)
-# ax.scatter(M_entries[:n_pts], W_entries[:n_pts]/1000, c='indigo', s=5,
+# ax.scatter(M_entries[:n_pts]/1000, W_entries[:n_pts]/1000, c='indigo', s=5,
 #            label='left', alpha=0.7, lw=0)
-# FP.plot_scatter(ax, M_entries[n_pts:], W_entries[n_pts:]/1000,
-#                 r'$\mathbf{M}_\mathrm{data}$ entries',
-#                 r'$\mathbf{W}_\mathrm{data}^\top \mathbf{W}_\mathrm{data}$'
+# FP.plot_scatter(ax, M_entries[n_pts:]/1000, W_entries[n_pts:]/1000,
+#                 r'$\mathbf{M}^2$ entries ($10^3$)',
+#                 r'$\mathbf{W}^\top \mathbf{W}$'
 #                 r' entries ($10^3$)', pca_line_scale1=0.15,
 #                 pca_line_scale2=0.65, show_cc=False, s=5, c='teal',
 #                 label='right', alpha=0.7, lw=0)
@@ -1210,9 +1292,9 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 # ax.text(0.65, 0.11, r'$r$' + " = %0.2f" % cc_real, transform=ax.transAxes)
 # ax.text(0.65, 0.03, "pv = %0.0e" % 0.01, transform=ax.transAxes)
 # # popt, _ = curve_fit()
-# ax.set(ylim=(0, None), xlim=(-5, None))
+# ax.set(ylim=(0, None), xlim=(-.5, None))
 #
-# file = f'{PP_CONN}/con_WtW_M_scatter.'
+# file = f'{PP_CONN}/con_WtW_M2_scatter.'
 # FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 # FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
@@ -1258,8 +1340,8 @@ ax.scatter(M_entries[:n_pts], W_entries[:n_pts], c='indigo', s=5,
            label='left', alpha=0.7, lw=0)
 FP.plot_scatter(ax, M_entries[n_pts:], W_entries[n_pts:],
                 r'$\mathbf{M}$ entries',
-                r'$\sqrt{\mathbf{W}^\mathrm{\top}'
-                r' \mathbf{W}}$ entries',
+                r'$(\mathbf{W}^\mathrm{\top}'
+                r' \mathbf{W})^{1/2}$ entries',
                 pca_line_scale1=0.18,
                 pca_line_scale2=0.68, show_cc=False, s=5, c='teal',
                 label='right', alpha=0.7, lw=0)
@@ -1305,42 +1387,6 @@ FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 # ####################  ACTIVITY PLOTS  #######################################
 # #############################################################################
 
-# definition used for actiivty plots, could be moved to the plotting file
-def get_div_color_map(vmin_col, vmin_to_show, vmax):
-    colors_neg = plt.cm.PuBu(np.linspace(vmin_to_show / vmin_col, 0, 256))
-    colors_pos = plt.cm.Oranges(np.linspace(0, 1, 256))
-    all_colors = np.vstack((colors_neg, colors_pos))
-    act_map = matplotlib.colors.LinearSegmentedColormap.from_list('act_map',
-                                                                  all_colors)
-    divnorm = matplotlib.colors.TwoSlopeNorm(vmin=vmin_to_show, vcenter=0,
-                                             vmax=vmax)
-    return act_map, divnorm
-
-
-def plot_full_activity(df, act_map, divnorm, title, cb_title,
-                       cb_ticks, pads=[0.55, 0.4, 0.2, 0.2], extend='max'):
-    # _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
-    fs, axs = FP.calc_fs_ax(pads, SQ * len(df.T) * 0.4, SQ * len(df))  # pads, gw, gh
-    f = plt.figure(figsize=fs)
-    ax = f.add_axes(axs)
-
-    splx = np.arange(5, len(df.T), 5)
-    cp = FP.imshow_df2(df, ax, vlim=None, show_lab_y=True,
-                       title=title,
-                       cmap=act_map, splits_x=splx,
-                       show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
-                       **{'norm': divnorm})
-    ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
-                        CB_W / fs[0], axs[3]])
-    # FP.add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend='max')
-    clb = plt.colorbar(cp, cax=ax_cb, extend=extend)
-    clb.outline.set_linewidth(0.00)
-    clb.ax.tick_params(size=2, direction='in', pad=1.5)
-    clb.ax.set_title(cb_title, pad=None)
-    clb.set_ticks(cb_ticks)
-    clb.set_ticklabels(cb_ticks)
-    return f, ax, clb
-# %%
 # #############################################################################
 # #####################  ACTIVITY PLOT, different conc separately  ############
 # #############################################################################
@@ -1362,7 +1408,7 @@ def plot_full_activity(df, act_map, divnorm, title, cb_title,
 # vmin_col = -2
 # vmin_to_show = -1
 # vmax = 6
-# act_map, divnorm = get_div_color_map(vmin_col, vmin_to_show, vmax)
+# act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
 #
 #
 # for conc in [8, 7, 6, 5, 4]:
@@ -1411,7 +1457,7 @@ def plot_full_activity(df, act_map, divnorm, title, cb_title,
 vmin_col = -2
 vmin_to_show = -1
 vmax = 6
-act_map, divnorm = get_div_color_map(vmin_col, vmin_to_show, vmax)
+act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
 # for logarithmic scale
 # act_map = 'plasma'
 # divnorm = matplotlib.colors.SymLogNorm(linthresh=0.01, linscale=0.01,
@@ -1432,7 +1478,7 @@ cb_title = r'$\Delta F/F$'
 cb_ticks = [-1, 0, 2, 4, 6]
 # cb_ticks = [-1, -0.1, 0, 0.1, 1, 8]  # for the log scale
 pads = [0.55, 0.4, 1.32, 0.2]
-f, ax, _ = plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
+f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
                               pads=pads)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
@@ -1442,7 +1488,7 @@ file = f'{PP_ACT}/ORN_act.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
-f, ax, _ = plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks)
+f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 
@@ -1474,7 +1520,7 @@ df = df/np.max(df)
 title = f'Scaled ORN soma activity patterns {Xdatatex}'
 cb_title = ''
 cb_ticks = [0, 0.5, 1]
-f, ax, _ = plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
+f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
                               extend='neither')
 ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 
@@ -3082,7 +3128,7 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 # #############################################################################
 # #####################  SHOWING EXAMPLE OF TRANSFORMATION  ###################
 # #############################################################################
-from scipy.stats import multivariate_normal
+# from scipy.stats import multivariate_normal
 n = 500
 x = np.random.randn(2, n)
 x[0] = x[0] * 2
@@ -3593,7 +3639,7 @@ ORN_order = par_act.ORN_order
 vmin_col = -2
 vmin_to_show = -2
 vmax = 6
-act_map, divnorm = get_div_color_map(vmin_col, vmin_to_show, vmax)
+act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
 
 pads = [0.2, 0.4, 0.2, 0.2]
 for data in datas:
@@ -3666,7 +3712,7 @@ for K in [1, 2, 3, 4, 8]:
     # vmin_col = -2
     # vmin_to_show = -2
     vmax = np.ceil(np.max(df.values))
-    # act_map, divnorm = get_div_color_map(vmin_col, vmin_to_show, vmax)
+    # act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
     divnorm = matplotlib.colors.Normalize(0, vmax)
     # divnorm = None
     act_map = 'Oranges'
@@ -3677,7 +3723,7 @@ for K in [1, 2, 3, 4, 8]:
         title = f'NNC-{K}, ' + r'LN activity $\{z^{(t)}\}$'
         ylabel = 'LN'
     cb_ticks = [0, vmax]
-    f, ax, _ = plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
+    f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
                                   extend='neither')
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='')
 
@@ -3700,14 +3746,14 @@ for K in [1, 8]:
     vmax = np.ceil(np.max(df.values))
     vmin_col = -vmax
     vmin_to_show = -vmax
-    act_map, divnorm = get_div_color_map(vmin_col, vmin_to_show, vmax)
+    act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
 
     # divnorm = None
     # act_map = 'Oranges'
 
     title = f'LC-{K}, LNs activity {Ztex}'
     cb_ticks = [-vmax, 0, vmax]
-    f, ax, _ = plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
+    f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
                                   extend='neither')
     ax.set(xticks=[], yticks=[], ylabel='LNs', xlabel='')
 
@@ -4370,7 +4416,7 @@ plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
 # #############################################################################
 # #############################################################################
 # #############################################################################
-# #############################  W and M in NNC  #############################
+# #########################  W clustering in NNC  #############################
 # #############################################################################
 # #############################################################################
 # #############################################################################
@@ -4399,9 +4445,15 @@ for s in lab_y.keys():
     pps_local = f'{title[s]}o'
     print('rho:', rho)
     W_nncT = Ws_nnc.loc[:, (s*10, 1)].values.T
-    CG = sns.clustermap(np.corrcoef(W_nncT), cmap=plt.cm.bwr, vmin=-1, vmax=1)
-    idx = CG.dendrogram_col.reordered_ind
-    df = pd.DataFrame(np.corrcoef(W_nncT[idx]))
+
+    links = sch.linkage(np.corrcoef(W_nncT), method='average', optimal_ordering=True)
+    new_order = sch.leaves_list(links)
+    df = pd.DataFrame(np.corrcoef(W_nncT[new_order]))
+    #
+    # CG = sns.clustermap(np.corrcoef(W_nncT), cmap=plt.cm.bwr, vmin=-1, vmax=1)
+    # idx = CG.dendrogram_col.reordered_ind
+    # df = pd.DataFrame(np.corrcoef(W_nncT[idx]))
+
 
     ax = f.add_axes(axs_coords[s])
     cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=lab_y[s],
@@ -4465,7 +4517,7 @@ corr_W_nnc_s = pd.Series(index=mi2)
 clust_W_nnc_s = pd.Series(index=mi2)
 
 for p in np.arange(-10, 10.1, 0.5):
-    rho = 10**(p/10)
+    # rho = 10**(p/10)
     for i in range(50):
         W_nnc = Ws_nnc_cn.loc[(p, i)]
         corr = W_nnc @ W_nnc.T
@@ -4510,5 +4562,317 @@ FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **png_opts)
 corr_M = (corr_L + corr_R) / 2
 print(x[np.sum(y > corr_M)])
 
+#%%
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# just for testing, doing the same as above, but with the angle between
+# vectors
+
+Ws_nnc = pd.DataFrame(pd.read_hdf(RESULTS_PATH / 'W_NNC-8.hdf'))
+# Ws_cn = FG.get_ctr_norm(Ws).loc[par_act.ORN_order].T
+
+#
+# # %%
+# # Plotting the previous graphs on a single figure
+# k = 8
+# lab_y = {-1: True, -0.45: False, 0: False, 1: False}
+# pads = [0.3, 0.075, 0.37, 0.35]
+# title = {-1: '0.1', -0.45: '0.35', 0: '1', 1: '10'}
+# n_ax = len(title)
+# fs, axs = FP.calc_fs_ax(pads, gw=SQ * k * n_ax + (n_ax-1) * 2 * SQ, gh=SQ * k)
+# f = plt.figure(figsize=fs)
+# axs_coords = {-1: [axs[0], axs[1], SQ * k / fs[0], axs[3]],
+#              -0.45:[axs[0] + SQ * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
+#               0: [axs[0] + SQ * 2 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
+#               1: [axs[0] + SQ * 3 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]]}
+# for s in lab_y.keys():
+#     rho = 10**s
+#     pps_local = f'{title[s]}o'
+#     print('rho:', rho)
+#     W_nncT = Ws_nnc.loc[:, (s*10, 1)].values.T
+#     CG = sns.clustermap(np.corrcoef(W_nncT), cmap=plt.cm.bwr, vmin=-1, vmax=1)
+#     idx = CG.dendrogram_col.reordered_ind
+#     W_nnc_n = FG.get_norm_np(W_nncT[idx].T)
+#     df = pd.DataFrame(W_nnc_n.T@W_nnc_n)
+#     df = np.arccos(df)
+#
+#     ax = f.add_axes(axs_coords[s])
+#     cp = FP.imshow_df2(df, ax, vlim=[0, np.pi/2], show_lab_y=lab_y[s],
+#                        show_lab_x=True, cmap=plt.cm.magma, rot=0)
+#     ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2, fontsize=ft_s_lb)
+#     ax.set_xticks(np.arange(8))
+#     ax.set_xticklabels(np.arange(1, 9))
+#     # ax.set_xlabel(r'NNC-8, $\mathbf{w}_k$', labelpad=1, rotation_mode='default',
+#     #               ha='center')
+#     if lab_y[s]:
+#         ax.set_yticks(np.arange(8))
+#         ax.set_yticklabels(np.arange(1, 9))
+#         ax.set_ylabel(r'$\mathbf{w}_k$', labelpad=6, va='center')
+#     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
+#     #                     CB_W / fs[0], axs[3]])
+#     # clb = FP.add_colorbar(cp, ax_cb, '', [-1, 0, 1])
+#     print(W_nncT[idx].sum(axis=1))
+# plt.suptitle(r'NNC-8, corr. among $\mathbf{w}_k$')
+# f.text(0.54, 0.1, r'$\mathbf{w}_k$', rotation=0, fontsize=ft_s_lb, va='bottom',
+#        ha='center')
+# file = f'{PP_CON_PRED}/ORN_act_NNC{k}_angle_W_all'
+# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+#
+# #%%
+# # #############################################################################
+# # #############################################################################
+#
+#
+# strm = 0
+# side = 'L'
+# LNs_sel1 = LNs_sel_d_side[side]
+# con_ff_sel = con_strms3.loc[:, strm]
+# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
+# con_ff_sel.columns = LNs_sel_short
+# con_ff_sel_n = FG.get_norm(con_ff_sel)
+# df1 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
+# # this makes sure that there is no numerical problem with any
+# # number larger than 1.
+# df1[:] = np.minimum.reduce([df1.values, np.ones((len(df1), len(df1)))])
+# df1 = np.arccos(df1)
+#
+# side = 'R'
+# LNs_sel1 = LNs_sel_d_side[side]
+# con_ff_sel = con_strms3.loc[:, strm]
+# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
+# con_ff_sel.columns = LNs_sel_short
+# con_ff_sel_n = FG.get_norm(con_ff_sel)
+# df2 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
+# df2[:] = np.minimum.reduce([df2.values, np.ones((len(df2), len(df2)))])
+# df2 = np.arccos(df2)
+# # %%
+# th = 0.45
+# df1_ent = FG.get_entries(df1, diag=False)
+# corr_L = FG.rectify(df1_ent).mean()
+# df2_ent = FG.get_entries(df2, diag=False)
+# corr_R = FG.rectify(df2_ent).mean()
+# print(corr_L, corr_R)
+# # %%
+# Ws_nnc = pd.DataFrame(pd.read_hdf(RESULTS_PATH / 'W_NNC-8.hdf'))
+# Ws_nnc_n = FG.get_norm(Ws_nnc).loc[par_act.ORN_order].T
+# mi2 = pd.MultiIndex(levels=[[], []], codes=[[], []],
+#                     names=['rho', 'rep'])
+# corr_W_nnc_s = pd.Series(index=mi2)
+# clust_W_nnc_s = pd.Series(index=mi2)
+#
+# for p in np.arange(-10, 10.1, 0.5):
+#     rho = 10**(p/10)
+#     for i in range(50):
+#         W_nnc = Ws_nnc_n.loc[(p, i)].T
+#         CS =  FG.get_cos_sim(W_nnc, W_nnc)
+#         angle = np.arccos(CS)
+#         df1_ent = FG.get_entries(angle, diag=False)
+#         corr_W_nnc_s.loc[(p, i)] = FG.rectify(df1_ent).mean()
+#
+# # %%
+# rho_special = 0.35
+# x_special = np.log10(rho_special)
+# x = corr_W_nnc_s.index.unique('rho')/10
+# y = corr_W_nnc_s.groupby('rho').mean()
+# e = corr_W_nnc_s.groupby('rho').std()
+#
+# pads = (0.4, 0.1, 0.35, 0.1)
+# # fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*10)
+# fs, axs = FP.calc_fs_ax(pads, SQ*12, SQ*12)  # pads, gw, gh
+# f = plt.figure(figsize=fs)
+# ax = f.add_axes(axs)
+# ax.plot(x, y, lw=1, c='k')
+# ax.fill_between(x, y-e, y+e, alpha=0.5, facecolor='k', label='NNC-8')
+# ax.fill_between([min(x), max(x)], [corr_L, corr_L], [corr_R, corr_R],
+#                 alpha=0.5, label='data')
+# ax.plot([x_special, x_special], [0, 0.4], lw=0.5, color='gray', ls='--')
+# ax.set_yticks([0, 0.2, 0.4])
+# # ax.set_yticklabels([0, '', 2, '', 4])
+# ax.set_xticks([-1, x_special, 0, 1])
+# ax.set_xticklabels([0.1, rho_special, 1, 10])
+# # ax.set_ylim(0, 0.4)
+# ax.set_ylabel(r'$\overline{r}_+$')
+# ax.set_xlabel(r'$\rho$')
+# ax.spines['right'].set_visible(False)
+# ax.spines['top'].set_visible(False)
+# plt.legend(frameon=False, loc='lower left')
+# file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
+#         f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-8_W-angle')
+# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **png_opts)
+#
+# %%
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# ##############################                  #############################
+# ##############################                  #############################
+# ############################## NNC CLUSTERING   #############################
+# ##############################                  #############################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+importlib.reload(FP)
+n_clusters = 2
+D = 10
+act_map = 'Oranges'
+v_max = 1.5
+divnorm = matplotlib.colors.Normalize(0, v_max)
+title = f'Input activity patterns {Xtstex}'
+cb_title = ''
+cb_ticks = [0, 0.5, 1]
+ylabel = r'$x_i$'
+size=1
+lw=0
+pad_up = 0.2
+for data_i in [1, 2]:
+# for data_i in [1]:
+    file = FO.OLF_PATH / \
+           f'results/dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
+    X = np.load(file)
+    df = pd.DataFrame(X)
+    D, N = X.shape
+    f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
+                       cb_ticks, pads=[0.2, 0.4, 0.3, pad_up], extend='neither',
+                       squeeze=0.1, do_vert_spl=False, SQ=SQ/10*9)
+    ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=f'samples (N={N})')
+
+    file = f'{PP_WrhoK}/dataset{data_i}.'
+    FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+
+    fs, axs = FP.calc_fs_ax([0.3, 0.3, 0.3, 0.15], 9 * SQ, 9 * SQ)
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+    FP.plot_scatter(ax, X[0], X[1], r'$x_1$',
+                    r'$x_2$', xticks=[0, 1],
+                    yticks=[0, 1],
+                    pca_line_scale1=0., pca_line_scale2=0.,
+                    show_cc=False,
+                    s=size, c='k', lw=lw)
+    ax.set_xlim(0, v_max)
+    ax.set_ylim(0, v_max)
+    # ax.axis('off')
+    file = f'{PP_WrhoK}/dataset{data_i}_scatter.'
+    FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+
+#%%
+# now let's plot the results
+
+n_clusters = 2
+D = 10
+K = 2
+
+act_map = 'Oranges'
+v_max = 1.5
+divnorm = matplotlib.colors.Normalize(0, v_max)
+title = f'LN activity patterns {Ztex}'
+ylabel = r'$z_i$'
+cb_title = ''
+cb_ticks = [0, 1]
+wtexs = {}
+wtexs[1] = r'$\mathbf{w}_1$'
+wtexs[2] = r'$\mathbf{w}_2$'
+wtexs[3] = r'$\mathbf{w}_3$'
+for data_i in [1, 2]:
+# for data_i in [1]:
+    file = FO.OLF_PATH / f'results/dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
+    X = np.load(file)
+    D, N = X.shape
+    for rho, K in itertools.product([0.1, 1, 10], [2, 3]):
+    # for rho, K in itertools.product([0.1], [2]):
+        file = FO.OLF_PATH / f'results/dataset{data_i}/Y_K{K}_rho{rho}.npy'
+        Y = np.load(file)
+        file = FO.OLF_PATH / f'results/dataset{data_i}/Z_K{K}_rho{rho}.npy'
+        Z = np.load(file)
 
 
+        df = pd.DataFrame(Z)
+        D, N = X.shape
+        W0 = Y @ Z.T / N  # original W
+        W = W0/LA.norm(W0, axis=0, keepdims=True)
+
+        corr = np.corrcoef(W0.T)
+        links = sch.linkage(corr, method='average', optimal_ordering=True)
+        new_order = sch.leaves_list(links)
+
+
+        divnorm = matplotlib.colors.Normalize(0, df.values.max())
+        f, ax, _ = FP.plot_full_activity(df.iloc[new_order], act_map, divnorm,
+                                         title, cb_title,
+                                         cb_ticks, pads=[0.2, 0.4, 0.3, pad_up],
+                                         extend='neither', squeeze=0.1,
+                                         do_vert_spl=False,
+                                         set_ticks_params=False,SQ=SQ*9/10)
+        ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='samples')
+
+        file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_Z.'
+        FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+        FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+
+
+        fs, axs = FP.calc_fs_ax([0.3, 0.3, 0.3, 0.01], 9 * SQ, 9 * SQ)
+        f = plt.figure(figsize=fs)
+        ax = f.add_axes(axs)
+        ax.plot([-1, -1], [-0.5, -0.5], label=r'$\mathbf{w}_{k}$',
+                alpha=0.9, c='g')
+        FP.plot_scatter(ax, X[0], X[1], r'$x_1$, $y_1$',
+                        r'$x_2$, $y_2$', xticks=[0, 1],
+                        yticks=[0, 1],
+                        pca_line_scale1=0., pca_line_scale2=0.,
+                        show_cc=False,
+                        s=size, c='k', lw=lw, label=f'input {Xttex}')
+        ax.scatter(*Y[:2], s=size, c='r', lw=lw, label=f'output {Yttex}')
+        # ax.scatter(*W[:2], s=size, c='g', lw=3, label=r'$\mathbf{w}_{k}$',
+        #            marker='+')
+        kwargs = {'length_includes_head':True, 'width':0.04, 'color':'g',
+                  'alpha':0.9, 'head_width':0.1, 'lw':0}
+        ax.arrow(0, 0, W[0, 0], W[1, 0], **kwargs)
+        for k in range(1, K):
+            ax.arrow(0, 0, W[0, k], W[1, k], **kwargs)
+        ax.set_xlim(0, v_max)
+        ax.set_ylim(0, v_max)
+        ax.legend(frameon=False, borderpad=0, handletextpad=0.2,
+                  loc='upper left', scatterpoints=1,
+                  bbox_to_anchor=(0.6, 1.05), labelspacing=0.,
+                  handlelength=1)
+
+        file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_XYW_scatter.'
+        FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+        FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+
+        # correlation between W plot
+        fs, axs = FP.calc_fs_ax([0.2, 0.4, 0.3,pad_up], 7 * SQ, 7 * SQ)
+        f = plt.figure(figsize=fs)
+        ax = f.add_axes(axs)
+        ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0],
+                            axs[1], CB_W / fs[0], axs[3]])
+        corr = pd.DataFrame(corr[new_order][:, new_order])
+        cp = FP.imshow_df2(corr, ax, cmap=plt.cm.bwr, vlim=1,
+                           splits_x=[], splits_y=[], show_lab_x=True,
+                           rot=0)
+        ax.set_xticklabels([wtexs[i] for i in range(1, K + 1)])
+        ax.set_yticklabels([wtexs[i] for i in range(1, K + 1)])
+
+        FP.add_colorbar(cp, ax_cb, r'$r$', [-1, 0, 1])
+
+        entries = FG.get_entries(corr, diag=False)
+        max_rect_corr = FG.rectify(entries).mean()
+        print(data_i, K, rho, 'mean rectified corr', max_rect_corr)
+        ax.set_title(r'$\overline{r}_+$' + f'={max_rect_corr:.2f}')
+
+        file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_W_corr.'
+        FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+        FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+
+
+
+#%%
