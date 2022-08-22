@@ -94,86 +94,87 @@ def add_y_splits(ax, splits, n, **plot_args):
     for s in splits:
         ax.plot([-0.5, n-0.5], [s-0.5, s-0.5], **plot_args)
 
-
-def imshow_df(df: pd.DataFrame, ax=None, cb=True, title='', vlim=None,
-              cmap=plt.cm.viridis, figsize=None, tight=False,
-              splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
-              show_lab_x: bool = True, show_lab_y: bool = True,
-              cb_frac: float = 0.043,
-              cbtitle: str = '', show_values: bool = False):
-    """
-    very general wrapper around imshow to plot dataframes with labels
-    splits_x and split_y adds lines to separate different categories in the
-    data
-    """
-    if ax is None:
-        f, ax = plt.subplots(1, 1, figsize=figsize)
-
-    (vmin, vmax) = unpack_vlim(vlim)
-    print(f'vmin and vmax in imshow_df: {vmin}, {vmax}')
-    cmap.set_bad('black')
-    cp = ax.imshow(df, cmap=cmap, vmin=vmin, vmax=vmax, interpolation='none')
-    ax.set_title(title)
-
-    plt.sca(ax)
-    if show_lab_x is True:
-        plt.xticks(np.arange(len(df.T)), list(df.columns), rotation=rot, ha=ha)
-        ax.tick_params('x', bottom=False, pad=0)
-
-        label = ''
-        # for a multiindex creates a label from the mi names
-        if df.columns.names[0] is not None:
-            for i in range(len(df.columns.names)):
-                label = label + ', ' + df.columns.names[i]
-            label = label[2:]
-        ax.set_xlabel(label)
-    else:
-        plt.xticks([], [])
-
-    if show_lab_y is True:
-        plt.yticks(np.arange(len(df)), list(df.index))
-        ax.tick_params('y', left=False, pad=0)
-
-        label = ''
-        if df.index.names[0] is not None:
-            for i in range(len(df.index.names)):
-                label = label + ', ' + df.index.names[i]
-            label = label[2:]
-        ax.set_ylabel(label)
-    else:
-        plt.yticks([], [])
-
-    add_x_splits(ax, splits_x, len(df.index), c='w', lw=lw)
-    add_y_splits(ax, splits_y, len(df.columns), c='w', lw=lw)
-
-    if cb is True:
-        clb = plt.colorbar(cp, ax=ax, fraction=cb_frac, pad=0.04)
-        clb.outline.set_linewidth(0.00)
-        clb.ax.tick_params(size=2, direction='in', pad=1.5)
-        clb.ax.set_title(cbtitle)
-    else:
-        clb = None
-
-    if tight is True:
-        plt.tight_layout()
-
-    # removing the borders
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-
-    # printing the actual values inside the squares.
-    if show_values:
-        for (j, i), label in np.ndenumerate(df):
-            ax.text(i, j, int(label), ha='center', va='center',
-                    size=matplotlib.rcParams['font.size']*0.8**2)
-
-    return (plt.gcf(), ax, clb)
+# not used in paper
+# def imshow_df(df: pd.DataFrame, ax=None, cb=True, title='', vlim=None,
+#               cmap=plt.cm.viridis, figsize=None, tight=False,
+#               splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
+#               show_lab_x: bool = True, show_lab_y: bool = True,
+#               cb_frac: float = 0.043,
+#               cbtitle: str = '', show_values: bool = False):
+#     """
+#     very general wrapper around imshow to plot dataframes with labels
+#     splits_x and split_y adds lines to separate different categories in the
+#     data
+#     """
+#     if ax is None:
+#         f, ax = plt.subplots(1, 1, figsize=figsize)
+#
+#     (vmin, vmax) = unpack_vlim(vlim)
+#     print(f'vmin and vmax in imshow_df: {vmin}, {vmax}')
+#     cmap.set_bad('black')
+#     cp = ax.imshow(df, cmap=cmap, vmin=vmin, vmax=vmax, interpolation='none')
+#     ax.set_title(title)
+#
+#     plt.sca(ax)
+#     if show_lab_x is True:
+#         plt.xticks(np.arange(len(df.T)), list(df.columns), rotation=rot, ha=ha)
+#         ax.tick_params('x', bottom=False, pad=0)
+#
+#         label = ''
+#         # for a multiindex creates a label from the mi names
+#         if df.columns.names[0] is not None:
+#             for i in range(len(df.columns.names)):
+#                 label = label + ', ' + df.columns.names[i]
+#             label = label[2:]
+#         ax.set_xlabel(label)
+#     else:
+#         plt.xticks([], [])
+#
+#     if show_lab_y is True:
+#         plt.yticks(np.arange(len(df)), list(df.index))
+#         ax.tick_params('y', left=False, pad=0)
+#
+#         label = ''
+#         if df.index.names[0] is not None:
+#             for i in range(len(df.index.names)):
+#                 label = label + ', ' + df.index.names[i]
+#             label = label[2:]
+#         ax.set_ylabel(label)
+#     else:
+#         plt.yticks([], [])
+#
+#     add_x_splits(ax, splits_x, len(df.index), c='w', lw=lw)
+#     add_y_splits(ax, splits_y, len(df.columns), c='w', lw=lw)
+#
+#     if cb is True:
+#         clb = plt.colorbar(cp, ax=ax, fraction=cb_frac, pad=0.04)
+#         clb.outline.set_linewidth(0.00)
+#         clb.ax.tick_params(size=2, direction='in', pad=1.5)
+#         clb.ax.set_title(cbtitle)
+#     else:
+#         clb = None
+#
+#     if tight is True:
+#         plt.tight_layout()
+#
+#     # removing the borders
+#     for spine in ax.spines.values():
+#         spine.set_visible(False)
+#
+#     # printing the actual values inside the squares.
+#     if show_values:
+#         for (j, i), label in np.ndenumerate(df):
+#             ax.text(i, j, int(label), ha='center', va='center',
+#                     size=matplotlib.rcParams['font.size']*0.8**2)
+#
+#     return (plt.gcf(), ax, clb)
 
 
 def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
                splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
                show_lab_x=True, show_lab_y=True, show_values=False,
-               aspect='equal', splits_c='w', **kwargs):
+               aspect='equal', splits_c='w', title_font=None,
+               **kwargs):
     """
     very general wrapper around imshow to plot dataframes with labels
     splits_x and split_y adds lines to separate different categories in the
@@ -185,10 +186,10 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
 #    cmap.set_bad('black')
     cp = ax.imshow(df, cmap=cmap, vmin=vmin, vmax=vmax, aspect=aspect,
                    **kwargs)
-    ax.set_title(title)
+    ax.set_title(title, fontdict=title_font)
 
     plt.sca(ax)
-    if show_lab_x is True:
+    if show_lab_x:
         plt.xticks(np.arange(len(df.T)), list(df.columns), rotation=rot, ha=ha)
         ax.tick_params('x', bottom=False, pad=-1)
 
@@ -202,7 +203,7 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
     else:
         plt.xticks([], [])
 
-    if show_lab_y is True:
+    if show_lab_y:
         plt.yticks(np.arange(len(df)), list(df.index))
         ax.tick_params('y', left=False, pad=-1)
 
@@ -231,16 +232,19 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
     return cp
 
 
-def add_colorbar(cp, ax, cbtitle='', ticks=[], pad=None, extend='neither'):
+def add_colorbar(cp, ax, cbtitle='', ticks=[], pad=1, extend='neither',
+                 title_font=None):
     """
     add a colorbar at the location specified by ax and for the plot referenced
     by cp. The pad is for the title position of the colorbar
     """
     clb = plt.colorbar(cp, cax=ax, extend=extend)
+    clb.ax.set_yscale('linear')  # new option needed
     clb.outline.set_linewidth(0.00)
     clb.ax.tick_params(size=2, direction='in', pad=1.5)
-    clb.ax.set_title(cbtitle, pad=pad)
-    clb.set_ticks(ticks)
+    clb.ax.set_title(cbtitle, pad=pad, fontdict=title_font)
+    if ticks is not None:
+        clb.set_ticks(ticks)
     return clb
 
 
@@ -606,7 +610,7 @@ def pvalue2stars(v, init: str = "", sign: str = "*"):
 
 
 # this is actually a plotting function...
-def add_sign_stars(ax, pvals, alpha, x, y, sign):
+def add_sign_stars(ax, pvals, alpha, x, y, sign, fontdict=None):
     """
     computes the significance with a certain alpha and puts the stars
     at the position x and y
@@ -616,7 +620,8 @@ def add_sign_stars(ax, pvals, alpha, x, y, sign):
     reject, _, _, _ = smsm.multipletests(pvals, method='fdr_bh', alpha=alpha)
     sign_stars = pvalue2stars(reject, sign=sign)
     for i in range(len(x)):
-        ax.text(x[i], y, sign_stars[i], horizontalalignment='center')
+        ax.text(x[i], y, sign_stars[i], horizontalalignment='center',
+                fontdict=fontdict)
 
 
 # #############################################################################
@@ -764,42 +769,42 @@ def plot_scatter_radio(df1, df2, title='', xlab='', ylab='', vlim=1):
 
     return radio1, radio2
 
-
-def plot_cov(data: pd.DataFrame, cell_sort=None, norm: bool = False,
-             title: str = '') -> (plt.Figure, plt.Axes, plt.colorbar):
-    """
-    plots the covariance of the input data
-
-
-    Parameters
-    ----------
-    data
-        input data
-    cell_sort
-        most probably in list or np.array format
-    norm
-        whether or not to divide by the number of samples
-    title
-        plot title
-
-    Returns
-    -------
-    f
-        reference to the figure
-    ax
-        reference to the axis
-    clb
-        reference to the colorbar
-    """
-
-    cov = data.T.dot(data)
-    if norm is True:
-        cov /= len(data)
-    if cell_sort is not None:
-        cov = cov.loc[cell_sort, cell_sort]
-    f, ax, clb = imshow_df(cov, vlim=np.max(cov.values),
-                              cmap=plt.cm.bwr, title=title, tight=True)
-    return f, ax, clb
+# not used in paper
+# def plot_cov(data: pd.DataFrame, cell_sort=None, norm: bool = False,
+#              title: str = '') -> (plt.Figure, plt.Axes, plt.colorbar):
+#     """
+#     plots the covariance of the input data
+#
+#
+#     Parameters
+#     ----------
+#     data
+#         input data
+#     cell_sort
+#         most probably in list or np.array format
+#     norm
+#         whether or not to divide by the number of samples
+#     title
+#         plot title
+#
+#     Returns
+#     -------
+#     f
+#         reference to the figure
+#     ax
+#         reference to the axis
+#     clb
+#         reference to the colorbar
+#     """
+#
+#     cov = data.T.dot(data)
+#     if norm is True:
+#         cov /= len(data)
+#     if cell_sort is not None:
+#         cov = cov.loc[cell_sort, cell_sort]
+#     f, ax, clb = imshow_df(cov, vlim=np.max(cov.values),
+#                               cmap=plt.cm.bwr, title=title, tight=True)
+#     return f, ax, clb
 
 
 # #############################################################################
@@ -820,7 +825,8 @@ def get_div_color_map(vmin_col, vmin_to_show, vmax):
 def plot_full_activity(df, act_map, divnorm, title, cb_title,
                        cb_ticks, pads=[0.55, 0.4, 0.2, 0.2], extend='max',
                        squeeze=0.4, do_vert_spl=True, set_ticks_params=True,
-                       SQ=0.07, CB_W=0.1, CB_DX=0.11):
+                       SQ=0.07, CB_W=0.1, CB_DX=0.11, title_font=None,
+                       cb_title_font=None):
     # _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
     fs, axs = calc_fs_ax(pads, SQ * len(df.T) * squeeze, SQ * len(df))  # pads, gw, gh
     f = plt.figure(figsize=fs)
@@ -834,15 +840,19 @@ def plot_full_activity(df, act_map, divnorm, title, cb_title,
                        title=title,
                        cmap=act_map, splits_x=splx,
                        show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
+                    title_font=title_font,
                        **{'norm': divnorm})
     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                         CB_W / fs[0], axs[3]])
-    # FP.add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend='max')
-    clb = plt.colorbar(cp, cax=ax_cb, extend=extend)
-    clb.outline.set_linewidth(0.00)
-    clb.ax.tick_params(size=2, direction='in', pad=1.5)
-    clb.ax.set_title(cb_title, pad=None)
-    if set_ticks_params:
-        clb.set_ticks(cb_ticks)
-        clb.set_ticklabels(cb_ticks)
+    clb = add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend=extend,
+                       title_font=cb_title_font)
+    # clb = plt.colorbar(cp, cax=ax_cb, extend=extend)
+    # clb.ax.set_yscale('linear')  # new option needed
+    # clb.outline.set_linewidth(0.00)
+    # clb.ax.tick_params(size=2, direction='in', pad=1.5)
+    # clb.ax.set_title(cb_title, pad=1)
+    # if set_ticks_params:
+    #     clb.set_ticks(cb_ticks)
+    #     clb.set_ticklabels(cb_ticks)
+    # clb.set_ticks(cb_ticks)  # needs to be called again because of the linea command
     return f, ax, clb

@@ -335,8 +335,8 @@ n_clusters = 2
 
 
 # data_i, dx = 1, 0  # clusters close to the edge, i.e., clusters further apart
-data_i, dx = 3, 0.2  # clusters further from the edge, clusters closer together
-X = FD.create_clusters_data(D, [100, 100], n_clusters, dx=dx, scale=0.15)
+data_i, dx = 3, 0.4  # clusters further from the edge, clusters closer together
+X = FD.create_clusters_data(D, [100, 100], n_clusters, dx=dx, scale=0.17)
 file = FO.OLF_PATH / f'results/dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
 np.save(file, X)  # I save the dataset, so that it can be reused.
 # X = np.load(file)

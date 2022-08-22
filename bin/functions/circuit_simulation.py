@@ -292,8 +292,11 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
                           np.max(np.abs(M @ Wff.T @ x))])
 
         print('estimate ', est)
-        # eta1 = 1. / est
-        eta1 =  0.001  # this usually works, but depends on the dataset unfortunately
+
+        # TODO: seems like I have been using one or the other of the
+        # 2 options below:
+        eta1 = 1. / est
+        # eta1 =  0.001  # this usually works, but depends on the dataset unfortunately
         # if i make delta larger, y often goes in the wrong direction and
         # diverges
         # y = Wx.copy()

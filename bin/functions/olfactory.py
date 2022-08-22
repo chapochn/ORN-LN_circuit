@@ -27,7 +27,7 @@ import params.con as par_con
 import os
 from typing import List, Tuple, Any
 
-from functions.plotting import plot_cov  # since we are not using any other
+# from functions.plotting import plot_cov  # since we are not using any other
 # plotting function
 
 PATH = os.path.realpath(f"{os.path.expanduser('~')}/ORN-LN_circuit") + '/'
@@ -388,153 +388,154 @@ def plot_gram(data, ax=None, name='', splits=[], fs=(13, 10), adj=0.2,
     plt.colorbar(cp, ax=ax)
     return plt.gcf(), ax
 
-
-def plot_con_full(save_plots, plot_plots, path_plots,
-                  cell_sort=par_con.ORN, cell_name='ORN',
-                  sides=['L', 'R', 'M'], ppss=['o', 'c', 'n', 'cn'],
-                  strms=[0, 1, 2, 3], show_values=True, show_n_syn=True):
-    """
-    Plots all the connection directions and all the connection pps,
-    e.g., o, c, n, cn (original, centered, normalized, cent-normalized)
-    for the cells cell_sort
-    """
-    print(f"""sides to plot {sides}\npps to plot {ppss}\n
-          streams to plot {strms}""")
-    FP.set_plotting(plot_plots)
-
-    # ################  ANALYSIS  #########
-    cons = get_con_data()
-
-    # calcualting the number of connections and synapses.
-    # It is something that is relevant only for streams 0, 1, 3
-    # and for L, R, M, and for pps 'o'
-
-    # n_con containts the number of connections from or towards
-    # any cell with the ORN/uPN set
-    # n_syn containts the number of connections from or towards
-    # any cell with the ORN/uPN set
-
-    mi = pd.MultiIndex(levels=[[], []], codes=[[], []],
-                       names=['side', 'stream'])
-
-    n_con = pd.DataFrame(columns=mi)
-    n_syn = pd.DataFrame(columns=mi)  # this is the number of synapses
-
-    for side in sides:
-        chosen_cells = FG.get_match_names(cell_sort, list(cons[side].index))
-        con_sel = get_con_pps(cons[side], chosen_cells)
-
-        for strm in strms:
-            con_o = con_sel[strm]['o']
-            n_con[side, strm] = np.sign(con_o).sum().values.astype(int)
-            n_syn[side, strm] = con_o.sum().values.astype(int)
-
-    # con_m = of.merge_con_data(con_L, con_R)
-
-    titles = [f'connections from {cell_name} to all',
-              f'connections from all to {cell_name}',
-              f'connections from all to {cell_name}, scaled by in-degree',
-              f'connections of {cell_name} with all',
-              ]
-
-    # iterating over the different "sides" (L, R, M)
-    for side in sides:
-        chosen_cells = FG.get_match_names(cell_sort, list(cons[side].index))
-        print(chosen_cells)
-        con_sel = get_con_pps(cons[side], chosen_cells)
-        # 0: sel2A, 1: A2sel, 2:A2sel: normalized by the input of each neuron
-
-        # plots of the connectivity, using lines
-# =============================================================================
-#     of.plot_con_data(ORN2A, A2ORN)
-#     of.plot_con_data(ORN2A_cn, A2ORN_cn)
-# =============================================================================
-
-        # iterating over the different pps of the connections
-        # a different figure/file for each
-        for pps in ppss:
-            # if pps_key != 'o':
-            #     continue
-            # plots of the cells connectivity, using imshow
-            f, axx = plt.subplots(len(strms), 1, figsize=(25, 22))
-            # iterating over the 4 streams (ff, fb, fb-indegr, (ff+fb))
-            # which are all in the same figure
-            for i, strm in enumerate(strms):
-                FP.imshow_df(con_sel[strm][pps], ax=axx[i],
-                             title=f'{titles[strm]}, {pps}',
-                             show_values=show_values)
-                
-                if show_n_syn:
-                    # adding the information about the number of connections
-                    # and the number of synapses above the heatmap
-                    x_n = len(n_con.index)
-                    for j in range(x_n):
-                        axx[i].text((j + 0.5)/x_n, 1.05,
-                           (f'{n_con[side, strm].loc[j]},'
-                           f' {n_syn[side, strm].loc[j]}'),
-                           ha='center', va='bottom',
-                           transform=axx[i].transAxes, rotation=90)
-            plt.tight_layout()
-            FP.save_plot(f, f'{path_plots}{cell_name}_con_{side}_{pps}.png',
-                         save_plots)
+# not used in paper
+# def plot_con_full(save_plots, plot_plots, path_plots,
+#                   cell_sort=par_con.ORN, cell_name='ORN',
+#                   sides=['L', 'R', 'M'], ppss=['o', 'c', 'n', 'cn'],
+#                   strms=[0, 1, 2, 3], show_values=True, show_n_syn=True):
+#     """
+#     Plots all the connection directions and all the connection pps,
+#     e.g., o, c, n, cn (original, centered, normalized, cent-normalized)
+#     for the cells cell_sort
+#     """
+#     print(f"""sides to plot {sides}\npps to plot {ppss}\n
+#           streams to plot {strms}""")
+#     FP.set_plotting(plot_plots)
+#
+#     # ################  ANALYSIS  #########
+#     cons = get_con_data()
+#
+#     # calcualting the number of connections and synapses.
+#     # It is something that is relevant only for streams 0, 1, 3
+#     # and for L, R, M, and for pps 'o'
+#
+#     # n_con containts the number of connections from or towards
+#     # any cell with the ORN/uPN set
+#     # n_syn containts the number of connections from or towards
+#     # any cell with the ORN/uPN set
+#
+#     mi = pd.MultiIndex(levels=[[], []], codes=[[], []],
+#                        names=['side', 'stream'])
+#
+#     n_con = pd.DataFrame(columns=mi)
+#     n_syn = pd.DataFrame(columns=mi)  # this is the number of synapses
+#
+#     for side in sides:
+#         chosen_cells = FG.get_match_names(cell_sort, list(cons[side].index))
+#         con_sel = get_con_pps(cons[side], chosen_cells)
+#
+#         for strm in strms:
+#             con_o = con_sel[strm]['o']
+#             n_con[side, strm] = np.sign(con_o).sum().values.astype(int)
+#             n_syn[side, strm] = con_o.sum().values.astype(int)
+#
+#     # con_m = of.merge_con_data(con_L, con_R)
+#
+#     titles = [f'connections from {cell_name} to all',
+#               f'connections from all to {cell_name}',
+#               f'connections from all to {cell_name}, scaled by in-degree',
+#               f'connections of {cell_name} with all',
+#               ]
+#
+#     # iterating over the different "sides" (L, R, M)
+#     for side in sides:
+#         chosen_cells = FG.get_match_names(cell_sort, list(cons[side].index))
+#         print(chosen_cells)
+#         con_sel = get_con_pps(cons[side], chosen_cells)
+#         # 0: sel2A, 1: A2sel, 2:A2sel: normalized by the input of each neuron
+#
+#         # plots of the connectivity, using lines
+# # =============================================================================
+# #     of.plot_con_data(ORN2A, A2ORN)
+# #     of.plot_con_data(ORN2A_cn, A2ORN_cn)
+# # =============================================================================
+#
+#         # iterating over the different pps of the connections
+#         # a different figure/file for each
+#         for pps in ppss:
+#             # if pps_key != 'o':
+#             #     continue
+#             # plots of the cells connectivity, using imshow
+#             f, axx = plt.subplots(len(strms), 1, figsize=(25, 22))
+#             # iterating over the 4 streams (ff, fb, fb-indegr, (ff+fb))
+#             # which are all in the same figure
+#             for i, strm in enumerate(strms):
+#                 FP.imshow_df(con_sel[strm][pps], ax=axx[i],
+#                              title=f'{titles[strm]}, {pps}',
+#                              show_values=show_values)
+#
+#                 if show_n_syn:
+#                     # adding the information about the number of connections
+#                     # and the number of synapses above the heatmap
+#                     x_n = len(n_con.index)
+#                     for j in range(x_n):
+#                         axx[i].text((j + 0.5)/x_n, 1.05,
+#                            (f'{n_con[side, strm].loc[j]},'
+#                            f' {n_syn[side, strm].loc[j]}'),
+#                            ha='center', va='bottom',
+#                            transform=axx[i].transAxes, rotation=90)
+#             plt.tight_layout()
+#             FP.save_plot(f, f'{path_plots}{cell_name}_con_{side}_{pps}.png',
+#                          save_plots)
 
 
 # #############################################################################
 # ################  PLOTTING SVD ANALYSIS OF CONNECTIONS  #####################
 # #############################################################################
 
+# not used in paper
 # need to check the resemblance with the SVD/PCA of the activity function
-def plot_SVD_con(data, sets=[], vlim=None, title=''):
-    SVD1 = FG.get_svd_df(data)
-    SVD1_s = np.diag(SVD1['s'])
-    x = SVD1_s[0] * SVD1['Vh'].iloc[0]
-    y = SVD1_s[1] * SVD1['Vh'].iloc[1]
-    z = SVD1_s[2] * SVD1['Vh'].iloc[2]
-    print(SVD1_s)
-
-    if vlim is None:
-        vlim = max([x.abs().max(), y.abs().max(), z.abs().max()])*1.1
-
-    if len(sets) == 0:
-        sets = [np.arange(len(data.T))]
-
-    f, axx = plt.subplots(2, 3, figsize=(15, 10))
-    plt.suptitle(title)
-
-    FP.imshow_df(data, ax=axx[0, 0])
-
-    plot_gram(data, ax=axx[0, 1])
-
-    ax = axx[1, 0]
-    ax.plot(np.arange(1, 1+len(SVD1_s)), SVD1_s)
-    ax.set_xlabel('principal component number')
-    plt.sca(ax)
-    plt.xticks(np.arange(1, 1+len(SVD1_s)))
-    ax.set_ylim(0, None)
-
-    ax = axx[1, 1]
-    for s in sets:
-        ax.scatter(x.iloc[s], y.iloc[s])
-    ax.set_xlim(-vlim, vlim)
-    ax.set_ylim(-vlim, vlim)
-    ax.set_xlabel('PC1')
-    ax.set_ylabel('PC2')
-    for cell_label in list(SVD1['Vh'].columns):
-        ax.annotate(cell_label, (x.loc[cell_label], y.loc[cell_label]))
-
-    ax = axx[1, 2]
-    for s in sets:
-        ax.scatter(y.iloc[s], z.iloc[s])
-    ax.set_xlim(-vlim, vlim)
-    ax.set_ylim(-vlim, vlim)
-    ax.set_xlabel('PC2')
-    ax.set_ylabel('PC3')
-    for cell_label in list(SVD1['Vh'].columns):
-        ax.annotate(cell_label, (y.loc[cell_label], z.loc[cell_label]))
-
-    axx[0, 2].axis('off')
-    plt.tight_layout()
-    return f, axx
+# def plot_SVD_con(data, sets=[], vlim=None, title=''):
+#     SVD1 = FG.get_svd_df(data)
+#     SVD1_s = np.diag(SVD1['s'])
+#     x = SVD1_s[0] * SVD1['Vh'].iloc[0]
+#     y = SVD1_s[1] * SVD1['Vh'].iloc[1]
+#     z = SVD1_s[2] * SVD1['Vh'].iloc[2]
+#     print(SVD1_s)
+#
+#     if vlim is None:
+#         vlim = max([x.abs().max(), y.abs().max(), z.abs().max()])*1.1
+#
+#     if len(sets) == 0:
+#         sets = [np.arange(len(data.T))]
+#
+#     f, axx = plt.subplots(2, 3, figsize=(15, 10))
+#     plt.suptitle(title)
+#
+#     FP.imshow_df(data, ax=axx[0, 0])
+#
+#     plot_gram(data, ax=axx[0, 1])
+#
+#     ax = axx[1, 0]
+#     ax.plot(np.arange(1, 1+len(SVD1_s)), SVD1_s)
+#     ax.set_xlabel('principal component number')
+#     plt.sca(ax)
+#     plt.xticks(np.arange(1, 1+len(SVD1_s)))
+#     ax.set_ylim(0, None)
+#
+#     ax = axx[1, 1]
+#     for s in sets:
+#         ax.scatter(x.iloc[s], y.iloc[s])
+#     ax.set_xlim(-vlim, vlim)
+#     ax.set_ylim(-vlim, vlim)
+#     ax.set_xlabel('PC1')
+#     ax.set_ylabel('PC2')
+#     for cell_label in list(SVD1['Vh'].columns):
+#         ax.annotate(cell_label, (x.loc[cell_label], y.loc[cell_label]))
+#
+#     ax = axx[1, 2]
+#     for s in sets:
+#         ax.scatter(y.iloc[s], z.iloc[s])
+#     ax.set_xlim(-vlim, vlim)
+#     ax.set_ylim(-vlim, vlim)
+#     ax.set_xlabel('PC2')
+#     ax.set_ylabel('PC3')
+#     for cell_label in list(SVD1['Vh'].columns):
+#         ax.annotate(cell_label, (y.loc[cell_label], z.loc[cell_label]))
+#
+#     axx[0, 2].axis('off')
+#     plt.tight_layout()
+#     return f, axx
 
 
 def get_ORN_act_data_2(dropna: bool = True, fast: bool = True) -> pd.DataFrame:
@@ -949,124 +950,124 @@ def plot_activity_old(act_df, cell_order, odor_order, norm=True, title=''):
 #    plt.show()
     return f, axx
 
-
-def plot_activity(act_df, cell_order, odor_order, norm=True, title='',
-                  cmap=plt.cm.viridis):
-    """
-    Plot the activity
-    the rows are stimuli (odors), the columns are ORNs
-    (just like in the plot in the paper)
-    a plot for each concentration
-    if norm is True, then it is the same scaling for each concentration
-    if norm is False, then each concentration has its own colorbar
-    not yet tested with the new dataset
-    """
-    if not norm:
-        plt.rc('font', size=5)
-    else:
-        plt.rc('font', size=6)
-    print(cell_order)
-    print(odor_order)
-    act_df = act_df[cell_order].reindex(odor_order, level='odor')
-
-    conc_list = act_df.index.get_level_values('conc').unique()
-    print(conc_list)
-    odor_list = act_df.index.get_level_values('odor').unique()
-    n_conc = len(conc_list)
-    # cell_list = list(act_df)
-    # cell_list = [name.strip(' ORN L&R') for name in cell_list]
-
-    vmax = act_df.max(axis=0, level='conc').max(axis=1)
-    vmin = act_df.min(axis=0, level='conc').min(axis=1)
-    if norm is True:
-        vmax[:] = vmax.max()
-        vmin[:] = vmin.min()
-    n_plots = n_conc
-
-    f_w = n_plots*1.7
-    f_h = len(odor_list)/12+0.4
-
-    f, axx = plt.subplots(1, n_plots, figsize=(f_w, f_h))
-    for i in range(n_conc):
-        if n_conc > 1:
-            ax = axx[i]
-        else:
-            ax = axx
-        FP.imshow_df(act_df.xs(conc_list[i], level='conc'), ax=ax,
-                     cmap=cmap, vlim=[vmin.iloc[i], vmax.iloc[i]],
-                     title='concentration 1e-' + str(conc_list[i]),
-                     cb=not norm, cb_frac=0.066)
-        ax.set_xlabel('')
-        if i > 0:
-            ax.set_yticks([])
-            ax.set_ylabel('')
-
-    if norm is True:
-        ri = 1 - 0.3/f_w
-        bot = 0.7/f_h
-        top = 1-0.4/f_h
-        plt.subplots_adjust(left=1.3/f_w, bottom=bot,
-                            right=ri, top=top, wspace=0.01/f_w)
-        cbaxes = f.add_axes([ri + 0.1/f_w, bot, 0.1/f_w, top-bot])
-        scale = mpl.colors.Normalize(vmin=vmin.iloc[0],
-                                            vmax=vmax.iloc[0])
-        clb = mpl.colorbar.ColorbarBase(cbaxes, norm=scale, cmap=cmap)
-        clb.outline.set_linewidth(0.00)
-        clb.ax.tick_params(size=2, direction='in', pad=1.5)
-    else:
-        plt.subplots_adjust(left=1.3/f_w, bottom=0.2,
-                            right=1 - 0.3/f_w, top=0.9, wspace=1.4/f_w)
-        plt.rc('font', size=5)
-# =============================================================================
-#         cp = ax.imshow(act_df.xs(conc_list[i], level='conc'),
-#                        vmin=vmin.iloc[i], vmax=vmax.iloc[i], cmap='jet')
-#         plt.sca(ax)
-#         plt.xticks(np.arange(len(cell_list)), cell_list, rotation='vertical')
-# 
-#         # putting the odor labels only on the most left graph
-#         if i == 0:
-#             ax.set_yticks(np.arange(len(odor_list)))
-#             ax.set_yticklabels(odor_list)
-#         else:
-#             ax.set_yticks([])
-#         ax.set_title('concentration 1e-' + str(conc_list[i]))
-#         if norm is False:
-#             f.colorbar(cp, ax=ax)
+# not used in paper
+# def plot_activity(act_df, cell_order, odor_order, norm=True, title='',
+#                   cmap=plt.cm.viridis):
+#     """
+#     Plot the activity
+#     the rows are stimuli (odors), the columns are ORNs
+#     (just like in the plot in the paper)
+#     a plot for each concentration
+#     if norm is True, then it is the same scaling for each concentration
+#     if norm is False, then each concentration has its own colorbar
+#     not yet tested with the new dataset
+#     """
+#     if not norm:
+#         plt.rc('font', size=5)
+#     else:
+#         plt.rc('font', size=6)
+#     print(cell_order)
+#     print(odor_order)
+#     act_df = act_df[cell_order].reindex(odor_order, level='odor')
+#
+#     conc_list = act_df.index.get_level_values('conc').unique()
+#     print(conc_list)
+#     odor_list = act_df.index.get_level_values('odor').unique()
+#     n_conc = len(conc_list)
+#     # cell_list = list(act_df)
+#     # cell_list = [name.strip(' ORN L&R') for name in cell_list]
+#
+#     vmax = act_df.max(axis=0, level='conc').max(axis=1)
+#     vmin = act_df.min(axis=0, level='conc').min(axis=1)
 #     if norm is True:
-#         ax = axx[-1]
-#         ax.axis('off')
-#         f.colorbar(cp, ax=ax)
-# =============================================================================
-
-    # plt.tight_layout()
-
-    plt.suptitle(title)
-#    plt.show()
-    plt.rc('font', size=6)
-    return f, axx
-
-
-def plot_activity2(act_df, cell_order, odor_order, title=''):
-    """
-    here we plot all the responses in one graph
-    the rows are different cells
-    the columns are different stimuli
-    in the top graph we plot the stimuli ordered by odors
-    in the lower graph, we plot stimuli first ordered by concentration
-    for each concentration, it looks just like a flipped version of the plots
-    above.
-    """
-    plt.rc('font', size=6)
-    f, axx = plt.subplots(2, 1, figsize=(11, 6))
-
-    act_df = act_df[cell_order].reindex(odor_order, level='odor')
-    FP.imshow_df(act_df.T, ax=axx[0], cmap=plt.cm.jet)
-
-    act_df = act_df.sort_index(axis=0, level='conc')
-    FP.imshow_df(act_df.T, ax=axx[1], cmap=plt.cm.jet)
-    plt.tight_layout()
-    plt.suptitle(title)
-    return f, axx
+#         vmax[:] = vmax.max()
+#         vmin[:] = vmin.min()
+#     n_plots = n_conc
+#
+#     f_w = n_plots*1.7
+#     f_h = len(odor_list)/12+0.4
+#
+#     f, axx = plt.subplots(1, n_plots, figsize=(f_w, f_h))
+#     for i in range(n_conc):
+#         if n_conc > 1:
+#             ax = axx[i]
+#         else:
+#             ax = axx
+#         FP.imshow_df(act_df.xs(conc_list[i], level='conc'), ax=ax,
+#                      cmap=cmap, vlim=[vmin.iloc[i], vmax.iloc[i]],
+#                      title='concentration 1e-' + str(conc_list[i]),
+#                      cb=not norm, cb_frac=0.066)
+#         ax.set_xlabel('')
+#         if i > 0:
+#             ax.set_yticks([])
+#             ax.set_ylabel('')
+#
+#     if norm is True:
+#         ri = 1 - 0.3/f_w
+#         bot = 0.7/f_h
+#         top = 1-0.4/f_h
+#         plt.subplots_adjust(left=1.3/f_w, bottom=bot,
+#                             right=ri, top=top, wspace=0.01/f_w)
+#         cbaxes = f.add_axes([ri + 0.1/f_w, bot, 0.1/f_w, top-bot])
+#         scale = mpl.colors.Normalize(vmin=vmin.iloc[0],
+#                                             vmax=vmax.iloc[0])
+#         clb = mpl.colorbar.ColorbarBase(cbaxes, norm=scale, cmap=cmap)
+#         clb.outline.set_linewidth(0.00)
+#         clb.ax.tick_params(size=2, direction='in', pad=1.5)
+#     else:
+#         plt.subplots_adjust(left=1.3/f_w, bottom=0.2,
+#                             right=1 - 0.3/f_w, top=0.9, wspace=1.4/f_w)
+#         plt.rc('font', size=5)
+# # =============================================================================
+# #         cp = ax.imshow(act_df.xs(conc_list[i], level='conc'),
+# #                        vmin=vmin.iloc[i], vmax=vmax.iloc[i], cmap='jet')
+# #         plt.sca(ax)
+# #         plt.xticks(np.arange(len(cell_list)), cell_list, rotation='vertical')
+# #
+# #         # putting the odor labels only on the most left graph
+# #         if i == 0:
+# #             ax.set_yticks(np.arange(len(odor_list)))
+# #             ax.set_yticklabels(odor_list)
+# #         else:
+# #             ax.set_yticks([])
+# #         ax.set_title('concentration 1e-' + str(conc_list[i]))
+# #         if norm is False:
+# #             f.colorbar(cp, ax=ax)
+# #     if norm is True:
+# #         ax = axx[-1]
+# #         ax.axis('off')
+# #         f.colorbar(cp, ax=ax)
+# # =============================================================================
+#
+#     # plt.tight_layout()
+#
+#     plt.suptitle(title)
+# #    plt.show()
+#     plt.rc('font', size=6)
+#     return f, axx
+#
+#
+# def plot_activity2(act_df, cell_order, odor_order, title=''):
+#     """
+#     here we plot all the responses in one graph
+#     the rows are different cells
+#     the columns are different stimuli
+#     in the top graph we plot the stimuli ordered by odors
+#     in the lower graph, we plot stimuli first ordered by concentration
+#     for each concentration, it looks just like a flipped version of the plots
+#     above.
+#     """
+#     plt.rc('font', size=6)
+#     f, axx = plt.subplots(2, 1, figsize=(11, 6))
+#
+#     act_df = act_df[cell_order].reindex(odor_order, level='odor')
+#     FP.imshow_df(act_df.T, ax=axx[0], cmap=plt.cm.jet)
+#
+#     act_df = act_df.sort_index(axis=0, level='conc')
+#     FP.imshow_df(act_df.T, ax=axx[1], cmap=plt.cm.jet)
+#     plt.tight_layout()
+#     plt.suptitle(title)
+#     return f, axx
 
 
 
@@ -1451,71 +1452,73 @@ class NeurActConAnalysis:
     # #########################################################################
     # ######################  PLOTTING ACTIVITY  ##############################
     # #########################################################################
-    def plot_act(self, ps_str, act=None, neur_order=None, odor_order=None):
-        """
-        plot where each concentration where the graph is scaled to its own max
-        plot where the responses for all concentations are on the same scale
-        plot where all responses are all on one plot
-        """
+    # not used in paper
+    # def plot_act(self, ps_str, act=None, neur_order=None, odor_order=None):
+    #     """
+    #     plot where each concentration where the graph is scaled to its own max
+    #     plot where the responses for all concentations are on the same scale
+    #     plot where all responses are all on one plot
+    #     """
+    #
+    #     # because in the raw case odors will have duplicates, before
+    #     # plotting we need to clean up the data by removing the duplicates:
+    #     if act is None:
+    #         act = self.act.copy()
+    #         act = act[~act.index.duplicated(keep='first')]
+    #
+    #     if neur_order is None:
+    #         neur_order = self.neur_order
+    #
+    #     if odor_order is None:
+    #         odor_order = self.odor_order
+    #
+    #     for norm in [False, True]:
+    #         f, _ = plot_activity(act, neur_order, odor_order,
+    #                     norm=bool(norm), title=f'{self.cell_type} activity')
+    #         file_str = (self.path_plots / f'{self.cell_type}_act'
+    #                     f'{self.dataset}_scale{int(norm)}'
+    #                     f'{ps_str}.png')
+    #         FP.save_plot(f, file_str, self.save_plots, dpi=300)
+    #     f, _ = plot_activity2(act, neur_order, odor_order,
+    #                           title=f'{self.cell_type} activity')
+    #     file_str = (self.path_plots / f'{self.cell_type}_act'
+    #                 f'{self.dataset}{ps_str}.png')
+    #     FP.save_plot(f, file_str, self.save_plots)
 
-        # because in the raw case odors will have duplicates, before
-        # plotting we need to clean up the data by removing the duplicates:
-        if act is None:
-            act = self.act.copy()
-            act = act[~act.index.duplicated(keep='first')]
-
-        if neur_order is None:
-            neur_order = self.neur_order
-
-        if odor_order is None:
-            odor_order = self.odor_order
-
-        for norm in [False, True]:
-            f, _ = plot_activity(act, neur_order, odor_order,
-                        norm=bool(norm), title=f'{self.cell_type} activity')
-            file_str = (self.path_plots / f'{self.cell_type}_act'
-                        f'{self.dataset}_scale{int(norm)}'
-                        f'{ps_str}.png')
-            FP.save_plot(f, file_str, self.save_plots, dpi=300)
-        f, _ = plot_activity2(act, neur_order, odor_order,
-                              title=f'{self.cell_type} activity')
-        file_str = (self.path_plots / f'{self.cell_type}_act'
-                    f'{self.dataset}{ps_str}.png')
-        FP.save_plot(f, file_str, self.save_plots)
-
-    def plot_cor(self, conc, pps, ps_str):
-        """
-        plotting the ORN and odor covariance matrices
-        choosing which concentrations we using
-        ps_str is just a string that we append to the end of the filename
-        """
-
-        # correlation between cells
-        f, _, _ = plot_cov(self.act_sels[conc][pps], self.neur_order)
-        file_str = (self.path_plots / f'{self.cell_type}_act'
-                    f'{self.dataset}_{conc}_{pps}_neur-cov{ps_str}.png')
-        FP.save_plot(f, file_str, self.save_plots, dpi=300)
-
-        # correlation between odors
-        # using the unstack makes that we average between concentrations
-
-        # if we want to have correlations for the odors, then we need to
-        # ctr and normalize in the ther other direction than for the
-        # cells
-
-        # because in the raw case odors will have duplicates, before
-        # plotting we need to clean up the data by removing the duplicates:
-        act = self.act_sels[conc]['o'].copy()
-        act = act[~act.index.duplicated(keep='first')]
-        # i don't think that removing dupliates has any effect
-        act = act.unstack().T
-        if pps == 'cn':
-            act = FG.get_ctr_norm(act)
-
-        f, _, _ = plot_cov(act, self.odor_order, norm=False)
-        file_str = (self.path_plots / f'{self.cell_type}_act'
-                    f'{self.dataset}_{conc}_{pps}_odor-cov{ps_str}.png')
-        FP.save_plot(f, file_str, self.save_plots, dpi=300)
+    # not used in paper
+    # def plot_cor(self, conc, pps, ps_str):
+    #     """
+    #     plotting the ORN and odor covariance matrices
+    #     choosing which concentrations we using
+    #     ps_str is just a string that we append to the end of the filename
+    #     """
+    #
+    #     # correlation between cells
+    #     f, _, _ = plot_cov(self.act_sels[conc][pps], self.neur_order)
+    #     file_str = (self.path_plots / f'{self.cell_type}_act'
+    #                 f'{self.dataset}_{conc}_{pps}_neur-cov{ps_str}.png')
+    #     FP.save_plot(f, file_str, self.save_plots, dpi=300)
+    #
+    #     # correlation between odors
+    #     # using the unstack makes that we average between concentrations
+    #
+    #     # if we want to have correlations for the odors, then we need to
+    #     # ctr and normalize in the ther other direction than for the
+    #     # cells
+    #
+    #     # because in the raw case odors will have duplicates, before
+    #     # plotting we need to clean up the data by removing the duplicates:
+    #     act = self.act_sels[conc]['o'].copy()
+    #     act = act[~act.index.duplicated(keep='first')]
+    #     # i don't think that removing dupliates has any effect
+    #     act = act.unstack().T
+    #     if pps == 'cn':
+    #         act = FG.get_ctr_norm(act)
+    #
+    #     f, _, _ = plot_cov(act, self.odor_order, norm=False)
+    #     file_str = (self.path_plots / f'{self.cell_type}_act'
+    #                 f'{self.dataset}_{conc}_{pps}_odor-cov{ps_str}.png')
+    #     FP.save_plot(f, file_str, self.save_plots, dpi=300)
 
     # #########################################################################
     # ##################  SAVING THE CONNECTIVITY IN HDF5  ####################
@@ -1537,30 +1540,31 @@ class NeurActConAnalysis:
     # #########################################################################
     # ######################  PLOTTING CONNECTIVITY  ##########################
     # #########################################################################
-    def plot_con(self, LNs, pps):
-        ct = self.cell_type
-        titles = [f'{ct}s to LNs',
-                  f'LNs to {ct}s',
-                  f'LNs to {ct}s, in-degree scaled',
-                  f'{ct}s with LNs, average ff and fb' ]
-        # print('hello')
-        f, axx = plt.subplots(1, len(self.strms), figsize=(7, 2.5))
-        for i in self.strms:
-            ax = axx[i]
-            data = self.con_strms2[i][pps].loc[:, LNs].copy()
-            # ordering the ORNs or uPNs as implied by the internal variable
-            data = data.loc[self.neur_order]
-            FP.imshow_df(data, ax=ax, splits_x=self.splits_LN, cb_frac=0.042)
-            ax.set_xlabel('')
-            ax.set_ylabel('')
-            ax.set_title(titles[i])
-            if i > 0:
-                ax.set_yticks([])
-
-        # plt.tight_layout()
-        plt.subplots_adjust(bottom=0.22, top=0.95, left=0.1, right=0.95)
-        FP.save_plot(f, self.path_plots / f'con_{self.cell_type}-LN_{pps}.png',
-                     self.save_plots, dpi=300)
+    # not used in paper
+    # def plot_con(self, LNs, pps):
+    #     ct = self.cell_type
+    #     titles = [f'{ct}s to LNs',
+    #               f'LNs to {ct}s',
+    #               f'LNs to {ct}s, in-degree scaled',
+    #               f'{ct}s with LNs, average ff and fb' ]
+    #     # print('hello')
+    #     f, axx = plt.subplots(1, len(self.strms), figsize=(7, 2.5))
+    #     for i in self.strms:
+    #         ax = axx[i]
+    #         data = self.con_strms2[i][pps].loc[:, LNs].copy()
+    #         # ordering the ORNs or uPNs as implied by the internal variable
+    #         data = data.loc[self.neur_order]
+    #         FP.imshow_df(data, ax=ax, splits_x=self.splits_LN, cb_frac=0.042)
+    #         ax.set_xlabel('')
+    #         ax.set_ylabel('')
+    #         ax.set_title(titles[i])
+    #         if i > 0:
+    #             ax.set_yticks([])
+    #
+    #     # plt.tight_layout()
+    #     plt.subplots_adjust(bottom=0.22, top=0.95, left=0.1, right=0.95)
+    #     FP.save_plot(f, self.path_plots / f'con_{self.cell_type}-LN_{pps}.png',
+    #                  self.save_plots, dpi=300)
 
     # #########################################################################
     # ##############  CALCULATING DIFFERENT ANALYSIS OF ACTIVITY  #############
@@ -2160,107 +2164,109 @@ class NeurActConAnalysis:
     # #########################################################################
     # ###############  PLOTTING CORR ODOR VS CONN  ############################
     # #########################################################################
-    def plot_act_odors_vs_conn_corr(self, act, act_comp, con_pps, ps_str,
-                                    neur_sel, odor_order=None, **kwargs):
-        """
-        act is the activity data, it will be centered and normalized inside
-        the function, before calculating the correlation coefficient
-        act_comp are the activity component that come for SVD of NMF
-        act will be concatenated with act_comp, so that we have a whole
-        matrix
-        the correlation of the concatenated data will be calculated with the
-        all the streams of connections.
-        Each stream will be plotted separately
-        ps_str is a string to be added to the file name so that the file
-        name can be easily differentiated
-        neur_sel are the neurons that we want to include in the plot and for
-        which the correlatoin will be calculated.
-        """
-
-        if odor_order is None:
-            odor_order = self.odor_order
-        ns = self.neur_order  # like neuron sort
-        A = act.loc[:, ns]  # sorting necessary before the concatenation below
-        A = A.unstack().loc[odor_order].stack()  # there is a bug
-        # and for some reason it doesn't work without the unstack/stack
-        # this order corresponds to the 2nd component of the PCA
-
-
-        C = act_comp.loc[ns]
-        A = pd.concat([A, C.T], axis=0)
-
-        for strm in self.strms:
-            B = self.con_strms2[strm][con_pps].loc[ns].loc[:, neur_sel]
-            B = pd.concat([C, B], axis=1)
-
-            corr_all_odors_con = A.dot(B)
-            f, ax, _ = FP.imshow_df(corr_all_odors_con.T, tight=True,
-                                    title=self.titles_d()[strm], **kwargs)
-
-            file_name = (f'{self.cell_type}_con_'
-                         f'{self.con_pps_k}{strm}_vs_act{self.dataset}_'
-                         f'{self.act_pps_k1}_{self.act_pps_k2}_'
-                         f'{ps_str}.png')
-            FP.save_plot(f, self.path_plots / file_name, self.save_plots)
+    # not used in paper
+    # def plot_act_odors_vs_conn_corr(self, act, act_comp, con_pps, ps_str,
+    #                                 neur_sel, odor_order=None, **kwargs):
+    #     """
+    #     act is the activity data, it will be centered and normalized inside
+    #     the function, before calculating the correlation coefficient
+    #     act_comp are the activity component that come for SVD of NMF
+    #     act will be concatenated with act_comp, so that we have a whole
+    #     matrix
+    #     the correlation of the concatenated data will be calculated with the
+    #     all the streams of connections.
+    #     Each stream will be plotted separately
+    #     ps_str is a string to be added to the file name so that the file
+    #     name can be easily differentiated
+    #     neur_sel are the neurons that we want to include in the plot and for
+    #     which the correlatoin will be calculated.
+    #     """
+    #
+    #     if odor_order is None:
+    #         odor_order = self.odor_order
+    #     ns = self.neur_order  # like neuron sort
+    #     A = act.loc[:, ns]  # sorting necessary before the concatenation below
+    #     A = A.unstack().loc[odor_order].stack()  # there is a bug
+    #     # and for some reason it doesn't work without the unstack/stack
+    #     # this order corresponds to the 2nd component of the PCA
+    #
+    #
+    #     C = act_comp.loc[ns]
+    #     A = pd.concat([A, C.T], axis=0)
+    #
+    #     for strm in self.strms:
+    #         B = self.con_strms2[strm][con_pps].loc[ns].loc[:, neur_sel]
+    #         B = pd.concat([C, B], axis=1)
+    #
+    #         corr_all_odors_con = A.dot(B)
+    #         f, ax, _ = FP.imshow_df(corr_all_odors_con.T, tight=True,
+    #                                 title=self.titles_d()[strm], **kwargs)
+    #
+    #         file_name = (f'{self.cell_type}_con_'
+    #                      f'{self.con_pps_k}{strm}_vs_act{self.dataset}_'
+    #                      f'{self.act_pps_k1}_{self.act_pps_k2}_'
+    #                      f'{ps_str}.png')
+    #         FP.save_plot(f, self.path_plots / file_name, self.save_plots)
 
     # #########################################################################
     # ##################  PLOTTING CORR AND SIGNIF  ###########################
     # #########################################################################
-    def plot_corr_signif(self, sel, strm, neur_sel, cat_drop, list_df, ext='',
-                         **kwargs):
-        """
-        cat_drop are the categories to drop in the index before plotting
-        ext is the extension that we put at the end of the filename
-        
-        what is in kwargs is transmitted to im
-        """
-        # the following is just some text extraction to be put in the file
-        # name
-        concs = [item[0] for item in sel]
-        concs = set(concs)
-        pps = [item[1] for item in sel]
-        pps = set(pps)
-        meths = [item[2] for item in sel]
-        meth_names = [''.join([i for i in meth if not i.isdigit()])
-                      for meth in meths]
-        meth_names = set(meth_names)
-        meth_numbers = [''.join([i for i in meth if i.isdigit()])
-                       for meth in meths]
-        meth_numbers = list(filter(None, meth_numbers))
-        meth_min = min(meth_numbers)
-        meth_max = max(meth_numbers)
-        # meth can be quite long to be included in the file name, making it
-        # shorter
-
-        
-        sel = [(s[0], s[1], s[2], i+1) for s in sel for i in range(s[3])]
-        
-        for (df, cm, lim, k) in list_df:
-            to_plot = df.loc[:, strm].copy()
-            to_plot = to_plot.reset_index(cat_drop, drop=True)
-            to_plot = to_plot.loc[sel, neur_sel]
-            
-            # print(to_plot)
-
-            # if we are plotting the correlation, we are changing the sign
-            # of the correlation coef on the row so that they are positive for
-            # the first Broad neuron
-
-            if k == 'c':
-                for i in range(len(to_plot.index)):
-                    if (to_plot.iloc[i, 0] < 0 and
-                        'SVD' in to_plot.iloc[i].name):
-                        to_plot.iloc[i] = - to_plot.iloc[i]
-
-            f, ax, clb = FP.imshow_df(to_plot, vlim=lim, cmap=cm, **kwargs)
-            f.tight_layout()
-            file_name = (self.path_plots / f'{self.cell_type}_con_'
-                         f'{self.con_pps_k}{strm}_vs_act{self.dataset}_'
-                         f'{self.act_pps_k1}_{self.act_pps_k2}_'
-                         f'{concs}_{pps}_{meth_names}{meth_min}-{meth_max}'
-                         f'_{k}{ext}')
-            FP.save_plot(f, file_name + '.png', self.save_plots,
-                         dpi=400, transparent=True)
+    # not used in paper
+    # def plot_corr_signif(self, sel, strm, neur_sel, cat_drop, list_df, ext='',
+    #                      **kwargs):
+    #     """
+    #     cat_drop are the categories to drop in the index before plotting
+    #     ext is the extension that we put at the end of the filename
+    #
+    #     what is in kwargs is transmitted to im
+    #     """
+    #     # the following is just some text extraction to be put in the file
+    #     # name
+    #     concs = [item[0] for item in sel]
+    #     concs = set(concs)
+    #     pps = [item[1] for item in sel]
+    #     pps = set(pps)
+    #     meths = [item[2] for item in sel]
+    #     meth_names = [''.join([i for i in meth if not i.isdigit()])
+    #                   for meth in meths]
+    #     meth_names = set(meth_names)
+    #     meth_numbers = [''.join([i for i in meth if i.isdigit()])
+    #                    for meth in meths]
+    #     meth_numbers = list(filter(None, meth_numbers))
+    #     meth_min = min(meth_numbers)
+    #     meth_max = max(meth_numbers)
+    #     # meth can be quite long to be included in the file name, making it
+    #     # shorter
+    #
+    #
+    #     sel = [(s[0], s[1], s[2], i+1) for s in sel for i in range(s[3])]
+    #
+    #     for (df, cm, lim, k) in list_df:
+    #         to_plot = df.loc[:, strm].copy()
+    #         to_plot = to_plot.reset_index(cat_drop, drop=True)
+    #         to_plot = to_plot.loc[sel, neur_sel]
+    #
+    #         # print(to_plot)
+    #
+    #         # if we are plotting the correlation, we are changing the sign
+    #         # of the correlation coef on the row so that they are positive for
+    #         # the first Broad neuron
+    #
+    #         if k == 'c':
+    #             for i in range(len(to_plot.index)):
+    #                 if (to_plot.iloc[i, 0] < 0 and
+    #                     'SVD' in to_plot.iloc[i].name):
+    #                     to_plot.iloc[i] = - to_plot.iloc[i]
+    #
+    #         f, ax, clb = FP.imshow_df(to_plot, vlim=lim, cmap=cm, **kwargs)
+    #         f.tight_layout()
+    #         file_name = (self.path_plots / f'{self.cell_type}_con_'
+    #                      f'{self.con_pps_k}{strm}_vs_act{self.dataset}_'
+    #                      f'{self.act_pps_k1}_{self.act_pps_k2}_'
+    #                      f'{concs}_{pps}_{meth_names}{meth_min}-{meth_max}'
+    #                      f'_{k}{ext}')
+    #         FP.save_plot(f, file_name + '.png', self.save_plots,
+    #                      dpi=400, transparent=True)
 
     # #########################################################################
     # #################  PLOTTING 1 CON AND 1 ACT VECTOR  #####################
