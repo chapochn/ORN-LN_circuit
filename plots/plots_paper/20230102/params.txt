@@ -1,0 +1,7 @@
+
+dataset: 3
+act_pps1: raw
+act_pps2: mean
+ACT_PPS: o
+CELL_TYPE: ORN
+strm: 0
