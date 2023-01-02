@@ -338,7 +338,7 @@ for LN_i in range(1, K+1):
 
 
     ax.set(xlabel='corr. coef. $r$',
-           ylabel='relative cumulative \linebreak frequency ($RCF$)',
+           ylabel='relative cumulative \n frequency ($RCF$)',
     # ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative \linebreak frequency',
            xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
 

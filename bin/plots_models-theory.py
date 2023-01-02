@@ -418,7 +418,7 @@ def plot_sv1(datas, order=None):
         order = np.arange(len(handles))
     leg = ax.legend([handles[idx] for idx in order],
                     [labels[idx] for idx in order],
-                    bbox_to_anchor=(1.5, 1.15), loc='upper right',
+                    bbox_to_anchor=(1.5, 1.10), loc='upper right',
                     handlelength=2)
     return f
 

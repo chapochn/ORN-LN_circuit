@@ -687,7 +687,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, color='dimgray', size=2)
+sns.swarmplot(ax=ax, data=dss_df, palette=['gray'], size=2)
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
@@ -771,7 +771,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, color='dimgray', size=1.5)
+sns.swarmplot(ax=ax, data=dss_df, palette=['gray'], size=1.5)
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,

@@ -644,20 +644,20 @@ for data in datas:
 print('done')
 #%%
 
-# this is to arrange the ordering so that it it visually related to the
+# this is to arrange the ordering so that it is visually related to the
 # actual LNs
 
-LNs_M = ['Broad T M M', 'Broad D M M', 'Keystone M M', 'Picky 0 [dend] M']
-con_sel = con_strms3_cn[0][LNs_M].loc[par_act.ORN_order]
-
-K = 8
-LN_order[2] = [1, 2]
-LN_order[3] = [2, 1, 3]
-LN_order[4] = [4, 2, 1, 3]
-LN_order[8] = [8, 2, 4, 3, 1, 5, 7, 6]
-
-W_sel = FG.get_ctr_norm(W_nnc[K][LN_order[K]])
-W_sel.values.T @ con_sel
+# LNs_M = ['Broad T M M', 'Broad D M M', 'Keystone M M', 'Picky 0 [dend] M']
+# con_sel = con_strms3_cn[0][LNs_M].loc[par_act.ORN_order]
+#
+# K = 8
+# LN_order[2] = [1, 2]
+# LN_order[3] = [2, 1, 3]
+# LN_order[4] = [4, 2, 1, 3]
+# LN_order[8] = [8, 2, 4, 3, 1, 5, 7, 6]
+#
+# W_sel = FG.get_ctr_norm(W_nnc[K][LN_order[K]])
+# W_sel.values.T @ con_sel
 #%%
 
 
@@ -667,9 +667,9 @@ if SCAL_W == 2:
              ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 8,
               f'NNC-4, LN activity {Ztex}', [0, 8]],
              ['NNC8LN_noM', Z_nnc_noM[8].copy().loc[LN_order[8]], False, False, True, 8,
-              f'NNC-8, LN activity {Ztex}', [0, 4, 8]],
+              f"NNC'-8, LN activity {Ztex}", [0, 4, 8]],
              ['NNC4LN_noM', Z_nnc_noM[4].copy().loc[LN_order[4]], False, False, True, 8,
-              f'NNC-4, LN activity {Ztex}', [0, 8]]
+              f"NNC'-4, LN activity {Ztex}", [0, 8]]
              ]
 elif SCAL_W ==10:
     datas = [['NNC8LN', Z_nnc[8].copy().loc[LN_order[8]], False, False, True, 16,
@@ -1135,7 +1135,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, color='dimgray', size=2)
+sns.swarmplot(ax=ax, data=dss_df, palette=['gray'], size=2)
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
@@ -1245,7 +1245,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, color='dimgray', size=1.5)
+sns.swarmplot(ax=ax, data=dss_df, size=1.5, palette=['gray'])
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
