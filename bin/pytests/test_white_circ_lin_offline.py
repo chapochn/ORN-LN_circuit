@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 20 22:39:20 2019
+Created in 2022
 
 @author: nchapochnikov
 
@@ -193,8 +193,8 @@ def test_offline_simul(create_datasets, get_res_th, get_res_off, ds):
     assert Y_overlap < 5e-3
     assert diff_Y < 0.07
 
-# it could make sense to actually have the results per dataset instead of
-# of the global constrains
+# it could make sense to actually have the results per dataset instead
+# of the global constraints
 
 # # %%
 # for name, k in list_ds:

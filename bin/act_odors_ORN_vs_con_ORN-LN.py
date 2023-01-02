@@ -212,17 +212,22 @@ N = 50000
     # to put there the matrix with less columns, as it will thus take
     # less time
     # later i invert the axes so that the odors are in the last dimension
-_, cor_col1 = FG.get_signif_corr_v1(act_cn, con_sel_cn, N=N, dist=True)
+cor0a, cor_col1, pv_o, _, _ = FG.get_signif_v1(act_cn, con_sel_cn, N=N,
+                                               dist=True, measure='corr')
 cor_col1 = np.swapaxes(cor_col1, 1, 2)
 
+pv_o = pv_o.T
+assert cor0a.equals(cor0.T)
 
 
 if np.isnan(cor_col1).any():
     print("WE HAVE SOME NANs IN cor_col1 which shouldn't be there")
-
+print('done')
 #%%
-# Saving the mean and std of the correlation coefficients, so that it
-# can be used to define a gaussian.
+# Saving the pvals, as we use them in figures
+file = (f'results/{cell_type}_con{STRM}_vs_'
+              f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+pv_o.to_hdf(FO.OLF_PATH / file, 'pvals')
 
 # %%
 # #############################################################################
@@ -241,7 +246,7 @@ pdfs_shfl_std = pd.DataFrame(pdfs_shfl.std(axis=0), index=CELL_LIST)
 
 cdf_shfl_m = pd.DataFrame(cdfs_shfl.mean(axis=0), index=CELL_LIST)
 cdf_shfl_std = pd.DataFrame(cdfs_shfl.std(axis=0), index=CELL_LIST)
-
+print('done')
 # %%
 # #############################################################################
 # ########################  EXPORTING CDF MEAN, AND STD  ######################
@@ -259,26 +264,21 @@ cdf_shfl_std.to_hdf(FO.OLF_PATH / f'{file_begin}cdf-shfl-std.hdf',
 
 # %%
 # ###################  MAXIMUM DEVIATION IN CDF AND PVAL  #####################
+# this is a kind of numerical implementation of the Kolmogorov-smirnov test
 
 cdf_shfl_diff_min = FG.get_min_diff(cdfs_shfl, cdf_shfl_m.values)
 # the max is over the odors, i.e., the last dimension
 
-# cdf_diff_max_true[strm] = np.max(np.abs(cdf_true[strm] - cdf_mean),
-# axis=1)
 # first dim are the cells, second dim are the odors
-# the 2 is because we already have a similar name, where the mean
-# comes from the category averages and not the cell per cell shuffled average
 cdf_diff_min2 = FG.get_min_diff(cdf_true, cdf_shfl_m)
 
-# cdf_diff_max_true2 contains the true max deviation for each cell
+# cdf_diff_min2 contains the true min deviation for each cell
 
-# cdf_diff_max_shfl is N_iter x n_cells
-# cdf_diff_max_true2 is n_cells
+# cdf_shfl_diff_min is N_iter x n_cells
 pv_min = np.mean(cdf_shfl_diff_min >= cdf_diff_min2.values, axis=0)
 
-# cdf_diff_max_true2 = pd.Series(cdf_diff_max_true2, index=cor0[strm].columns)
 cdf_diff_min_pv2 = pd.Series(pv_min, index=CELL_LIST)
-cdf_diff_min_pv2 = cdf_diff_min_pv2.replace(0, 1./N).T
+cdf_diff_min_pv2 = cdf_diff_min_pv2.replace(0, 1./N_iter).T
 
 
 # %%
@@ -291,3 +291,19 @@ cdf_diff_min2.to_hdf(FO.OLF_PATH / f'{file_begin}.hdf', 'cdf_diff_min')
 cdf_diff_min_pv2.to_hdf(FO.OLF_PATH / f'{file_begin}_pv.hdf', 'cdf_diff_min_pv')
 # 
 # =============================================================================
+
+#%%
+# importlib.reload(FG)
+# # doing the same as above, but with Anderson-Darling test
+# # basically same results as with the KS test, not used for paper
+#
+# cdf_shfl_dists = FG.get_andersondarling_dist(cdfs_shfl, cdf_shfl_m.values)
+# cdf_dists = FG.get_andersondarling_dist(cdf_true.values, cdf_shfl_m.values)
+#
+# pv_min = np.mean(cdf_shfl_dists >= cdf_dists, axis=0)
+#
+# # cdf_diff_max_true2 = pd.Series(cdf_diff_max_true2, index=cor0[strm].columns)
+# cdf_diff_min_pv2 = pd.Series(pv_min, index=CELL_LIST)
+# cdf_diff_min_pv2 = cdf_diff_min_pv2.replace(0, 1./N_iter).T
+# print('done')
+

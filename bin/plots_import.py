@@ -10,21 +10,17 @@ Created on Tue Mar 26 11:56:59 2019
 # ################################# IMPORTS ###################################
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib  # for colors and gradients
-import matplotlib.colors  # for colors and gradients
+  # for colors and gradients
+# import matplotlib.colors  # for colors and gradients
 import pandas as pd
 import pathlib
 import importlib
 import seaborn as sns
-import fitz # to rotate a pdf page, packaged needed to install: pymupdf
-# -> pip install pymupdf
-# could be replaced by PyPDF2
 from typing import Union
 
 import itertools
-
-from functools import partial
 
 import statsmodels.stats.multitest as smsm  # for the multihypothesis testing
 
@@ -51,36 +47,40 @@ OLF_PATH = FO.OLF_PATH
 
 DATASET = 3
 RESULTS_PATH = OLF_PATH / 'results'
-# RESULTS_PATH = OLF_PATH / 'results2'
 
 SAVE_PLOTS = True
 PLOT_PLOTS = False
 
 PATH_PLOTS = ''
-if SAVE_PLOTS:
-    PATH_PLOTS = FG.create_path(OLF_PATH / 'plots/plots_paper/')
-    print('path plots:', PATH_PLOTS)
-    PP_CONN = PATH_PLOTS / 'conn'
-    PP_CONN.mkdir(exist_ok=True)
-    PP_THEORY = PATH_PLOTS / 'theory'
-    PP_THEORY.mkdir(exist_ok=True)
-    PP_ACT = PATH_PLOTS / 'activity'
-    PP_ACT.mkdir(exist_ok=True)
-    PP_COMP_CON = PATH_PLOTS / 'act-comps_vs_con'
-    PP_COMP_CON.mkdir(exist_ok=True)
-    PP_ODOR_CON = PATH_PLOTS / 'act-odors_vs_con'
-    PP_ODOR_CON.mkdir(exist_ok=True)
-    PP_CON_PRED = PATH_PLOTS / 'conn_predictions'
-    PP_CON_PRED.mkdir(exist_ok=True)
-    PP_ROT = PATH_PLOTS / 'rotationX-Y'
-    PP_ROT.mkdir(exist_ok=True)
-    # defined lower
-    # PP_WHITE = PATH_PLOTS / 'whitening'
-    # PP_WHITE.mkdir()
-    PP_Z = PATH_PLOTS / 'clusteringZ'
-    PP_Z.mkdir(exist_ok=True)
+PATH_PLOTS = OLF_PATH/ 'plots/plots_paper/20230102/'
 
-    PP_WrhoK = PATH_PLOTS / 'W_vs_rho_K'
+if SAVE_PLOTS and PATH_PLOTS == '':
+    PATH_PLOTS = FG.create_path(OLF_PATH / 'plots/plots_paper/')
+elif SAVE_PLOTS:
+    PATH_PLOTS.mkdir(exist_ok=True)
+
+print('path plots:', PATH_PLOTS)
+
+if SAVE_PLOTS:
+    PP_CONN = PATH_PLOTS / 'connectivity'
+    PP_CONN.mkdir(exist_ok=True)
+    PP_THEORY = PATH_PLOTS / 'simulations_theory'
+    PP_THEORY.mkdir(exist_ok=True)
+    PP_THEORY_NOM = PATH_PLOTS / 'simulations_theory_noM'
+    PP_THEORY_NOM.mkdir(exist_ok=True)
+    PP_ACT = PATH_PLOTS / 'ORN-activity'
+    PP_ACT.mkdir(exist_ok=True)
+    PP_COMP_CON = PATH_PLOTS / 'ORN-activity-comps_vs_connectivity'
+    PP_COMP_CON.mkdir(exist_ok=True)
+    PP_ODOR_CON = PATH_PLOTS / 'ORN-activity_vs_connectivity'
+    PP_ODOR_CON.mkdir(exist_ok=True)
+    PP_CON_PRED = PATH_PLOTS / 'connectivity_predictions'
+    PP_CON_PRED.mkdir(exist_ok=True)
+    PP_ROT = PATH_PLOTS / 'simulations_ORN-act_rotationX-Y'
+    PP_ROT.mkdir(exist_ok=True)
+    PP_Z = PATH_PLOTS / 'simulations_ORN-act_Z'
+    PP_Z.mkdir(exist_ok=True)
+    PP_WrhoK = PATH_PLOTS / 'simulations_W-vs-rho-K-data'
     PP_WrhoK.mkdir(exist_ok=True)
 
 
@@ -95,9 +95,13 @@ act_pps2 = 'mean'  # what is used in the whole paper
 # this is the preprocessing about if the data is centered, normalized, etc...
 ACT_PPS = 'o'  # o is original
 
-STRM = 0  # this is the first stream, from ORN to LNs
+STRM = 0  # this is the feedforward  stream, from ORN to LNs
+# 0: ff
+# 1: feedback
+# 2: feedback, divided by the indegree
+# 3: (ff + fb)/2
 
-SIDES = ['L', 'R']
+SIDES = ['L', 'R']  # left, right
 
 # this is useful for having all the LNs so that later i can order them
 LNs = ['Broad T1',
@@ -271,6 +275,7 @@ LNs_sel_LR_short = ['BT 1 L',
                     # 'P0a R'
                     ]
 
+# LN categories
 LN_cats = ['Broad T',
            'Broad D',
            'Keystone',
@@ -296,7 +301,7 @@ LN_cats2 = ['Broad T',
             'Keystone',
             'Picky 0',
             'Picky'
-           ]
+            ]
 
 LNs_side = {S: [f'{name} {S}' for name in LNs] for S in SIDES}
 LNs_sel_side = {S: [f'{name} {S}' for name in LNs_sel] for S in SIDES}
@@ -317,28 +322,54 @@ pdf_opts = {'dpi': 800}
 # bbox_inches='tight', pad_inches = 0
 # it seems not, then it doesn't respect the size you've put
 
-CB_W = 0.1
-CB_DX = 0.11
-SQ = 0.07
+CB_W = 0.1  # related to the colorbar width
+CB_DX = 0.11  # related to the distance to colorbar
+SQ = 0.07  # related to the square size in the imshow plots
 
 # this updates the values for all the plots
 # https://matplotlib.org/stable/tutorials/introductory/customizing.html
-matplotlib.rcParams['font.size'] = ft_s_tk
-matplotlib.rcParams['axes.labelsize'] = ft_s_lb
-matplotlib.rcParams['axes.titlesize'] = ft_s_tl
-matplotlib.rcParams['figure.titlesize'] = ft_s_tl
-matplotlib.rcParams['xtick.labelsize'] = ft_s_tk
-matplotlib.rcParams['ytick.labelsize'] = ft_s_tk
-# matplotlib.rcParams['legend.fontsize'] = 'medium' #ft_s_tk
-# matplotlib.rcParams['legend.title_fontsize'] = None#ft_s_lb
-matplotlib.rcParams['savefig.transparent'] = True
+mpl.rcParams['font.size'] = ft_s_tk
+mpl.rcParams['axes.labelsize'] = ft_s_lb
+mpl.rcParams['axes.titlesize'] = ft_s_tl
+mpl.rcParams['figure.titlesize'] = ft_s_tl
+mpl.rcParams['xtick.labelsize'] = ft_s_tk
+mpl.rcParams['ytick.labelsize'] = ft_s_tk
+
+mpl.rcParams['legend.fontsize'] = ft_s_tk
+# mpl.rcParams['legend.title_fontsize'] = None#ft_s_lb
+mpl.rcParams['legend.frameon'] = False
+mpl.rcParams['legend.borderpad'] = 0
+mpl.rcParams['legend.borderaxespad'] = 0
+mpl.rcParams['legend.handlelength'] = 1
+mpl.rcParams['legend.handletextpad'] = 0.4
+mpl.rcParams['legend.columnspacing'] = 1
+mpl.rcParams['legend.fancybox'] = False
+
+mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['xtick.major.pad'] = 1
+mpl.rcParams['xtick.minor.pad'] = 1
+mpl.rcParams['ytick.major.pad'] = 1
+mpl.rcParams['ytick.minor.pad'] = 1
+
+mpl.rcParams['xtick.major.size'] = 2
+mpl.rcParams['xtick.minor.size'] = 1
+mpl.rcParams['ytick.major.size'] = 2
+mpl.rcParams['ytick.minor.size'] = 1
+
+mpl.rcParams['savefig.transparent'] = 1
+
+
+
+
 
 cb_title_font = None  # if you don't want any changes
 cb_title_font = {'size':ft_s_lb}
+CB_TITLE_PAD = 1
 
-def add_colorbar_crt(cp, ax, cbtitle='', ticks=[], pad=1, extend='neither',
-                 title_font=cb_title_font):
-    return FP.add_colorbar(cp, ax, cbtitle=cbtitle, ticks=ticks, pad=pad,
+def add_colorbar_crt(cp, ax, cbtitle='', ticks=None, pad=CB_TITLE_PAD,
+                     extend='neither', title_font=cb_title_font):
+    return FP.add_colorbar(cp, ax, cbtitle=cbtitle, ticks=ticks, pad_title=pad,
                            extend=extend, title_font=title_font)
 
 # these options make the plotting much slower unfortunately
@@ -353,7 +384,7 @@ plt.rcParams.update({
 # https://stackoverflow.com/questions/2537868/sans-serif-math-with-latex-in-matplotlib/20709149#20709149
 # plt.rcParams['text.latex.preamble'] = r'\usepackage{siunitx} \sisetup{detect-all} \usepackage{helvet} \usepackage{sansmath} \sansmath'
 # plt.rcParams['text.latex.preamble'] = r'\usepackage{helvet} \usepackage{sansmath} \sansmath'
-plt.rcParams['text.latex.preamble'] = r'\usepackage{helvet} \usepackage[helvet]{sfmath}'
+plt.rcParams['text.latex.preamble'] = r'\usepackage{helvet} \usepackage[helvet]{sfmath} \usepackage{setspace} \singlespacing \centering'
 # plt.rcParams['text.latex.preamble'] = r'\renewcommand{\familydefault}{\sfdefault} \usepackage{helvet} \usepackage[helvet]{sfmath}'# \everymath={\sf}'
 # plt.rcParams['text.latex.preamble'] = r'\usepackage{siunitx} \sisetup{detect-all} \usepackage{tgheros} \usepackage{sansmath} \sansmath'
 # plt.rcParams['text.latex.preamble'] = r'\usepackage{siunitx} \sisetup{detect-all} \usepackage{newtxtext,newtxmath,sansmath} \usepackage{sansmath} \sansmath'
@@ -361,6 +392,7 @@ plt.rcParams['text.latex.preamble'] = r'\usepackage{helvet} \usepackage[helvet]{
 # corr_cmap = plt.cm.RdBu_r
 corr_cmap = plt.cm.bwr
 
+# writing the parameters that are used in the params.txt file
 with open(f'{PATH_PLOTS}/params.txt', 'w') as f:
     f.write(f'\ndataset: {DATASET}')
     f.write(f'\nact_pps1: {act_pps1}')
@@ -372,11 +404,14 @@ with open(f'{PATH_PLOTS}/params.txt', 'w') as f:
 #    f.write(f'\nCONC: {CONC}')
 #    f.write(f'\nact_sel_ks: {act_sel_ks}')
 
+# some latex shortcuts used for plotting
 Xdatatex = r'$\{\mathbf{x}^{(t)}\}_\mathrm{data}$'
 Xtstex = r'$\{\mathbf{x}^{(t)}\}$'
 Xttex = r'$\mathbf{x}^{(t)}$'
 Yttex = r'$\mathbf{y}^{(t)}$'
 Wdatatex = r'$\mathbf{W}_\mathrm{data}$'
+wLNtex = r'$\mathbf{w}_{\mathrm{LN}}$'
+wLNtypetex = r'$\mathbf{w}_\mathrm{LNtype}$'
 # Ytex = r'$\mathbf{Y}$'
 # Ztex = r'$\mathbf{Z}$'
 Ytex = r'$\{\mathbf{y}^{(t)}\}$'
@@ -387,14 +422,20 @@ Ztex = r'$\{\mathbf{z}^{(t)}\}$'
 # ##############################  IMPORTS  ####################################
 # #############################################################################
 # importlib.reload(FO)
+# this reads f'results/cons/cons_full_{k}.hdf'
+# which is created in con_preprocess.py
 con = FO.get_con_data()
 ORNs = par_con.ORN
 ORNs_short = [name[4:] for name in ORNs]
 ORNs_sorted = par_act.ORN_order
 ORNs_sorted_short = [name[4:] for name in ORNs_sorted]
 
+# this import the activity data in the file:
+# PATH / par_act3.file_hdf
+# which is 'results/act3.hdf'
+# which is generated by act_preprocess.py
 act = FO.get_ORN_act_data(DATASET).T
-act_m = act.mean(axis=1, level=('odor', 'conc'))
+act_m = act.groupby(axis=1, level=('odor', 'conc')).mean()
 act_m = act_m.loc[par_act.ORN, :]
 act_mr = FG.rectify(act_m)
 
@@ -426,7 +467,5 @@ for s in SIDES:
 con_strms3 = pd.DataFrame(pd.read_hdf(RESULTS_PATH / 'cons/cons_ORN_all.hdf'))
 con_strms3_cn = FG.get_ctr_norm(con_strms3)
 
-# this are the parameters in the first plot, which fixes the SQ for the rest
-# of the file, maybe would make sense to just fix the SQ
 
 print('DONE IMPORTING')

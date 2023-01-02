@@ -4,12 +4,24 @@
 Created on Tue Mar 26 11:56:59 2019
 
 @author: Nikolai M Chapochnikov
+
+This plots all the connectivity related plots in the paper
+
+External files that are read and used for this plotting:
+in plots_paper_import:
+f'results/cons/cons_full_{k}.hdf'
+'results/act3.hdf' FROM act_preprocess.py
+'results/cons/cons_ORN_all.hdf' FROM con_preprocess.py
+
+'W_NNC-8.hdf'  FROM olf_circ_offline_sims_ORN-data.py
+
+for sqrt(WW) vs M: significance is calculated in the file con_analysis_MvsW.py
 """
 
 # %%
 # ################################# IMPORTS ###################################
 
-from plots_paper_import import *
+from plots_import import *
 # %%
 # ################################  RELOADS  ##################################
 importlib.reload(FO)
@@ -25,7 +37,7 @@ importlib.reload(par_act)
 
 # plotting ff and fb plots together, and also putting some more details
 # onto the plots, as the categories of the neurons
-importlib.reload(FG)
+# importlib.reload(FG)
 
 pads = [0.6, 0.55, 0.1, 0.2]
 d_h = 1.4
@@ -79,7 +91,7 @@ for s in ['L', 'R']:
     add_colorbar_crt(cp, ax_cb, '\# of synapses', [0, 10, 20])
 
     # rectangle
-    rect = matplotlib.patches.Rectangle((53 - 0.6, -41.8), 9.2, 62.5, lw=1,
+    rect = mpl.patches.Rectangle((53 - 0.6, -41.8), 9.2, 62.5, lw=1,
                                         clip_on=False, ls='--',
                                         edgecolor='r', facecolor='none')
     ax2.add_patch(rect)
@@ -93,7 +105,7 @@ for s in ['L', 'R']:
     # file1 = f'{PP_CONN}/con_ORN_{s}_all2.'
     # FP.save_plot(f, file1 + 'pdf', SAVE_PLOTS, **pdf_opts1)
 
-
+print('done')
 
 # %%
 # #############################################################################
@@ -119,11 +131,10 @@ ax1 = f.add_axes(axs)
 
 splx = [6, 6+4, 6+4+4]
 
-cp = FP.imshow_df2(df, ax1, vlim=[0, 55], title='', splits_x=splx, lw=0.5)
-ax1.set(ylabel='ORNs', xlabel='LNs', title=r'ORNs$\rightarrow$LNs'+
-                                           f'\n syn. counts '
-                                        +r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
-ax1.xaxis.set_label_coords(0.5, -0.45)
+cp = FP.imshow_df2(df, ax1, vlim=[0, 55], splits_x=splx, lw=0.5,
+                   title=r'ORNs$\rightarrow$LNs' + f'\n syn. counts '
+                         + r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
+ax1.set(ylabel='ORNs', xlabel='LNs')
 
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, '\# of syn.', [0, 20, 40])
@@ -146,11 +157,10 @@ ax1 = f.add_axes(axs)
 
 splx = [6, 6+4, 6+4+4]
 
-cp = FP.imshow_df2(df, ax1, vlim=[0, 21], title='', splits_x=splx, lw=0.5)
-ax1.set(ylabel='ORNs', xlabel='LNs', title=r'LNs$\rightarrow$ORNs'
-                                           +f'\n syn. counts '
-                                        +r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
-ax1.xaxis.set_label_coords(0.5, -0.45)
+cp = FP.imshow_df2(df, ax1, vlim=[0, 21], splits_x=splx, lw=0.5,
+                   title=r'LNs$\rightarrow$ORNs'+ f'\n syn. counts '
+                         + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
+ax1.set(ylabel='ORNs', xlabel='LNs')
 
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, '\# of syn.', [0, 10, 20])
@@ -158,7 +168,7 @@ add_colorbar_crt(cp, ax_cb, '\# of syn.', [0, 10, 20])
 file = f'{PP_CONN}/con_ORN_fb_LN_sel.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
-
+print('done')
 # %%
 # #############################################################################
 # ###################  SHOWING THE VARIANCE FOR EACH CON CAT  #################
@@ -217,82 +227,49 @@ for LN, LN_list in LNs_cat.items():
     # version of the std
     data_m = data1.mean(axis=1)
 
-    print(np.max(np.abs(data.values-data_m.values)))
+    assert np.array_equal(data.values,data_m.values)
 
     if LN == 'BT':
-        pads = [0.2, 0.35, 0.55, 0.12]
+        pads = [0.55, 0.12, 0.35, 0.2]
     else:
-        pads = [0.2, 0.35, 0.12, 0.12]
+        pads = [0.12, 0.12, 0.35, 0.2]
 
-    fs, ax1 = FP.calc_fs_ax(pads, 21*SQ, 10*SQ)
+    fs, ax1 = FP.calc_fs_ax(pads, 10*SQ, 21*SQ)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(ax1)
 
-    mean = data_m.mean()
-    std = SS.poisson.std(mean)
-    n_total = data_m.sum()
-    std2 = SS.binom.std(n_total, p=1/21)
-    print(std, std2)
+    # mean = data_m.mean()
+    # std = SS.poisson.std(mean)
+    # n_total = data_m.sum()
+    # std2 = SS.binom.std(n_total, p=1/21)
+    # print(std, std2)
 
-    # ax.fill_between([-0.5, len(data)-0.5], [mean - std]*2, [mean + std]*2,
-    #                  facecolor='red', alpha=0.3, zorder=10)
-    # ax.plot([-0.5, len(data)-0.5], [mean]*2, c='red', lw=0.5, zorder=15)
-
-    ax.errorbar(np.arange(len(data)), data, c=col1, yerr=data_std,
+    ax.errorbar(data, np.arange(len(data)), c=col1, xerr=data_std,
                 elinewidth=0.5, ecolor=col_e, capsize=1, lw=1, zorder=20)
-    ax.plot(data1, lw=0.5)
-    ax.set_ylim(-2, LNs_ymax[LN])
-    ax.set_xlim(-0.5, 20.5)
+    for i in range(data1.shape[1]):
+        ax.plot(data1.iloc[:, i], range(data1.shape[0]), lw=0.5)
+    ax.set_xlim(-2, LNs_ymax[LN])
+    ax.set_ylim(-0.5, 20.5)
+    ax.set_title(LNs_name[LN])
+    ax.invert_yaxis()
 
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
-    ax.spines['right'].set_edgecolor(col1)
-    # ax.set_title('connection vector from ORNs to ' + lbl)
-
-    plt.sca(ax)
-    y_max = np.ceil(data.max()/10) * 10
-    # ytcks = [0, int(y_max/2), int(y_max)]
-    ytcks = LNs_yticks[LN]
-    plt.yticks(ytcks, ytcks, va='center')
-    ax.tick_params(axis='x', which='both', bottom=False, pad=-1,
-                   labelrotation=90)
-    ax.tick_params(axis='y', which='both', pad=1, rotation=90, colors=col1)
-
-    f.text(-0.1, 0.5, LNs_name[LN], rotation=90, transform=ax.transAxes,
-           fontsize=ft_s_tl*1, va='center', ha='left')
-
+    ax.set_xticks(LNs_yticks[LN])
+    ax.set_yticks(np.arange(len(cell_list)), cell_list)
     if LN == 'BT':
-        ax.set_xlabel('ORNs', rotation=180)
-        plt.sca(ax)
-        plt.xticks(np.arange(len(cell_list)), cell_list, rotation='vertical')
-        # ax.set_ylabel(r'\# of syn. ORNs$\rightarrow$LN    ', color=col1)
+        ax.tick_params(axis='y', left=False, direction='in')
+        ax.set_ylabel('ORNs')
     else:
-        plt.sca(ax)
-        plt.xticks(np.arange(len(cell_list)), ['']*21)
+        ax.tick_params(axis='y', left=False, labelleft=False)
 
 
-    # adjusting the borders
-    ax.xaxis.grid(zorder=0)
-    ax.spines['left'].set_visible(False)
-    ax.spines['top'].set_visible(False)
+    ax.yaxis.grid(zorder=0)
 
-    file = f'{PP_CONN}/con_{LN}_rot'
+
+    file = f'{PP_CONN}/con_{LN}'
     FP.save_plot(f, file+'.png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-    fimg = plt.imread(file + '.png')
-    fimg = np.rot90(fimg, k=3)
-    fimg = fimg.copy(order='C')  # not sure why I need this, but
-    # otherwise imsave complains...
-    plt.imsave(file + '2.png', fimg, dpi=400)
-    # plt.imsave(file + '2.pdf', fimg, dpi=400)
 
-    doc = fitz.open(file + '.pdf')
-    page = doc[0]
-    page.set_rotation(90)
-    doc.save(file + '2.pdf')
-    doc.close()
-
-
+print('done')
 # %%
 # #############################################################################
 # #########################  CONNECTION CORRELATIONS  #########################
@@ -347,15 +324,13 @@ for strm in [0, 1]:
     f = plt.figure(figsize=fs)
     ax1 = f.add_axes(axs)
     cp = FP.imshow_df2(grammian, ax1, cmap=corr_cmap, vlim=1,
-                       splits_x=[6, 10, 14], splits_y=[6, 10, 14],
-                       show_lab_x=False)
-    ax1.set_xticks(np.arange(len(grammian.T)) + 0.5)
-    ax1.set_xticklabels(list(grammian.columns), rotation=70, ha='right')
-    ax1.tick_params('x', bottom=False, pad=-1)
-    # ax1.set(xlabel=xylabel, ylabel=xylabel, title=title)
-    ax1.set_title(title)
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
+                       splits_x=[6, 10, 14], splits_y=[6, 10, 14], ha='right',
+                       show_lab_x=True, title=title, x_offset=0.5, rot=70)
+    # ax1.set_xticks(np.arange(len(grammian.T)) + 0.5)  # the +0.5 is needed
+    # because of the rotation
+    # ax1.set_xticklabels(list(grammian.columns), rotation=70, )
+    ax1.set(xlabel=xlabel, ylabel=ylabel)
+
     # ax1.set_xlabel(xlabel, rotation=0, fontsize=ft_s_tk, labelpad=2,
     #                rotation_mode='default', ha='center', va='top')
     # ax1.set_ylabel(ylabel, rotation=0, fontsize=ft_s_tk, labelpad=3,
@@ -399,14 +374,16 @@ for strm in [0, 1]:
     ax1 = f.add_axes(axs)
 
     FP.imshow_df2(gram_cat, ax1, cmap=corr_cmap, vlim=1,
-                       splits_x=[1, 2, 3], splits_y=[1, 2, 3], rot=50)
-    ax1.set(xlabel='', ylabel='', title=r'mean corr. coef. $r$' + '\nwithin and '
-                                        'across\n LN types')
+                  splits_x=[1, 2, 3], splits_y=[1, 2, 3], rot=50,
+                  title = r'mean corr. coef. $r$' + '\nwithin and '
+                                                    'across\n LN types'
+                  )
+    ax1.set(xlabel='', ylabel='')
 
     file = (f'{PP_CONN}/{CELL_TYPE}_con{strm}_cn_grammian_cat')
     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
+print('done')
 # %%
 # plot correlation of feedforward vs feedforward so that we have that in the
 # paper and have it as argument for not showing the analysis for feedback.
@@ -429,18 +406,16 @@ pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
 _, fs, axs = FP.calc_fs_ax_df(grammian, pads, sq=SQ)
 f = plt.figure(figsize=fs)
 ax1 = f.add_axes(axs)
-cp = FP.imshow_df2(grammian, ax1, cmap=corr_cmap, vlim=1, show_lab_x=False,
-                   splits_x=[6, 10, 14], splits_y=[6, 10, 14])
-ax1.set_xticks(np.arange(len(grammian.T))+0.5)
-ax1.set_xticklabels(list(grammian.columns), rotation=70, ha='right')
-ax1.set_title(f'corr. between\n'+ r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$ and '
-               + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
+cp = FP.imshow_df2(grammian, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
+                   splits_x=[6, 10, 14], splits_y=[6, 10, 14],
+                   title=f'corr. between\n'+ r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$ and '
+                         + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$', rot=70, ha='right')
+
 ax1.set_xlabel(r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
 ax1.set_ylabel(r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
 # ax1.set_xlabel('to ORNs from', rotation=0, fontsize=ft_s_tk, labelpad=2)
 # ax1.set_ylabel('from\nORNs\nto', rotation=0, fontsize=ft_s_tk,
 #                labelpad=3, va='center', ha='right')
-ax1.tick_params('x', bottom=False, pad=-1)
 # ax1.xaxis.set_label_coords(0.5, -0.6)
 # ax1.yaxis.set_label_coords(-0.6, 0.5)
 # ax1.annotate('', xy=(-2, 20.3), xytext=(17, 20.3), xycoords='data',
@@ -455,59 +430,7 @@ add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
 file = f'{PP_CONN}/{CELL_TYPE}_con0vs1_cn_grammian'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-# %%
-# this is not used in the paper
-
-# left and right side separately
-# strm = 0
-# xlabel = 'from ORNs to'
-# ylabel = 'from\nORNs\nto'
-# # ylabel = {'L': r'ORNs $\rightarrow$ ...', 'R': ''}
-# pads = {'L': (0.51, 0.1, 0.45, 0.2),
-#         'R': (0.1, 0.45, 0.45, 0.2)}  # l, r, b, t
-# show_ylabel = {'L':  True, 'R': False}
-# title = {'L': 'left', 'R': 'right'}
-# for side in ['L', 'R']:
-#     # Correlation coefficient per category
-#     LNs_sel1 = LNs_sel_d_side[side]
-#
-#     con_ff_sel = con_strms3.loc[:, strm]
-#     con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
-#     con_ff_sel.columns = LNs_sel_short
-#     con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
-#     grammian = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
-#
-#     _, fs, axs = FP.calc_fs_ax_df(grammian, pads[side], sq=SQ)
-#     f = plt.figure(figsize=fs)
-#     ax1 = f.add_axes(axs)
-#     cp = FP.imshow_df2(grammian, ax1, cmap=corr_cmap, vlim=1,
-#                        show_lab_x=True, show_lab_y=show_ylabel[side])
-#     # splits_x=[3, 5, 7], splits_y=[3, 5, 7])
-#     ax1.set_title(f'W data, {title[side]}')
-#     ax1.set_xticks(np.arange(len(grammian.T)) + 0.5)
-#     ax1.set_xticklabels(list(grammian.columns), rotation=70, ha='right')
-#     if side == 'L':
-#         ax1.set_ylabel(ylabel, rotation=0, fontsize=ft_s_tk, labelpad=3,
-#                        va='center', ha='right')
-#     ax1.set_xlabel(xlabel, rotation=0, fontsize=ft_s_tk, labelpad=2,
-#                    rotation_mode='default', ha='center', va='top')
-#     ax1.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
-#                  arrowprops={'arrowstyle': '-', 'lw': 0.5},
-#                  annotation_clip=False)
-#     ax1.annotate('', xy=(-4.1, -1), xytext=(-4.1, 8), xycoords='data',
-#                  arrowprops={'arrowstyle': '-', 'lw': 0.5},
-#                  annotation_clip=False)
-#     # ax1.xaxis.set_label_coords(0.5, -1.2)
-#     # ax1.yaxis.set_label_coords(-1.2, 0.5)
-#
-#     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0],
-#                         axs[3]])
-#     add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
-#     file = (f'{PP_CONN}/{CELL_TYPE}_con{strm}{side}_cn_grammian')
-#     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-#     FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
+print('done')
 
 # %%
 # left and right side separately, but on same figure
@@ -546,11 +469,9 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-cp = FP.imshow_df2(df1, ax1, cmap=corr_cmap, vlim=1,
-                   show_lab_x=True, show_lab_y=True)
-ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
-ax1.set_xticks(np.arange(len(df1.T)) + 0.5)
-ax1.set_xticklabels(list(df1.columns), rotation=70, ha='right')
+cp = FP.imshow_df2(df1, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
+                   rot=70, ha='right')
+ax1.set_title('left side', pad=2)
 ax1.set_ylabel(ylabel)
 # ax1.set_ylabel(ylabel, rotation=0, fontsize=ft_s_tk, labelpad=3,
 #                va='center', ha='right')
@@ -560,11 +481,10 @@ ax1.set_ylabel(ylabel)
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
 #              annotation_clip=False)
 
-cp = FP.imshow_df2(df2, ax2, cmap=corr_cmap, vlim=1,
-                   show_lab_x=True, show_lab_y=False)
-ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
-ax2.set_xticks(np.arange(len(df2.T)) + 0.5)
-ax2.set_xticklabels(list(df2.columns), rotation=70, ha='right')
+cp = FP.imshow_df2(df2, ax2, cmap=corr_cmap, vlim=1, x_offset=0.5,
+                   show_lab_y=False, rot=70, ha='right')
+ax2.set_title('right side', pad=2)
+
 # ax2.set_xlabel(xlabel, rotation=0, fontsize=ft_s_tk, labelpad=2,
 #                rotation_mode='default', ha='center', va='top')
 # ax2.annotate('', xy=(-12, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
@@ -580,83 +500,8 @@ plt.suptitle(r'connectome, corr. among $\mathbf{w}_\mathrm{LN}$')
 file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-#%%
-# #############################################################################
-# #############################################################################
-# not used in paper
-# plot above with angle instead of correlation coefficient...:
-#
-# # left and right side separately, but on same figure
-# d_h = 0.15
-# strm = 0
-# # xlabel = 'from ORNs to'
-# xlabel = r'$\mathbf{w}_\mathrm{LN}$'
-# # ylabel = 'from\nORNs\nto'
-# ylabel = xlabel
-# pads = [0.40, 0.45, 0.37, 0.35]  # l, r, b, t
-# title = {'L': 'left', 'R': 'right'}
-# side = 'L'
-# # Correlation coefficient per category
-# LNs_sel1 = LNs_sel_d_side[side]
-#
-# con_ff_sel = con_strms3.loc[:, strm]
-# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
-# con_ff_sel.columns = LNs_sel_short
-# # con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
-# con_ff_sel_n = FG.get_norm(con_ff_sel)
-# # df1 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
-# df1 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
-# # this makes sure that there is no numerical problem with any
-# # number larger than 1.
-# df1[:] = np.minimum.reduce([df1.values, np.ones((len(df1), len(df1)))])
-# df1 = np.arccos(df1)
-# side = 'R'
-# # Correlation coefficient per category
-# LNs_sel1 = LNs_sel_d_side[side]
-#
-# con_ff_sel = con_strms3.loc[:, strm]
-# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
-# con_ff_sel.columns = LNs_sel_short
-# # con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
-# con_ff_sel_n = FG.get_norm(con_ff_sel)
-# # df2 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
-# df2 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
-# df2[:] = np.minimum.reduce([df2.values, np.ones((len(df2), len(df2)))])
-# df2 = np.arccos(df2)
-# d_x = 0.15  # delta height between the 2 imshows
-# fs, axs1, axs2, axs_cb = FP.calc_fs_ax_2plts_side(df1, df2, pads, d_h, SQ,
-#                                                   CB_DX, CB_W)
-#
-# f = plt.figure(figsize=fs)
-# ax1 = f.add_axes(axs1)
-# ax2 = f.add_axes(axs2)
-# ax_cb = f.add_axes(axs_cb)
-#
-# cp = FP.imshow_df2(df1, ax1, cmap=plt.cm.magma, vlim=[0,np.pi/2],
-#                    show_lab_x=True, show_lab_y=True)
-# ax1.set_title('left side', pad=2, fontsize=ft_s_lb)
-# ax1.set_xticks(np.arange(len(df1.T)) + 0.5)
-# ax1.set_xticklabels(list(df1.columns), rotation=70, ha='right')
-# ax1.set_ylabel(ylabel)
-#
-# cp = FP.imshow_df2(df2, ax2, cmap=plt.cm.magma, vlim=[0,np.pi/2],
-#                    show_lab_x=True, show_lab_y=False)
-# ax2.set_title('right side', pad=2, fontsize=ft_s_lb)
-# ax2.set_xticks(np.arange(len(df2.T)) + 0.5)
-# ax2.set_xticklabels(list(df2.columns), rotation=70, ha='right')
-#
-# f.text(0.5, 0., xlabel, rotation=0, fontsize=ft_s_lb, va='bottom',
-#        ha='center')
-#
-#
-# add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
-# plt.suptitle(r'corr. among $\mathbf{w}_\mathrm{LN}}$ on each side')
-# file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian_CS'
-# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-#
-# print(np.mean(FG.get_entries(df1, diag=False)))
-# print(np.mean(FG.get_entries(df2, diag=False)))
+
+print('done')
 
 # %%
 # #############################################################################
@@ -695,9 +540,7 @@ cp = FP.imshow_df2(df1, ax1, vlim=[0, 110], show_lab_x=False)
 ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df2(df2, ax2, vlim=[0, 110])
-ax2.set_xticks(np.arange(len(df2.T)) + 0.5)
-ax2.set_xticklabels(list(df2.columns), rotation=70, ha='right')
+cp = FP.imshow_df2(df2, ax2, vlim=[0, 110], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
 
 # y label
@@ -711,7 +554,7 @@ file = f'{PP_CONN}/con_M_a-d.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
-
+print('done')
 # %%
 # ###########################          WTW       ##############################
 # this is pretty much the same as the W plot above, just with Picky dend and
@@ -754,9 +597,7 @@ FP.imshow_df2(df1/1000, ax1, vlim=[0, 15], show_lab_x=False)
 ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df2(df2/1000, ax2, vlim=[0, 15])
-ax2.set_xticks(np.arange(len(df2.T)) + 0.5)
-ax2.set_xticklabels(list(df2.columns), rotation=70, ha='right')
+cp = FP.imshow_df2(df2/1000, ax2, vlim=[0, 15], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
 ax2.set_xlabel(xlabel)
 # ax2.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
@@ -776,16 +617,14 @@ clb.set_ticklabels([0, r'$10^4$'])
 clb.ax.set_title(r'(\# syn.)$^2$', pad=2, fontsize=ft_s_tk)
 # clb.ax.set_title('1e3', pad=2, fontsize=ft_s_tk)
 plt.suptitle(r'ORNs$\rightarrow$LN dot products' + '\n'
-             r'$\mathbf{W}^\mathrm{\top}\mathbf{W} = $'+
+                                                   r'$\mathbf{W}^\mathrm{\top}\mathbf{W} = $'+
              r'$\{\mathbf{w}_\mathrm{LNi}^\mathrm{\top}\mathbf{w}_\mathrm{LNj}\}$')
 
 file = f'{PP_CONN}/con_WtW_d.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
-
-
 #
-#
+print('done')
 #
 # %%
 # #########################        sqrt(WTW)       ############################
@@ -831,9 +670,7 @@ cp = FP.imshow_df2(df1, ax1, vlim=[0, 90], show_lab_x=False)
 ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df2(df2, ax2, vlim=[0, 90])
-ax2.set_xticks(np.arange(len(df2.T)) + 0.5)
-ax2.set_xticklabels(list(df2.columns), rotation=70, ha='right')
+cp = FP.imshow_df2(df2, ax2, vlim=[0, 90], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2) #  , fontsize=ft_s_lb)
 ax2.set_xlabel(xylabel)
 # ax2.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
@@ -854,76 +691,14 @@ file = f'{PP_CONN}/con_sqrtWtW_d.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
-
+print('done')
 # %%
 # #####################  SCATTER  PLOTS AND    ################################
 # #####################     SIGNIFICANCE       ################################
 
-# this is not used in the paper
-#
-# scatter plot between WTW and M^2
-#
-# importlib.reload(FP)
-#
-# power = 1
-#
-# s = 'L'
-# ML = con_S[s].loc[LNs_sel_a_side[s], LNs_sel_d_side[s]].values
-# ML2 = ML @ ML
-# WL = con_S[s].loc[ORNs_side[s], LNs_sel_d_side[s]]
-# WTW_L = WL.T @ WL
-# s = 'R'
-# MR = con_S[s].loc[LNs_sel_a_side[s], LNs_sel_d_side[s]].values
-# MR2 = MR @ MR
-# WR = con_S[s].loc[ORNs_side[s], LNs_sel_d_side[s]]
-# WTW_R = WR.T @ WR
-#
-# diag = False
-# W_entries = np.concatenate([FG.get_entries(WTW_L, diag=diag),
-#                             FG.get_entries(WTW_R, diag=diag)])
-#
-# M_entries = np.concatenate([FG.get_entries(ML2, diag=diag),
-#                             FG.get_entries(MR2, diag=diag)])
-# n_pts = int(len(M_entries)/2)
-#
-# cc_real = np.corrcoef(W_entries, M_entries)[0, 1]
-# print(cc_real)  # 0.75
-#
-# # the only thing that is important that it matches is the bottom in order
-# # to compare with the M and WTW plots
-# # b = 0.41
-# b = 0.35
-# pads = (0.4, 0.1, b, 0.15)
-# # then, what about the actual size of the graph?
-#
-# fs, ax1 = FP.calc_fs_ax(pads, 15*SQ, 15*SQ)
-# f = plt.figure(figsize=fs)
-# ax = f.add_axes(ax1)
-# ax.scatter(M_entries[:n_pts]/1000, W_entries[:n_pts]/1000, c='indigo', s=5,
-#            label='left', alpha=0.7, lw=0)
-# FP.plot_scatter(ax, M_entries[n_pts:]/1000, W_entries[n_pts:]/1000,
-#                 r'$\mathbf{M}^2$ entries ($10^3$)',
-#                 r'$\mathbf{W}^\top \mathbf{W}$'
-#                 r' entries ($10^3$)', pca_line_scale1=0.15,
-#                 pca_line_scale2=0.65, show_cc=False, s=5, c='teal',
-#                 label='right', alpha=0.7, lw=0)
-# ax.legend(frameon=False, borderpad=0, handletextpad=0, loc='upper left',
-#           bbox_to_anchor=(-0.07, 1.04))
-# ax.text(0.65, 0.11, r'$r$' + " = %0.2f" % cc_real, transform=ax.transAxes)
-# ax.text(0.65, 0.03, "pv = %0.0e" % 0.01, transform=ax.transAxes)
-# # popt, _ = curve_fit()
-# ax.set(ylim=(0, None), xlim=(-.5, None))
-#
-# file = f'{PP_CONN}/con_WtW_M2_scatter.'
-# FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
-# FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
-
-# significance is calculated in the file con_analysis_MvsW2.py
-
-# %%
 # scatter plot between sqrt(WTW) and M
 
-importlib.reload(FP)
+# importlib.reload(FP)
 
 power = 1
 
@@ -965,17 +740,16 @@ FP.plot_scatter(ax, M_entries[n_pts:], W_entries[n_pts:],
                 pca_line_scale1=0.18,
                 pca_line_scale2=0.68, show_cc=False, s=5, c='teal',
                 label='right', alpha=0.7, lw=0)
-ax.legend(frameon=False, borderpad=0, handletextpad=0, loc='upper left',
-          bbox_to_anchor=(-0.07, 1.04))
+ax.legend(loc='upper left')
 ax.text(0.65, 0.11, r'$r$' + " = %0.2f" % cc_real, transform=ax.transAxes)
 ax.text(0.65, 0.03, "pv = %0.0e" % 0.006, transform=ax.transAxes)
-ax.set(ylim=(0, None), xlim=(-5, None))
+ax.set(ylim=(None , None), xlim=(-5, None))
 
 file = f'{PP_CONN}/con_sqrtWtW_M_scatter'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-# significance is calculated in the file con_analysis_MvsW2.py
+print('done')
+# significance is calculated in the file con_analysis_MvsW.py
 # %%
 # #############################################################################
 # #############################################################################
@@ -1008,7 +782,7 @@ n_ax = len(title)
 fs, axs = FP.calc_fs_ax(pads, gw=SQ * k * n_ax + (n_ax-1) * 2 * SQ, gh=SQ * k)
 f = plt.figure(figsize=fs)
 axs_coords = {-1: [axs[0], axs[1], SQ * k / fs[0], axs[3]],
-             -0.45:[axs[0] + SQ * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
+              -0.45:[axs[0] + SQ * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
               0: [axs[0] + SQ * 2 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
               1: [axs[0] + SQ * 3 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]]}
 for s in lab_y.keys():
@@ -1029,9 +803,9 @@ for s in lab_y.keys():
     ax = f.add_axes(axs_coords[s])
     cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=lab_y[s],
                        show_lab_x=True, cmap=corr_cmap, rot=0)
-    ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2)#, fontsize=ft_s_lb)
-    ax.set_xticks(np.arange(8))
-    ax.set_xticklabels(np.arange(1, 9))
+    ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2)
+    ax.set_xticks(np.arange(8), np.arange(1, 9))
+    # ax.set_xticklabels()
     # ax.set_xlabel(r'NNC-8, $\mathbf{w}_k$', labelpad=1, rotation_mode='default',
     #               ha='center')
     if lab_y[s]:
@@ -1120,14 +894,11 @@ ax.fill_between([min(x), max(x)], [corr_L, corr_L], [corr_R, corr_R],
 ax.plot([x_special, x_special], [0, 0.4], lw=0.5, color='gray', ls='--')
 ax.set_yticks([0, 0.2, 0.4])
 # ax.set_yticklabels([0, '', 2, '', 4])
-ax.set_xticks([-1, x_special, 0, 1])
-ax.set_xticklabels([0.1, rho_special, 1, 10])
+ax.set_xticks([-1, x_special, 0, 1], [0.1, rho_special, 1, 10])
 ax.set_ylim(0, 0.4)
 ax.set_ylabel(r'$\overline{r}_+$')
 ax.set_xlabel(r'$\rho$')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-plt.legend(frameon=False, loc='lower left')
+plt.legend(loc='upper right')
 file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
         f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-8_W-corr')
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -1138,145 +909,4 @@ print('done')
 # the value of x around where the lines intersect
 corr_M = (corr_L + corr_R) / 2
 print(x[np.sum(y > corr_M)])
-print('done')
-#%%
-# #############################################################################
-# #############################################################################
-# #############################################################################
-# just for testing, doing the same as above, but with the angle between
-# vectors
-
-# Ws_nnc = pd.DataFrame(pd.read_hdf(RESULTS_PATH / 'W_NNC-8.hdf'))
-# Ws_cn = FG.get_ctr_norm(Ws).loc[par_act.ORN_order].T
-
-#
-# # %%
-# # Plotting the previous graphs on a single figure
-# k = 8
-# lab_y = {-1: True, -0.45: False, 0: False, 1: False}
-# pads = [0.3, 0.075, 0.37, 0.35]
-# title = {-1: '0.1', -0.45: '0.35', 0: '1', 1: '10'}
-# n_ax = len(title)
-# fs, axs = FP.calc_fs_ax(pads, gw=SQ * k * n_ax + (n_ax-1) * 2 * SQ, gh=SQ * k)
-# f = plt.figure(figsize=fs)
-# axs_coords = {-1: [axs[0], axs[1], SQ * k / fs[0], axs[3]],
-#              -0.45:[axs[0] + SQ * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
-#               0: [axs[0] + SQ * 2 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
-#               1: [axs[0] + SQ * 3 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]]}
-# for s in lab_y.keys():
-#     rho = 10**s
-#     pps_local = f'{title[s]}o'
-#     print('rho:', rho)
-#     W_nncT = Ws_nnc.loc[:, (s*10, 1)].values.T
-#     CG = sns.clustermap(np.corrcoef(W_nncT), cmap=corr_cmap, vmin=-1, vmax=1)
-#     idx = CG.dendrogram_col.reordered_ind
-#     W_nnc_n = FG.get_norm_np(W_nncT[idx].T)
-#     df = pd.DataFrame(W_nnc_n.T@W_nnc_n)
-#     df = np.arccos(df)
-#
-#     ax = f.add_axes(axs_coords[s])
-#     cp = FP.imshow_df2(df, ax, vlim=[0, np.pi/2], show_lab_y=lab_y[s],
-#                        show_lab_x=True, cmap=plt.cm.magma, rot=0)
-#     ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2, fontsize=ft_s_lb)
-#     ax.set_xticks(np.arange(8))
-#     ax.set_xticklabels(np.arange(1, 9))
-#     # ax.set_xlabel(r'NNC-8, $\mathbf{w}_k$', labelpad=1, rotation_mode='default',
-#     #               ha='center')
-#     if lab_y[s]:
-#         ax.set_yticks(np.arange(8))
-#         ax.set_yticklabels(np.arange(1, 9))
-#         ax.set_ylabel(r'$\mathbf{w}_k$', labelpad=6, va='center')
-#     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
-#     #                     CB_W / fs[0], axs[3]])
-#     # clb = add_colorbar_crt(cp, ax_cb, '', [-1, 0, 1])
-#     print(W_nncT[idx].sum(axis=1))
-# plt.suptitle(r'NNC-8, corr. among $\mathbf{w}_k$')
-# f.text(0.54, 0.1, r'$\mathbf{w}_k$', rotation=0, fontsize=ft_s_lb, va='bottom',
-#        ha='center')
-# file = f'{PP_CON_PRED}/ORN_act_NNC{k}_angle_W_all'
-# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-#
-# #%%
-# # #############################################################################
-# # #############################################################################
-#
-#
-# strm = 0
-# side = 'L'
-# LNs_sel1 = LNs_sel_d_side[side]
-# con_ff_sel = con_strms3.loc[:, strm]
-# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
-# con_ff_sel.columns = LNs_sel_short
-# con_ff_sel_n = FG.get_norm(con_ff_sel)
-# df1 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
-# # this makes sure that there is no numerical problem with any
-# # number larger than 1.
-# df1[:] = np.minimum.reduce([df1.values, np.ones((len(df1), len(df1)))])
-# df1 = np.arccos(df1)
-#
-# side = 'R'
-# LNs_sel1 = LNs_sel_d_side[side]
-# con_ff_sel = con_strms3.loc[:, strm]
-# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
-# con_ff_sel.columns = LNs_sel_short
-# con_ff_sel_n = FG.get_norm(con_ff_sel)
-# df2 = FG.get_cos_sim(con_ff_sel_n, con_ff_sel_n)
-# df2[:] = np.minimum.reduce([df2.values, np.ones((len(df2), len(df2)))])
-# df2 = np.arccos(df2)
-# # %%
-# th = 0.45
-# df1_ent = FG.get_entries(df1, diag=False)
-# corr_L = FG.rectify(df1_ent).mean()
-# df2_ent = FG.get_entries(df2, diag=False)
-# corr_R = FG.rectify(df2_ent).mean()
-# print(corr_L, corr_R)
-# # %%
-# Ws_nnc = pd.DataFrame(pd.read_hdf(RESULTS_PATH / 'W_NNC-8.hdf'))
-# Ws_nnc_n = FG.get_norm(Ws_nnc).loc[par_act.ORN_order].T
-# mi2 = pd.MultiIndex(levels=[[], []], codes=[[], []],
-#                     names=['rho', 'rep'])
-# corr_W_nnc_s = pd.Series(index=mi2)
-# clust_W_nnc_s = pd.Series(index=mi2)
-#
-# for p in np.arange(-10, 10.1, 0.5):
-#     rho = 10**(p/10)
-#     for i in range(50):
-#         W_nnc = Ws_nnc_n.loc[(p, i)].T
-#         CS =  FG.get_cos_sim(W_nnc, W_nnc)
-#         angle = np.arccos(CS)
-#         df1_ent = FG.get_entries(angle, diag=False)
-#         corr_W_nnc_s.loc[(p, i)] = FG.rectify(df1_ent).mean()
-#
-# # %%
-# rho_special = 0.35
-# x_special = np.log10(rho_special)
-# x = corr_W_nnc_s.index.unique('rho')/10
-# y = corr_W_nnc_s.groupby('rho').mean()
-# e = corr_W_nnc_s.groupby('rho').std()
-#
-# pads = (0.4, 0.1, 0.35, 0.1)
-# # fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*10)
-# fs, axs = FP.calc_fs_ax(pads, SQ*12, SQ*12)  # pads, gw, gh
-# f = plt.figure(figsize=fs)
-# ax = f.add_axes(axs)
-# ax.plot(x, y, lw=1, c='k')
-# ax.fill_between(x, y-e, y+e, alpha=0.5, facecolor='k', label='NNC-8')
-# ax.fill_between([min(x), max(x)], [corr_L, corr_L], [corr_R, corr_R],
-#                 alpha=0.5, label='data')
-# ax.plot([x_special, x_special], [0, 0.4], lw=0.5, color='gray', ls='--')
-# ax.set_yticks([0, 0.2, 0.4])
-# # ax.set_yticklabels([0, '', 2, '', 4])
-# ax.set_xticks([-1, x_special, 0, 1])
-# ax.set_xticklabels([0.1, rho_special, 1, 10])
-# # ax.set_ylim(0, 0.4)
-# ax.set_ylabel(r'$\overline{r}_+$')
-# ax.set_xlabel(r'$\rho$')
-# ax.spines['right'].set_visible(False)
-# ax.spines['top'].set_visible(False)
-# plt.legend(frameon=False, loc='lower left')
-# file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
-#         f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-8_W-angle')
-# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **png_opts)
-#
+print('Final done')

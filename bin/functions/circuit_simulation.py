@@ -127,7 +127,7 @@ def sm_output_online(x: np.ndarray, W: np.ndarray, M: np.ndarray,
             y = y2.copy()
             y2 += eta * (Wx - M.dot(y2))
             # print(- 4 * (W.T @ y) @ x + 2 * M @ y @ y)
-            # TODO: for checking the convergence, it would make sense that the
+            # -> for checking the convergence, it would make sense that the
             # error is multiplied by the eta
             if test_rtol(y, y2, rtol):
             # if tol_test(y, y2, atol=atol, rtol=rtol):
@@ -145,7 +145,7 @@ def sm_output_online(x: np.ndarray, W: np.ndarray, M: np.ndarray,
             y = y2.copy()
             y2 = FG.rectify(y2 + eta * (Wx - M.dot(y2)))
             # print(- 4 * (W.T @ y) @ x + 2 * M @ y @ y)
-            # TODO: for checking the convergence, it would make sense that the
+            # -> for checking the convergence, it would make sense that the
             # error is multiplied by the eta
             if test_rtol(y, y2, rtol):
                 break
@@ -291,7 +291,7 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
             est = np.max([np.max(np.abs(Wff.T @ x)),
                           np.max(np.abs(M @ Wff.T @ x))])
 
-        print('estimate ', est)
+        print('estimate for 1/eta, which is the step', est)
 
         # TODO: seems like I have been using one or the other of the
         # 2 options below:
@@ -344,7 +344,7 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
             z = z2.copy()
             y2 = (1-eta)*y2 + eta * (x - y - Wfb.dot(z))
             z2 = (1-eta)*z2 + eta * (rho ** 2 * Wff.T.dot(y) - M.dot(z))
-            # TODO: for checking the convergence, it would make sense that the
+            # -> for checking the convergence, it would make sense that the
             # tol is multiplited by eta
             if (test_rtol(y, y2, rtol) and (test_rtol(z, z2, rtol))):
             # if (tol_test(y, y2, atol=atol, rtol=rtol) and
@@ -385,11 +385,11 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
     return y2, z2
 
 
-def olf_output_offline(X, Wff, Wfb, M, rho=1, method='inv',
-                       n_iter_max=int(1e6)):
+def olf_output_online_bulk(X, Wff, Wfb, M, rho=1, method='inv',
+                           n_iter_max=int(1e6)):
     """
     just doing the same as the function above, but with a matrix instead
-    of on thing at a time
+    of on thing at a time.
     Parameters
     ----------
     X
@@ -411,6 +411,7 @@ def olf_output_offline(X, Wff, Wfb, M, rho=1, method='inv',
         Y = np.zeros((D, N))
         Z = np.zeros((K, N))
         for i in range(N):
+            print(f'finding output for input {i}')
             y, z = olf_output_online(X[:, i], Wff, Wfb, M, rho=rho,
                                      method=method, n_iter_max=n_iter_max)
             Y[:, i], Z[:, i] = y, z
@@ -743,7 +744,7 @@ class OlfSim(Circuit):
         return y, z
 
     def transform_batch(self, X):
-        return olf_output_offline(X, self.W, self.W, self.M, self.method)
+        return olf_output_online_bulk(X, self.W, self.W, self.M, self.method)
 
     def fit_next(self, x):
         """

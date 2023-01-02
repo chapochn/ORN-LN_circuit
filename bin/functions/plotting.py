@@ -173,7 +173,7 @@ def add_y_splits(ax, splits, n, **plot_args):
 def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
                splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
                show_lab_x=True, show_lab_y=True, show_values=False,
-               aspect='equal', splits_c='w', title_font=None,
+               aspect='equal', splits_c='w', title_font=None, x_offset=0,
                **kwargs):
     """
     very general wrapper around imshow to plot dataframes with labels
@@ -183,16 +183,16 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
 
     (vmin, vmax) = unpack_vlim(vlim)
     print(f'vmin and vmax in imshow_df: {vmin}, {vmax}')
-#    cmap.set_bad('black')
+    #    cmap.set_bad('black')
     cp = ax.imshow(df, cmap=cmap, vmin=vmin, vmax=vmax, aspect=aspect,
                    **kwargs)
     ax.set_title(title, fontdict=title_font)
 
-    plt.sca(ax)
+    ax.tick_params('x', bottom=False, direction='in')
+    ax.tick_params('y', left=False, direction='in')
     if show_lab_x:
-        plt.xticks(np.arange(len(df.T)), list(df.columns), rotation=rot, ha=ha)
-        ax.tick_params('x', bottom=False, pad=-1)
-
+        ax.set_xticks(np.arange(len(df.T)) + x_offset,
+                      list(df.columns), rotation=rot, ha=ha)
         label = ''
         # for a multiindex creates a label from the mi names
         if df.columns.names[0] is not None:
@@ -201,11 +201,10 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
             label = label[2:]
         ax.set_xlabel(label)
     else:
-        plt.xticks([], [])
+        ax.set_xticks([], [])
 
     if show_lab_y:
-        plt.yticks(np.arange(len(df)), list(df.index))
-        ax.tick_params('y', left=False, pad=-1)
+        ax.set_yticks(np.arange(len(df)), list(df.index))
 
         label = ''
         if df.index.names[0] is not None:
@@ -214,7 +213,7 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
             label = label[2:]
         ax.set_ylabel(label)
     else:
-        plt.yticks([], [])
+        ax.set_yticks([], [])
 
     add_x_splits(ax, splits_x, df.shape[0], c=splits_c, lw=lw)
     add_y_splits(ax, splits_y, df.shape[1], c=splits_c, lw=lw)
@@ -232,7 +231,7 @@ def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
     return cp
 
 
-def add_colorbar(cp, ax, cbtitle='', ticks=[], pad=1, extend='neither',
+def add_colorbar(cp, ax, cbtitle='', ticks=None, pad_title=1, extend='neither',
                  title_font=None):
     """
     add a colorbar at the location specified by ax and for the plot referenced
@@ -241,8 +240,10 @@ def add_colorbar(cp, ax, cbtitle='', ticks=[], pad=1, extend='neither',
     clb = plt.colorbar(cp, cax=ax, extend=extend)
     clb.ax.set_yscale('linear')  # new option needed
     clb.outline.set_linewidth(0.00)
-    clb.ax.tick_params(size=2, direction='in', pad=1.5)
-    clb.ax.set_title(cbtitle, pad=pad, fontdict=title_font)
+    # clb.ax.tick_params(size=2, direction='in', pad=-1)
+    # clb.ax.tick_params(size=2, direction='in', pad=1.5)
+    clb.ax.tick_params(direction='in')
+    clb.ax.set_title(cbtitle, pad=pad_title, fontdict=title_font)
     if ticks is not None:
         clb.set_ticks(ticks)
     return clb
@@ -393,19 +394,18 @@ def plot_scatter(ax, data1, data2, lblx, lbly, c1='k', c2='k',
     ax.set_xlabel(lblx, color=c1)  # , fontsize=ft_s_lb)
     ax.set_ylabel(lbly, color=c2)  # , fontsize=ft_s_lb)
 
+    # This is to allow the authomatic ticking if you don't put any parameters
     if yticks is not None:
         ax.set_yticks(yticks)
     if xticks is not None:
         ax.set_xticks(xticks)
 
-    ax.tick_params('x', colors=c1, which='both', pad=1)  # , labelsize=ft_s_tk)
-    ax.tick_params('y', colors=c2, which='both', pad=1)  # , labelsize=ft_s_tk)
+    ax.tick_params('x', colors=c1)
+    ax.tick_params('y', colors=c2)
 
-    ax.spines['bottom'].set_edgecolor(c1)
-    ax.spines['left'].set_edgecolor(c2)
+    ax.spines['bottom'].set_color(c1)
+    ax.spines['left'].set_color(c2)
 
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
     # plt.subplots_adjust(left=adj_l, right=adj_r, bottom=adj_b, top=adj_t)
     if show_cc:
         ax.text(0.65, 0.11, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes)
@@ -420,12 +420,12 @@ def plot_scatter(ax, data1, data2, lblx, lbly, c1='k', c2='k',
 #     d1max = np.max(data1)*2
 #     ax.plot([d1min, d1max], regr.predict([[d1min], [d1max]]), '--', c='gray')
 # =============================================================================
-    # ax.plot()
+# ax.plot()
 
 
 def plot_line_2yax(ax, data1, data2, lbl1, lbl2, cell_list, ct,
-                   c1='k', c2='k', m1=',', m2=',',
-                   LS='-', ttl='', rot_y=0):
+                   c1='k', c2='k', m1=',', m2=',', label1 = '', label2='',
+                   LS='-', title='', rot_y=0):
     """
     plot activity components and a connectivity with a line plot,
     where the 2 sides have a different scaling
@@ -439,141 +439,130 @@ def plot_line_2yax(ax, data1, data2, lbl1, lbl2, cell_list, ct,
     ct: x label
 
     """
-    ttl_y = 1.17
-
     # ideally one should scale the 2 datasets a bit better so that
     # mean1 = np.mean(data1)
     # mean2 = np.mean(data2)
     ln1 = ax.plot(data1, c=c1, label=lbl1, ls=LS, marker=m1)
 
-    # ax.set_title('activity and connectivity', fontsize=ft_s_lb)
-    ax.text(0.5, ttl_y, ttl,
-            horizontalalignment='center', verticalalignment='center',
-            transform=ax.transAxes)
+    ax.set_title(title)
 
     # ax.set_ylim(0, None)  # in the case of PCA it can be below 0
     ax.set_xlabel(ct)
-    ax.set_ylabel('activity', color=c1)
+    ax.set_ylabel(label1, color=c1)
 
-    ax.tick_params('y', colors=c1, which='both', pad=1, rotation=rot_y)
+    ax.tick_params('y', colors=c1, rotation=rot_y)
     # ax.set_yticks([0.0, 0.5, 1.0])
-    ax.set_xticks(np.arange(len(cell_list)))
-    ax.set_xticklabels(cell_list)
-    ax.tick_params(axis='x', which='both', bottom=False, pad=-1,
-                   labelrotation=90)
+    ax.set_xticks(np.arange(len(cell_list)), cell_list)
+    ax.tick_params(axis='x', bottom=False, direction='in', labelrotation=90)
 
     ax2 = ax.twinx()
     ln2 = ax2.plot(data2, c=c2, label=lbl2, ls=LS, marker=m2)
     ax2.set_ylim(0, None)
-    ax2.set_ylabel('number of synapses', color=c2)
-    ax2.tick_params('y', colors=c2, which='both', pad=1, rotation=rot_y)
-    # y_max = data2.max() // 10 * 10
-    # ytcks = [0, int(y_max/2), int(y_max)]
-    # ax2.set_yticks(ytcks)
+    ax2.set_ylabel(label2, color=c2)
+    ax2.tick_params('y', colors=c2, rotation=rot_y)
 
     # adjusting the borders
-    ax2.spines['left'].set_edgecolor(c1)
-    ax2.spines['right'].set_edgecolor(c2)
-    ax.spines['top'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
+    ax2.spines['left'].set_visible(False)
+    ax2.spines['right'].set(visible=True, color=c2)
+    ax.spines['left'].set_color(c1)
+
     ax.xaxis.grid()
 
     # legend, if one puts ax instead of ax, then the legend will not be on the
     # top layer
     lns = ln1 + ln2
-    labs = [l.get_label() for l in lns]
+
     # ax2.legend(lns, labs, loc=4, prop={'size': ft_s_tk})
     # adding a legend if lbl1 and lbl2 are not None
     if (lbl1 is not None) and (lbl2 is not None):
-        leg = ax2.legend(lns, labs, ncol=3, loc=10,
-                         bbox_to_anchor=(0., 1.01, 1., .1), frameon=False)
-        leg.get_frame().set_linewidth(0.0)
+        labs = [l.get_label() for l in lns]
+        ax2.legend(lns, labs, ncol=3, loc='lower center',
+                         bbox_to_anchor=(0.5, 1.01))
     return ax, ax2, lns
 
-
-def plot_double_series(data1, data2, col1, col2, ylab1, ylab2,
-                       ylim1=None, ylim2=None, figsize=(9, 2.5)):
-    """
-    the weird order of ax and ax2 comes from the fact i want the corr points to
-    be above the signif points
-    used for plotting of p-values and mad diff of cdf
-    """
-
-    f, ax = plt.subplots(1, 1, figsize=figsize)
-    ax2 = ax.twinx()
-    ax2.yaxis.set_label_position("left")
-    ax2.yaxis.tick_left()
-    ax2.plot([-1, len(data1)], [0, 0], c='gray', lw=0.5)
-    ax2.plot(data1, ls='None', marker='.', markersize=5)
-    # ax.set_zorder(2)
-    ax2.set_ylabel(ylab1, color=col1)
-    ax2.spines['left'].set_edgecolor(col1)
-    ax2.tick_params('y', colors=col1)
-    ax2.set_xlim(-0.7, len(data1) - 1 + 0.7)
-    ax2.spines['right'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
-    ax2.set_ylim(ylim1)
-
-    ax.plot(data2, ls='None', marker="+", c=col2, markersize=5)
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
-    ax.set_ylabel(ylab2, color=col2)
-    ax.spines['right'].set_edgecolor(col2)
-    ax.tick_params('y', colors=col2)
-    ax.spines['top'].set_visible(False)
-    sign = -np.log10(0.05)
-    ax.plot([-0.5, len(data2)-0.5], [sign, sign], c=col2, lw=0.5)
-    ax.xaxis.grid()
-    ax.set_ylim(ylim2)
-
-    ax.set_xticklabels(data1.index, rotation=90)
-
-    plt.tight_layout()
-    return f, (ax2, ax)
+# this is not used as the function below is more flexible
+# def plot_double_series(data1, data2, col1, col2, ylab1, ylab2,
+#                        ylim1=None, ylim2=None, figsize=(9, 2.5)):
+#     """
+#     the weird order of ax and ax2 comes from the fact i want the corr points to
+#     be above the signif points
+#     used for plotting of p-values and mad diff of cdf
+#     """
+#
+#     f, ax = plt.subplots(1, 1, figsize=figsize)
+#     ax2 = ax.twinx()
+#     ax2.yaxis.set_label_position("left")
+#     ax2.yaxis.tick_left()
+#     ax2.plot([-1, len(data1)], [0, 0], c='gray', lw=0.5)
+#     ax2.plot(data1, ls='None', marker='.', markersize=5)
+#     # ax.set_zorder(2)
+#     ax2.set_ylabel(ylab1, color=col1)
+#     ax2.spines['left'].set_edgecolor(col1)
+#     ax2.tick_params('y', colors=col1)
+#     ax2.set_xlim(-0.7, len(data1) - 1 + 0.7)
+#     ax2.set_ylim(ylim1)
+#
+#     ax.plot(data2, ls='None', marker="+", c=col2, markersize=5)
+#     ax.yaxis.set_label_position("right")
+#     ax.yaxis.tick_right()
+#     ax.set_ylabel(ylab2, color=col2)
+#     ax.spines['right'].set_edgecolor(col2)
+#     ax.spines['right'].set_visible(True)
+#     ax.tick_params('y', colors=col2)
+#     sign = -np.log10(0.05)
+#     ax.plot([-0.5, len(data2)-0.5], [sign, sign], c=col2, lw=0.5)
+#     ax.xaxis.grid()
+#     ax.set_ylim(ylim2)
+#
+#     ax.set_xticklabels(data1.index, rotation=90)
+#
+#     plt.tight_layout()
+#     return f, (ax2, ax)
 
 
 def plot_double_series_unevenX(ax, x, data1, data2, col1, col2, ylab1, ylab2,
                                ylim1=None, ylim2=None):
-    """
-    the weird order of ax and ax2 comes from the fact i want the corr points to
-    be above the signif points
-    """
+#https://discourse.matplotlib.org/t/zorder-with-twinx-grid/10574
+# zorder does not work when you have 2 axis
+# that's why we need the weird order of axis
     if not data1.index.equals(data2.index):
         raise ValueError('data1 and data2 should have the same index')
 
     ax2 = ax.twinx()
-    ax2.yaxis.set_label_position("left")
-    ax2.yaxis.tick_left()
     ax2.plot([-1, np.max(x) + 1], [0, 0], c='gray', lw=0.5)
     ax2.plot(x, data1.values, ls='None', marker='.', markersize=5, c=col1)
     # ax.set_zorder(2)
 
-    ax2.spines['left'].set_edgecolor(col1)
-    ax2.spines['right'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
+    ax2.spines['left'].set_color(col1)
 
     ax2.set_ylabel(ylab1, color=col1)
     ax2.tick_params('y', colors=col1)
     ax2.set_ylim(ylim1)
-
     ax2.set_xlim(-0.7, np.max(x) + 0.7)
+    ax2.yaxis.set_label_position("left")
+    ax2.yaxis.tick_left()
 
-    # ax
-    ax.plot(x, data2.values, ls='None', marker="+", c=col2, markersize=5)
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
+
+
+
+    ax.plot(x, data2.values, ls='None', marker="+", c=col2, markersize=5,
+             zorder=5)
     ax.set_ylabel(ylab2, color=col2)
-    ax.spines['right'].set_edgecolor(col2)
+    ax.spines['right'].set(visible=True, color=col2)
     ax.tick_params('y', colors=col2)
-    ax.spines['top'].set_visible(False)
     sign = -np.log10(0.05)
     ax.plot([-1, np.max(x) + 1], [sign, sign], c=col2, lw=0.5)
-    ax.xaxis.grid()
+
     ax.set_ylim(ylim2)
 
     ax.set_xticks(x)
     ax.set_xticklabels(data1.index, rotation=90)
-    ax.tick_params(axis='x', which='both', bottom=False, pad=-1)
+    ax.tick_params(axis='x', which='both', bottom=False, direction='in')
+    ax.xaxis.grid()
+
+
+    ax.yaxis.set_label_position("right")
+    ax.yaxis.tick_right()
 
     return ax2, ax
 
@@ -822,9 +811,9 @@ def get_div_color_map(vmin_col, vmin_to_show, vmax):
     return act_map, divnorm
 
 
-def plot_full_activity(df, act_map, divnorm, title, cb_title,
-                       cb_ticks, pads=[0.55, 0.4, 0.2, 0.2], extend='max',
-                       squeeze=0.4, do_vert_spl=True, set_ticks_params=True,
+def plot_full_activity(df, act_map, divnorm, title='', cb_title='',
+                       cb_ticks=None, pads=[0.55, 0.4, 0.2, 0.2], extend='max',
+                       squeeze=0.45, do_vert_spl=True,
                        SQ=0.07, CB_W=0.1, CB_DX=0.11, title_font=None,
                        cb_title_font=None):
     # _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
@@ -837,11 +826,11 @@ def plot_full_activity(df, act_map, divnorm, title, cb_title,
     else:
         splx = []
     cp = imshow_df2(df, ax, vlim=None, show_lab_y=True,
-                       title=title,
-                       cmap=act_map, splits_x=splx,
-                       show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
+                    title=title,
+                    cmap=act_map, splits_x=splx,
+                    show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
                     title_font=title_font,
-                       **{'norm': divnorm})
+                    **{'norm': divnorm})
     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                         CB_W / fs[0], axs[3]])
     clb = add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend=extend,

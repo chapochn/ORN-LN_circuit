@@ -30,7 +30,7 @@ from typing import List, Tuple, Any
 # from functions.plotting import plot_cov  # since we are not using any other
 # plotting function
 
-PATH = os.path.realpath(f"{os.path.expanduser('~')}/ORN-LN_circuit") + '/'
+# OLF_PATH = os.path.realpath(f"{os.path.expanduser('~')}/ORN-LN_circuit") + '/'
 OLF_PATH = pathlib.Path.home() / 'ORN-LN_circuit'
 
 # ###################### FUNCTIONS CONNECTIVITY DATA ##########################
@@ -167,7 +167,7 @@ def import_con_data(keys=['L', 'R', 'M']):
 def get_con_data(keys=['L', 'R', 'M']):
     cons = {}
     for k in keys:
-        cons[k] = pd.read_hdf(f'{PATH}results/cons/cons_full_{k}.hdf')
+        cons[k] = pd.read_hdf(OLF_PATH / f'results/cons/cons_full_{k}.hdf')
     return cons
 
 
@@ -364,7 +364,7 @@ def plot_gram(data, ax=None, name='', splits=[], fs=(13, 10), adj=0.2,
         gram = FG.get_corr(data, data)
     else:
         data = FG.get_norm(data)
-        gram = FG.get_cos_sim(data, data)
+        gram = FG.get_CS(data, data)
         vmin, vmax = (np.nanmin(gram.values), np.nanmax(gram.values))
 
     print(vmin, vmax)
@@ -767,7 +767,8 @@ def get_ORN_act_pps(dataset: int, pps1: str, pps2: str, dropna: bool = True,
 
     if pps2 == 'mean':
         # averaging data between the repetitions
-        act2 = act1.mean(level=('odor', 'conc'))
+        # act2 = act1.mean(level=('odor', 'conc'))
+        act2 = act1.groupby(level=('odor', 'conc')).mean()
     elif pps2 == 'raw':
         act2 = act1.copy()
     elif pps2 == 'l2':
@@ -1318,7 +1319,7 @@ class NeurActConAnalysis:
         # that are present in the activity
         # also i wonder if i should be careful about the order here...
 
-        path = f'{PATH}results/cons/'
+        path = OLF_PATH / f'results/cons/'
 
         self.con_strms2 = {}
         for s in self.strms:
@@ -1327,14 +1328,14 @@ class NeurActConAnalysis:
 #             self.con_strms2[s] = pd.read_hdf(f'../results/cons/cons_'
 #                                              f'{cell_type}_{s}.hdf')
 # =============================================================================
-            self.con_strms2[s] = pd.read_hdf(f'{path}cons_'
+            self.con_strms2[s] = pd.read_hdf(path / f'cons_'
                                              f'{cell_type}_{s}_all.hdf')
             self.con_strms2[s] = self.con_strms2[s].loc[self.neur_order]
             self.con_strms2[s] = FG.get_pps(self.con_strms2[s],
                                             ['o', 'cn', 'n'])
 
         # self.con_strms3 = pd.read_hdf(f'{path}cons_{cell_type}.hdf')
-        self.con_strms3 = pd.read_hdf(f'{path}cons_{cell_type}_all.hdf')
+        self.con_strms3 = pd.read_hdf(path / f'cons_{cell_type}_all.hdf')
         self.con_strms3 = self.con_strms3.loc[self.neur_order]
         self.con_strms3 = FG.get_pps(self.con_strms3, ['o', 'cn', 'n'])
 
@@ -1386,7 +1387,7 @@ class NeurActConAnalysis:
 
         mi3 = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []],
                             names=['conc', 'decomp', 'k'])
-        self.errors = pd.Series(index=mi3)
+        self.errors = pd.Series(index=mi3, dtype=float)
         # the additional parameter i here is the identifier for the shuffling
         mi7 = pd.MultiIndex(levels=[[], [], [], [], [], [], []],
                             codes=[[], [], [], [], [], [], []],
@@ -1530,11 +1531,11 @@ class NeurActConAnalysis:
         """
         this exports the con_stream2 dataset into 3 hdf5 files
         """
-        path = f'{PATH}results/'
+        path = OLF_PATH / 'results'
         ct = self.cell_type
-        self.con_strms2[0]['o'].to_hdf(f'{path}con_{ct}2LN.hdf', f'{ct}2LN')
-        self.con_strms2[1]['o'].to_hdf(f'{path}con_LN2{ct}.hdf', f'LN2{ct}')
-        self.con_strms2[2]['o'].to_hdf(f'{path}con_LN2{ct}_indeg.hdf',
+        self.con_strms2[0]['o'].to_hdf(path / f'con_{ct}2LN.hdf', f'{ct}2LN')
+        self.con_strms2[1]['o'].to_hdf(path / f'con_LN2{ct}.hdf', f'LN2{ct}')
+        self.con_strms2[2]['o'].to_hdf(path / f'con_LN2{ct}_indeg.hdf',
                                        f'LN2{ct}2_indeg')
 
     # #########################################################################
@@ -1805,9 +1806,10 @@ class NeurActConAnalysis:
         if we are shuffling them all at once, with the same permutation.
         """
         if opt == 'fast':
-            signif_f = FG.get_signif_corr_v2
+            # signif_f = FG.get_signif_v2
+            raise ValueError('fast is not anymore implemented/maintained')
         elif opt == 'slow':
-            signif_f = FG.get_signif_corr_v1
+            signif_f = FG.get_signif_v1
         else:
             raise ValueError('no input option opt: ' + opt)
 
@@ -1815,8 +1817,8 @@ class NeurActConAnalysis:
         # This function aligns the ORN order, i.e., in the row dimension
         # the function shuffles the second dataset, here con_strms3, so
         # it is better if it has less columns than the other...
-        cor, pv_o, pv_l, pv_r = signif_f(self.act_W_cn,
-                                         self.con_strms3['cn'], N=N_iter)
+        cor, pv_o, pv_l, pv_r = signif_f(self.act_W_cn, self.con_strms3['cn'],
+                                         N=N_iter, measure='corr')
 
         pv_o = pv_o.replace(0, 1./N_iter)
         pv_l = pv_l.replace(0, 1./N_iter)
@@ -1833,7 +1835,7 @@ class NeurActConAnalysis:
         self.cc_pv['t'] = t.applymap(lambda x: sps.t.sf(x, N - 2))
 
     # calculating the cosine similarity
-    def calc_act_con_CS_pv(self, N_iter=10, opt='fast'):
+    def calc_act_con_CS_pv(self, N_iter=10, opt='slow'):
         """
         calculates the significance for every cosine similarity
         that was already calculated
@@ -1842,15 +1844,16 @@ class NeurActConAnalysis:
         if we are shuffling them all at once, with the same permutation.
         """
         if opt == 'fast':
-            signif_f = FG.get_signif_CS_v2
+            # signif_f = FG.get_signif_v2
+            raise ValueError('fast is not anymore implemented/maintained')
         elif opt == 'slow':
-            signif_f = FG.get_signif_CS_v1
+            signif_f = FG.get_signif_v1
         else:
             raise ValueError('no input option opt: ' + opt)
 
         # it seems that this function might be aligning the ORN order
-        CS, pv_o, pv_l, pv_r = signif_f(self.act_U_n,
-                                        self.con_strms3['n'], N=N_iter)
+        CS, pv_o, pv_l, pv_r = signif_f(self.act_U_n, self.con_strms3['n'],
+                                        N=N_iter, measure='CS')
         # for the cosine similarity we need the normalized version of vectors
 
         pv_o = pv_o.replace(0, 1./N_iter)
@@ -1970,30 +1973,30 @@ class NeurActConAnalysis:
 #
 #
 
-    def get_something(self, act_subspc, label):
-        """
-        maybe here doing the projection and also findout the contribution
-        of different components in the best projection
-
-        the QR decomposition is done once and for all, it is only dependent
-        on the subspace we are working with
-        The Q R decomposition gives the following:
-        - the columns of Q are the orthonormal vector forming the same subspace
-        as the original vectors that were provided
-        - the columns of R give the coefficients needed recreate the
-        original vector
-        Then, using the QR decomposition, we then take one by one the
-        connectivity vectors we are interested in, the different streams,
-        the different LNs, etc...
-        For each connectivity w, R^-1 Q.T w gives the coefficients
-        in terms of the original act vectors, that give the projection
-        (i.e., the vector with the highest correlation) in the subspace
-        of the original vectors
-
-        for just the projection on the subspace, we only need Q Q.T w
-
-        To get the contributions one needs R^-1 Q.T w
-        """
+    # def get_something(self, act_subspc, label):
+    #     """
+    #     maybe here doing the projection and also findout the contribution
+    #     of different components in the best projection
+    #
+    #     the QR decomposition is done once and for all, it is only dependent
+    #     on the subspace we are working with
+    #     The Q R decomposition gives the following:
+    #     - the columns of Q are the orthonormal vector forming the same subspace
+    #     as the original vectors that were provided
+    #     - the columns of R give the coefficients needed recreate the
+    #     original vector
+    #     Then, using the QR decomposition, we then take one by one the
+    #     connectivity vectors we are interested in, the different streams,
+    #     the different LNs, etc...
+    #     For each connectivity w, R^-1 Q.T w gives the coefficients
+    #     in terms of the original act vectors, that give the projection
+    #     (i.e., the vector with the highest correlation) in the subspace
+    #     of the original vectors
+    #
+    #     for just the projection on the subspace, we only need Q Q.T w
+    #
+    #     To get the contributions one needs R^-1 Q.T w
+    #     """
 
     # #########################################################################
     # #################  SIGNIFICANCE TEST WITH DEEP SHUFFLING  ###############

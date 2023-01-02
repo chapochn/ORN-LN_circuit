@@ -219,7 +219,7 @@ def get_scale_data_factor(X: np.ndarray) -> float:
 #     # return datasets
 
 # code for 2 clusters:
-def create_clusters_data(D=21, n=100, K=2, dx=0.5, scale=0.1):
+def create_clusters_data(D=21, n=100, K=2, dx=0.5, scale=0.1, x_max=1):
     """
 
     :param D: number of dimensions
@@ -229,8 +229,6 @@ def create_clusters_data(D=21, n=100, K=2, dx=0.5, scale=0.1):
     :param scale: sd of the gaussian
     :return:
     """
-    x_max = 1
-    # scale = 0.2
 
     cls = {}
     if isinstance(n, int): # if n is an int

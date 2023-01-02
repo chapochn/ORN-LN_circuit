@@ -4,12 +4,29 @@
 Created on Tue Mar 26 11:56:59 2019
 
 @author: Nikolai M Chapochnikov
+
+This plots the plots related to the simulation of the model on
+artificial datasets, to understand its functioning
+
+the external files are that used are:
+data_i = 3
+f'dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy
+f'dataset{data_i}/Y_K{K}_rho{rho}.npy'
+f'dataset{data_i}/Z_K{K}_rho{rho}.npy'
+
+data_i = 1, 2
+f'dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
+f'dataset{data_i}/Y_K{K}_rho{rho}.npy'
+f'dataset{data_i}/Z_K{K}_rho{rho}.npy'
+
+FROM olf_circ_offline_sims.py
+
 """
 
 # %%
 # ################################# IMPORTS ###################################
 
-from plots_paper_import import *
+from plots_import import *
 # %%
 # ################################  RELOADS  ##################################
 importlib.reload(FO)
@@ -57,12 +74,9 @@ for rho in rhos_sel:
     ax.plot(x, FOC.damp_sx(x, 1, rho=rho), c=rhos[rho])
     ax.text(6.2, FOC.damp_sx(6, 1, rho=rho), rho)
 ax.text(6.2, 6.8, r'$\rho:$')
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
 ax.set(ylabel=r'axon, PCA s.d. ($\sigma_Y$)',
        xlabel=r'soma, PCA s.d. ($\sigma_X$)',
        xticks=[0, 3, 6], yticks=[0, 3, 6])
-ax.tick_params(axis='both',  pad=1)
 
 file = f'{PP_THEORY}/sy_sx.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -87,11 +101,6 @@ for rho in rhos_sel:
     ax.loglog(x, FOC.damp_sx(x, 1, rho=rho), c=rhos[rho])
     ax.text(x_end + 50, FOC.damp_sx(x_end, 1, rho=rho), rho)
 ax.text(x_end + 50, x_end + 200, r'$\rho:$')
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-
-
-
 
 x = np.logspace(-0.8, 0.9, 100)
 ax.loglog(x, 10*x, ls='--', lw=1, c='k')
@@ -105,9 +114,8 @@ ax.text(9, 0.06, r'$\sigma_Y\propto \sigma_X^{1/3}$',
 ax.set(ylabel=r'axon, PCA s.d. ($\sigma_Y$)',
        xlabel=r'soma, PCA s.d. ($\sigma_X$)',
        xticks=[0.1, 1, 10, 100], yticks=[0.1, 1, 10, 100],
-      xticklabels=[0.1, 1, 10, 100],
-      yticklabels=[0.1, 1, 10, 100])
-ax.tick_params(axis='both',  pad=1)
+       xticklabels=[0.1, 1, 10, 100],
+       yticklabels=[0.1, 1, 10, 100])
 ax.minorticks_off()
 # ax.set_xticks([0.1, 1, 10, 100])
 
@@ -124,16 +132,15 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 data_i = 3
 D = 2
 n_clusters = 2
-file = FO.OLF_PATH / \
-       f'results/dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
+file = RESULTS_PATH / f'dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
 X = np.load(file)
 # df = pd.DataFrame(X)
 D, N = X.shape
 K = 2
 rho = 1
-file = FO.OLF_PATH / f'results/dataset{data_i}/Y_K{K}_rho{rho}.npy'
+file = RESULTS_PATH / f'dataset{data_i}/Y_K{K}_rho{rho}.npy'
 Y_NNC = np.load(file)
-file = FO.OLF_PATH / f'results/dataset{data_i}/Z_K{K}_rho{rho}.npy'
+file = RESULTS_PATH / f'dataset{data_i}/Z_K{K}_rho{rho}.npy'
 Z_NNC = np.load(file)
 
 
@@ -174,7 +181,7 @@ for data, label in [(X, 'X'), (Z_NNC, 'NNC'), (Z_LC, 'LC')]:
         act_map, divnorm = FP.get_div_color_map(-v_max, -v_max, v_max)
         cb_ticks = [-1, 1]
     else:
-        divnorm = matplotlib.colors.Normalize(0, v_max)
+        divnorm = mpl.colors.Normalize(0, v_max)
         act_map = 'Oranges'
         cb_ticks = [0, 1]
     if label == 'X':
@@ -191,9 +198,9 @@ for data, label in [(X, 'X'), (Z_NNC, 'NNC'), (Z_LC, 'LC')]:
         xlabel = ''
         pad_down = 0.1
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
-                       cb_ticks, pads=[pad_l, pad_r, pad_down, pad_up],
+                                     cb_ticks, pads=[pad_l, pad_r, pad_down, pad_up],
                                      extend='neither',
-                       squeeze=squeeze, do_vert_spl=False, SQ=SQ, CB_DX=0.06,
+                                     squeeze=squeeze, do_vert_spl=False, SQ=SQ, CB_DX=0.06,
                                      cb_title_font=cb_title_font)
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=xlabel)
 
@@ -258,23 +265,23 @@ FP.plot_scatter(ax, X[0], X[1], r'$x_1$, $y_1$',
                 show_cc=False,
                 s=size, c='k', lw=lw, label=f'soma {Xttex}')
 s2 = ax.scatter(*Y_LC[:2], s=size, c='magenta', lw=lw, label=f'LC, axon {Yttex}',
-           alpha=0.9)
-legend1 = ax.legend(frameon=False, ncol=1, columnspacing=0.8, borderpad=0,
-          loc='upper left', handletextpad=0.4, handlelength=0.8,
-          bbox_to_anchor=(-.1, 1.25), labelspacing=0.2)
+                alpha=0.9)
+legend1 = ax.legend(ncol=1, columnspacing=0.8,
+                    loc='upper left', handletextpad=0.4, handlelength=0.8,
+                    bbox_to_anchor=(0, 1.22), labelspacing=0.3)
 for i in range(N):
     ax.plot([X[0, i], Y_LC[0, i]],[X[1, i], Y_LC[1, i]], c='k', lw=0.3, ls='-',
             alpha=0.2)
 l1, = ax.plot([0, U_X[0, 0]*sigmax[0]], [0, U_X[0, 1]*sigmax[0]], c='salmon', lw=2,
-        label=r'$\sigma_{X, 1} \mathbf{u}_{X, 1}$', alpha=alpha, clip_on=False)
+              label=r'$\sigma_{X, 1} \mathbf{u}_{X, 1}$', alpha=alpha, clip_on=False)
 l2, = ax.plot([0, U_X[1, 0]*sigmax[1]], [0, U_X[1, 1]*sigmax[1]], c='mediumpurple', lw=2,
-        label=r'$\sigma_{X, 2} \mathbf{u}_{X, 2}$', alpha=alpha, clip_on=False)
+              label=r'$\sigma_{X, 2} \mathbf{u}_{X, 2}$', alpha=alpha, clip_on=False)
 l3, = ax.plot([0, U_X[0, 0]*sigmay[0]], [0, U_X[0, 1]*sigmay[0]], c='r',
-        label=r'$\sigma_{Y, 1} \mathbf{u}_{Y, 1}$', clip_on=False)
+              label=r'$\sigma_{Y, 1} \mathbf{u}_{Y, 1}$', clip_on=False)
 l4, = ax.plot([0, U_X[1, 0]*sigmay[1]], [0, U_X[1, 1]*sigmay[1]], c='darkviolet',
-        label=r'$\sigma_{Y, 2} \mathbf{u}_{Y, 2}$', clip_on=False)
+              label=r'$\sigma_{Y, 2} \mathbf{u}_{Y, 2}$', clip_on=False)
 l5, = ax.plot([-1, -1], [-0.5, -0.5], label=r'$\mathbf{w}_1, \mathbf{w}_2$',
-        alpha=0.9, c='g') # not visible, just for legend
+              alpha=0.9, c='g') # not visible, just for legend
 plot_lines = [l1, l2, l3, l4, l5]
 ax.set_xlim(-.15, v_max)
 ax.set_ylim(-.15, v_max)
@@ -286,11 +293,9 @@ for k in range(K):
     ax.arrow(0, 0, W[0, k], W[1, k], **kwargs)
 
 
-legend2 = plt.legend(handles=plot_lines,
-                          frameon=False, ncol=1, columnspacing=0.8, borderpad=0,
-                            loc='upper right', handletextpad=0.4, handlelength=0.8,
-                            bbox_to_anchor=(1.1, 1.25), labelspacing=0.7
-                          )
+legend2 = plt.legend(handles=plot_lines, ncol=1,
+                     loc='upper right',
+                     bbox_to_anchor=(1.09, 1.21), labelspacing=0.5)
 
 # Add the legend manually to the current Axes.
 ax.add_artist(legend1)
@@ -306,7 +311,7 @@ file = f'{PP_THEORY}/dataset{data_i}_scatterXY_LC.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
-
+print('done')
 # %%
 # #############################################################################
 # #############################################################################
@@ -320,7 +325,7 @@ n_clusters = 2
 
 act_map = 'Oranges'
 v_max = 1.5
-divnorm = matplotlib.colors.Normalize(0, v_max)
+divnorm = mpl.colors.Normalize(0, v_max)
 title = f'LN activity patterns {Ztex}'
 ylabel = r'$z_i$'
 cb_title = ''
@@ -367,14 +372,11 @@ kwargs = {'length_includes_head':True, 'width':0.04, 'color':'g',
 for k in range(K):
     ax.arrow(0, 0, W[0, k], W[1, k], **kwargs)
 
-# ax.legend(frameon=False, ncol=3, columnspacing=1., borderpad=0,
+# ax.legend(ncol=3, columnspacing=1.,
 #           loc='upper right', handletextpad=0.4, handlelength=1,
 #           bbox_to_anchor=(1.15, 1.3))
-ax.legend(frameon=False, ncol=2, columnspacing=1.2, borderpad=0,
-          handletextpad=0.2,
-          loc='upper center', scatterpoints=1,
-          bbox_to_anchor=(0.5, 1.25),
-          handlelength=0.8, labelspacing=0.2)
+ax.legend(ncol=2, loc='upper right',
+          bbox_to_anchor=(1.09, 1.21), labelspacing=0.3)
 
 file = f'{PP_THEORY}/dataset{data_i}_scatterXY_NNC.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -411,21 +413,13 @@ def plot_sv1(datas, order=None):
     ax.set(ylabel='variance', xlabel=f'PCA direction',
            xticks=[1, 2], ylim=[0 , None], xlim=[0.75, 2.25],
            yticks=[0, 1])
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.tick_params(axis='both',  pad=1)
     handles, labels = ax.get_legend_handles_labels()
     if order is None:
         order = np.arange(len(handles))
     leg = ax.legend([handles[idx] for idx in order],
                     [labels[idx] for idx in order],
-                    bbox_to_anchor=(1.6, 1.15), loc='upper right',
-                    frameon=False, borderpad=0,
-                    handletextpad=0.4
-                    )
-    leg.get_frame().set_linewidth(0.0)
-    # leg = ax.legend()
-    # leg.get_frame().set_linewidth(0.0)
+                    bbox_to_anchor=(1.5, 1.15), loc='upper right',
+                    handlelength=2)
     return f
 
 
@@ -443,7 +437,7 @@ FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 
 
- # %%
+# %%
 # #############################################################################
 # #############################################################################
 # #############################################################################
@@ -466,8 +460,8 @@ n_clusters = 2
 D = 10
 act_map = 'Oranges'
 v_max = 1.5
-divnorm = matplotlib.colors.Normalize(0, v_max)
-title = f'Input activity patterns {Xtstex}'
+divnorm = mpl.colors.Normalize(0, v_max)
+title = f'Sona activity patterns {Xtstex}'
 cb_title = ''
 cb_ticks = [0, 0.5, 1]
 ylabel = r'$x_i$'
@@ -476,19 +470,18 @@ lw=0
 pad_up = 0.2
 # for data_i in [1, 2, 3]:  # the 3rd dataset is plotted above
 for data_i in [1, 2]:
-# for data_i in [1]:
+    # for data_i in [1]:
     if data_i == 3:
         D = 2
     else:
         D = 10
-    file = FO.OLF_PATH / \
-           f'results/dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
+    file = RESULTS_PATH / f'dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
     X = np.load(file)
     df = pd.DataFrame(X)
     D, N = X.shape
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
-                       cb_ticks, pads=[0.2, 0.4, 0.3, pad_up], extend='neither',
-                       squeeze=0.1, do_vert_spl=False, SQ=SQ/10*9)
+                                     cb_ticks, pads=[0.2, 0.4, 0.3, pad_up], extend='neither',
+                                     squeeze=0.1, do_vert_spl=False, SQ=SQ*0.9)
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=f'samples (T={N})')
 
     file = f'{PP_WrhoK}/dataset{data_i}.'
@@ -519,7 +512,7 @@ n_clusters = 2
 
 act_map = 'Oranges'
 v_max = 1.5
-divnorm = matplotlib.colors.Normalize(0, v_max)
+divnorm = mpl.colors.Normalize(0, v_max)
 title = f'LN activity patterns {Ztex}'
 ylabel = r'$z_i$'
 cb_title = ''
@@ -531,22 +524,22 @@ wtexs[2] = r'$\mathbf{w}_2$'
 wtexs[3] = r'$\mathbf{w}_3$'
 # for data_i in [1, 2, 3]: # in case you also want to do the 3rd dataset
 for data_i in [1, 2]:
-# for data_i in [3]:
-# for data_i in [1]:
+    # for data_i in [3]:
+    # for data_i in [1]:
     if data_i == 3:
         iters = [(1, 2)]
         D = 2
     else:
         iters = itertools.product([0.1, 1, 10], [2, 3])
         D = 10
-    file = FO.OLF_PATH / f'results/dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
+    file = RESULTS_PATH / f'dataset{data_i}/dataset_{D}D_{n_clusters}clusters.npy'
     X = np.load(file)
     D, N = X.shape
     for rho, K in iters:
-    # for rho, K in itertools.product([0.1], [2]):
-        file = FO.OLF_PATH / f'results/dataset{data_i}/Y_K{K}_rho{rho}.npy'
+        # for rho, K in itertools.product([0.1], [2]):
+        file = RESULTS_PATH / f'dataset{data_i}/Y_K{K}_rho{rho}.npy'
         Y = np.load(file)
-        file = FO.OLF_PATH / f'results/dataset{data_i}/Z_K{K}_rho{rho}.npy'
+        file = RESULTS_PATH / f'dataset{data_i}/Z_K{K}_rho{rho}.npy'
         Z = np.load(file)
 
 
@@ -560,13 +553,12 @@ for data_i in [1, 2]:
         new_order = sch.leaves_list(links)
 
 
-        divnorm = matplotlib.colors.Normalize(0, df.values.max())
+        divnorm = mpl.colors.Normalize(0, df.values.max())
         f, ax, _ = FP.plot_full_activity(df.iloc[new_order], act_map, divnorm,
                                          title, cb_title,
                                          cb_ticks, pads=[0.2, 0.4, 0.3, pad_up],
                                          extend='neither', squeeze=0.1,
-                                         do_vert_spl=False,
-                                         set_ticks_params=False,SQ=SQ*9/10)
+                                         do_vert_spl=False, SQ=SQ*9/10)
         ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='samples')
 
         file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_Z.'
@@ -574,7 +566,7 @@ for data_i in [1, 2]:
         FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
 
-        fs, axs = FP.calc_fs_ax([0.3, 0.3, 0.3, 0.01], 9 * SQ, 9 * SQ)
+        fs, axs = FP.calc_fs_ax([0.3, 0.4, 0.3, 0.01], 9 * SQ, 9 * SQ)
         f = plt.figure(figsize=fs)
         ax = f.add_axes(axs)
         ax.plot([-1, -1], [-0.5, -0.5], label=r'$\mathbf{w}_{k}$',
@@ -584,8 +576,8 @@ for data_i in [1, 2]:
                         yticks=[0, 1],
                         pca_line_scale1=0., pca_line_scale2=0.,
                         show_cc=False,
-                        s=size, c='k', lw=lw, label=f'input {Xttex}')
-        ax.scatter(*Y[:2], s=size, c='r', lw=lw, label=f'output {Yttex}')
+                        s=size, c='k', lw=lw, label=f'soma {Xttex}')
+        ax.scatter(*Y[:2], s=size, c='r', lw=lw, label=f'axon {Yttex}')
         # ax.scatter(*W[:2], s=size, c='g', lw=3, label=r'$\mathbf{w}_{k}$',
         #            marker='+')
         kwargs = {'length_includes_head':True, 'width':0.04, 'color':'g',
@@ -595,10 +587,7 @@ for data_i in [1, 2]:
             ax.arrow(0, 0, W[0, k], W[1, k], **kwargs)
         ax.set_xlim(0, v_max)
         ax.set_ylim(0, v_max)
-        ax.legend(frameon=False, borderpad=0, handletextpad=0.2,
-                  loc='upper left', scatterpoints=1,
-                  bbox_to_anchor=(0.6, 1.05), labelspacing=0.,
-                  handlelength=1)
+        ax.legend(loc='upper right', bbox_to_anchor=(1.6, 1.0), labelspacing=0.3)
 
         file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_XYW_scatter.'
         FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -630,4 +619,4 @@ for data_i in [1, 2]:
 
 
 print('Final done')
-#%%
+ #%%

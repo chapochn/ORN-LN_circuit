@@ -1,8 +1,13 @@
 """
-Created on Aug 5 2019
+Created in 2021
 
 @author: Nikolai M Chapochnikov
 
+this generates several results that are then plotted in the paper:
+W_NNC-4.hdf
+W_NNC-8.hdf
+the files in dataset1 and dataset2 (related to changing rho and K
+to see the effect of the correlation of W) and dataset3 (use for figure 6)
 
 """
 # %%
@@ -196,7 +201,7 @@ K = 3
 K = 2
 # There is a bit of tinkering needed if terms of alpha as far as I remember
 alpha = 50  # seems to be a bit faster
-alpha = 1  # maybe more slower but more precise
+alpha = 1  # maybe slower but more precise
 # for rho in [0.1, 1, 10]:  # the parameters needed in the paper
 for rho in [.1]:
     Y1, Z1, costs = FOC.olf_gd_offline(X, K, max_iter=100000, rectY=rect,

@@ -4,17 +4,14 @@ M and sqrt(W.T*W)
 
 @author: Nikolai M Chapochnikov
 """
-
+#%%
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import functions.olfactory as FO
 import functions.general as FG
 import scipy.linalg as LA
-import scipy.stats as SS
 
-
-import functions.datasets as FD
 # %%
 
 SIDES = ['L', 'R']
@@ -67,6 +64,7 @@ def signif_sqrtWTW_M(W, M_entries, N, diag):
     return cc_shfl
 
 def signif_sqrtWTW_M_LR(WL, WR, M_entries, N, diag):
+    # shuffling the columns of W
     cc_shfl = np.zeros(N)
     for i in range(N):
         WL_shfl = FG.shuffle_matrix(WL)
@@ -78,8 +76,23 @@ def signif_sqrtWTW_M_LR(WL, WR, M_entries, N, diag):
         cc_shfl[i] = np.corrcoef(W_entr_shfl, M_entries)[0, 1]
     return cc_shfl
 
+def signif_sqrtWTW_M_LR2(WL, WR, M_entries, N, diag):
+    # shuffling the rows of W, meaning that the connectivity of each single ORN
+    # remains the same
+    cc_shfl = np.zeros(N)
+    for i in range(N):
+        WL_shfl = FG.shuffle_matrix(WL.T).T
+        WR_shfl = FG.shuffle_matrix(WR.T).T
+        WTW_L_shfl = LA.sqrtm(WL_shfl.T @ WL_shfl)
+        WTW_R_shfl = LA.sqrtm(WR_shfl.T @ WR_shfl)
+        W_entr_shfl = np.concatenate([FG.get_entries(WTW_L_shfl, diag=diag),
+                                      FG.get_entries(WTW_R_shfl, diag=diag)])
+        cc_shfl[i] = np.corrcoef(W_entr_shfl, M_entries)[0, 1]
+    return cc_shfl
+
 
 def signif_sqrtWTW_M_LRbis(WL, WR, M_entries, N, diag):
+    # shuffling both W and M
     cc_shfl = np.zeros(N)
     for i in range(N):
         WL_shfl = FG.shuffle_matrix(WL)
@@ -114,32 +127,43 @@ cc_shfl = signif_sqrtWTW_M_LR(W_f_L.values, W_f_R.values,
                               M_entries, N, diag)
 pval = np.mean(cc_shfl > cc_real)
 print('sqrt(WTW) vs M, on LR, cc', cc_real, 'pval', pval)
+
 cc_shfl = signif_sqrtWTW_M_LRbis(W_f_L.values, W_f_R.values,
                               M_entries, N, diag)
 pval = np.mean(cc_shfl > cc_real)
 print('sqrt(WTW) vs M, on LR, shuffling M as well, cc', cc_real, 'pval', pval)
 
+# this is not used in the paper:
 
-W_entries = FG.get_entries(LA.sqrtm(WTW_L), diag=diag)
-M_entries = FG.get_entries(M_L, diag=diag)
-plt.figure()
-plt.scatter(M_entries, W_entries)
-plt.title('sqrt(WTW) vs M, L')
-plt.show()
-cc_real = np.corrcoef(W_entries, M_entries)[0, 1]
-cc_shfl = signif_sqrtWTW_M(W_f_L.values, M_entries, N, diag)
-pval = np.mean(cc_shfl > cc_real)
-print('sqrt(WTW) vs M, on L, cc', cc_real, 'pval', pval)
+# shuffling the rows of W instead of the columns, so that the total synaptic
+# strenght of each ORN remains the same
+# cc_shfl = signif_sqrtWTW_M_LR2(W_f_L.values, W_f_R.values,
+#                               M_entries, N, diag)
+# pval = np.mean(cc_shfl > cc_real)
+# print('sqrt(WTW) vs M, on LR, cc', cc_real, 'pval', pval)
 
 
-W_entries = FG.get_entries(LA.sqrtm(WTW_R), diag=diag)
-M_entries = FG.get_entries(M_R, diag=diag)
-plt.figure()
-plt.scatter(M_entries, W_entries)
-plt.title('sqrt(WTW) vs M, R')
-plt.show()
-cc_real = np.corrcoef(W_entries, M_entries)[0, 1]
-cc_shfl = signif_sqrtWTW_M(W_f_R.values, M_entries, N, diag)
-pval = np.mean(cc_shfl > cc_real)
-print('sqrt(WTW) vs M, on R, cc', cc_real, 'pval', pval)
+
+# W_entries = FG.get_entries(LA.sqrtm(WTW_L), diag=diag)
+# M_entries = FG.get_entries(M_L, diag=diag)
+# plt.figure()
+# plt.scatter(M_entries, W_entries)
+# plt.title('sqrt(WTW) vs M, L')
+# plt.show()
+# cc_real = np.corrcoef(W_entries, M_entries)[0, 1]
+# cc_shfl = signif_sqrtWTW_M(W_f_L.values, M_entries, N, diag)
+# pval = np.mean(cc_shfl > cc_real)
+# print('sqrt(WTW) vs M, on L, cc', cc_real, 'pval', pval)
+#
+#
+# W_entries = FG.get_entries(LA.sqrtm(WTW_R), diag=diag)
+# M_entries = FG.get_entries(M_R, diag=diag)
+# plt.figure()
+# plt.scatter(M_entries, W_entries)
+# plt.title('sqrt(WTW) vs M, R')
+# plt.show()
+# cc_real = np.corrcoef(W_entries, M_entries)[0, 1]
+# cc_shfl = signif_sqrtWTW_M(W_f_R.values, M_entries, N, diag)
+# pval = np.mean(cc_shfl > cc_real)
+# print('sqrt(WTW) vs M, on R, cc', cc_real, 'pval', pval)
 

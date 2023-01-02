@@ -20,22 +20,38 @@ Install Python 3 and the required packages (e.g., via Anaconda) in the file
 
 
 
-Put the folder root folder "ORN-LN_circuit" in your home directory.
+Put the folder root folder "ORN-LN_circuit" (or a link to it) in your home directory.
 
 
-Run the following files in the "ORN-LN_circuit/bin" folder (this step may be skipped):
+Running the following files "ORN-LN_circuit/bin" folder will compute data
+in the 'results' folder,
+necessary to generate the plots (below). These simulations have been prerun, so
+this step can be skipped.
 - act_preprocess.py
 - con_preprocess.py
-- act_odors_ORN_vs_con_ORN-LN.py
-- act_ORN_vs_con_ORN-LN.py
-- act_ORN_whitening.py
+- con_analysis_MvsW.py (only prints a significance used for plotting)
+- olf_circ_offline_sims_ORN-data.py
 - olf_circ_offline_sims.py
+- olf_circ_online_sims_real-syn-counts.py
+- olf_circ_noM_offline_sims.py
+- act_odors_ORN_vs_con_ORN-LN.py
+- act_odors_ORN_vs_con_ORN-LN_recon.py
+- act_odors_ORN_vs_con_ORN-LN_cdf-simulations.py (only gives plots)
+- act_odors_ORN_vs_con_NNC.py
+- act_ORN_vs_con_ORN-LN.py
 
-This will regenerate files that are already present in the "results" folder.
-
+The following files with generate all the plots present in the paper:
+- plots_activity.py
+- plots_activity-conn-cdf.py
+- plots_connectivity.py
+- plots_models-theory.py
+- plots_models-theory-noM.py
+- plots_models-ORN-act.py (needs to be run twice, with SCAL_W=2 and with SCAL_W=10 inside the file)
+- plots_model-real-syn-counts.py
 Then run the file "ORN-LN_circuit/bin/plots_paper.py", which will generate the plots in the paper in the folder "plots/plots_paper".
 
 To obtain additional supplementary figures, rerun the file "ORN-LN_circuit/bin/plots_paper.py" with SCAL_W = 10 instead of SCAL_W = 2 (on line 3032 of "plots_paper.py"), which will in addition generate the folder whitening10 inside plots/plots_paper/[date_time].
 
 
-NOTE: because some simulations are non deterministic, the generated plots might slightly differ from the plots in the paper.
+NOTE: because some simulations are non-deterministic, the generated plots might
+slightly differ from the plots in the paper.

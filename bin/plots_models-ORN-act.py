@@ -4,13 +4,27 @@
 Created on Tue Mar 26 11:56:59 2019
 
 @author: Nikolai M Chapochnikov
+
+
+This plots the plots related to the simulation of the model on
+the ORN datasets, to understand the effect on these particular
+odor representations
+
+the external files are that used are:
+'NNC-Y_act-all.hdf'
+'NNC-Z_act-all.hdf'
+f'orthogonal_matrix_{k}.npy'
+
+
+FROM olf_circ_offline_sims_ORN-data
+
 """
 
 # %%
 # ################################# IMPORTS ###################################
 import pandas as pd
 
-from plots_paper_import import *
+from plots_import import *
 # %%
 # ################################  RELOADS  ##################################
 importlib.reload(FO)
@@ -131,7 +145,7 @@ conc = 'all'
 pps = f'{SCAL_W}o'
 
 if SAVE_PLOTS:
-    PP_WHITE = PATH_PLOTS / f'whitening{SCAL_W}'
+    PP_WHITE = PATH_PLOTS / f'simulations_ORN-act_rho{SCAL_W}'
     PP_WHITE.mkdir(exist_ok=True)
 
 Y_nnc = {}
@@ -148,7 +162,10 @@ Y_nnc_cc_p_o = {}  # patterns outside same odor
 
 Y_lc = {}
 Y_lc_sel = {}
-Z_lc = {}
+Z_lc = {}  # this is the LN activity after multiplying by a random
+# orthogonal matrix on the left, from here the M is extracted, and then the
+# off-diagonal values are removed to investigate the circuit without
+#LN-LN circuit
 Z_lc2 = {}  # this is the activity without multiplying by a random
 # orthogonal matrix on the left
 Z_lc_sel = {}
@@ -185,17 +202,17 @@ U_random = {} ##############  check if you want real random below #########
 if SCAL_W == 2:
     LN_order = {}
     LN_order[1] = [1]
-    LN_order[2] = [2, 1]
-    LN_order[3] = [3, 1, 2]
-    LN_order[4] = [2, 1, 3, 4]
-    LN_order[8] = [7, 1, 8, 3, 4 ,2, 5, 6]
+    LN_order[2] = [1, 2]
+    LN_order[3] = [2, 1, 3]
+    LN_order[4] = [3, 1, 2, 4]
+    LN_order[8] = [4, 2, 8, 3, 1, 7, 5, 6]
 elif SCAL_W == 10:
     LN_order = {}
     LN_order[1] = [1]
-    LN_order[2] = [2, 1]
-    LN_order[3] = [1, 2, 3]
-    LN_order[4] = [2, 1, 4, 3]
-    LN_order[8] = [5, 3, 1, 4, 8, 6, 2, 7]
+    LN_order[2] = [1, 2]
+    LN_order[3] = [2, 1, 3]
+    LN_order[4] = [4, 2, 1, 3]
+    LN_order[8] = [8, 2, 4, 3, 1, 5, 7, 6]
 
 print('done')
 #%%
@@ -240,9 +257,9 @@ for k in range(1, 9):
     Y_lc_noM[k] = Y_lc[k].copy()
     Z_lc_noM[k] = Z_lc[k].copy()
 
-    Y_lc_noM[k][:], Z_lc_noM[k][:] = FCS.olf_output_offline(X.values,
-                            W_lc_noM[k].values, W_lc_noM[k].values,
-                            M_lc_noM[k], SCAL_W, method='inv')
+    Y_lc_noM[k][:], Z_lc_noM[k][:] = FCS.olf_output_online_bulk(X.values,
+                                                                W_lc_noM[k].values, W_lc_noM[k].values,
+                                                                M_lc_noM[k], SCAL_W, method='inv')
 
     res = get_important_data(Y_lc_noM[k], Z_lc_noM[k])
     Y_lc_noM[k], Y_lc_noM_sel[k], Z_lc_noM[k], _, _, _ = res
@@ -258,9 +275,9 @@ for k in range(1, 9):
     # for this eta1 needs to be 1/est instead of 0.001
     # not sure for what you are using 0.001
     # TODO: will need to find and test
-    res = FCS.olf_output_offline(X.values,
-                                 W_nnc_noM[k].values, W_nnc_noM[k].values,
-                                 M_nnc_noM[k], SCAL_W, method='GD_NN')
+    res = FCS.olf_output_online_bulk(X.values,
+                                     W_nnc_noM[k].values, W_nnc_noM[k].values,
+                                     M_nnc_noM[k], SCAL_W, method='GD_NN')
     Y_nnc_noM[k][:], Z_nnc_noM[k][:] = res
 
     res = get_important_data(Y_nnc_noM[k], Z_nnc_noM[k])
@@ -330,10 +347,12 @@ def plot_XYtrans(data):
     if title == 'LC-8' or title == "LC'-8":
         ax.set_xticks([0, 4, 7, 9, 14, 20], [1, 5, 8, 10, 15, 21])
     ax.tick_params('both', which='minor', length=0)
-    ax.tick_params('both', which='major', bottom=True, left=True, pad=1, length=2)
-    for spine in ax.spines.values():
-        spine.set_visible(True)
-    [i.set_linewidth(0.5) for i in ax.spines.values()]
+    # ax.tick_params('both', which='major', bottom=False, left=False, direction='in')
+    # for spine in ax.spines.values():
+    #     spine.set_visible(True)
+    ax.spines['left'].set_visible(True)
+    ax.spines['bottom'].set_visible(True)
+    # [i.set_linewidth(0.5) for i in ax.spines.values()]
     ax.set_xlabel(r'PCA direction $\mathbf{u}_{X,i}$')
     ax.set_ylabel(r'PCA direction $\mathbf{u}_{Y,i}$')
     ax.set_xticks(np.arange(-.5, 21, 1), minor=True)
@@ -481,19 +500,15 @@ def plot_XYcrosscorr_diag(data):
     ax = f.add_axes(axs)
     for i in range(len(data[1])):
         ax.plot(data[1][i], c=colors[i], ls=ls[i], label=labels[i])
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
     ax.set_xlabel('ORNs')
     ax.set_ylabel(r'corr. coef. $r$')
     ax.set_yticks([0.8, 0.9, 1])
-    ax.set_xticks(np.arange(data[0].shape[1]))
-    ax.set_xticklabels([])
-    ax.tick_params(axis='x', which='both', bottom=False, pad=-2)
+    ax.set_xticks(np.arange(data[0].shape[1]), [])
+    ax.tick_params(axis='x', which='both', bottom=False, direction='in')
     ax.xaxis.grid()
 
-    ax.legend(ncol=3, loc=10,
-              bbox_to_anchor=(0.1, 1.01, .8, 0.1), frameon=False,
-              handletextpad=0.5, columnspacing=1)
+    ax.legend(ncol=2, loc='lower center', bbox_to_anchor=(0.5, 1.01),
+              handlelength=2)
 
     file =  f'{PP_ROT}/ORN_act-{pps}_{name}_crosscorr_diag'
     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -551,10 +566,10 @@ datas = [['X', X.copy(), False, False, True,
          ['NNC8', Y_nnc[8].copy(), False, False, True, 4,
           f'NNC-8, ORN axon activity {Ytex}',
           [-2, 0, 2, 4]]
-#         ['LC-noM8', Y_lc_noM_sel[8].copy(), False, False, True, 4,
-#          f"LC'-8, output activity {Ytex}"],
-#         ['NNC-noM8', Y_nnc_noM_sel[8].copy(), False, False, True, 4,
-#          f"NNC'-8, output activity {Ytex}"]
+         #         ['LC-noM8', Y_lc_noM_sel[8].copy(), False, False, True, 4,
+         #          f"LC'-8, output activity {Ytex}"],
+         #         ['NNC-noM8', Y_nnc_noM_sel[8].copy(), False, False, True, 4,
+         #          f"NNC'-8, output activity {Ytex}"]
          ]
 
 
@@ -609,18 +624,17 @@ for data in datas:
                        title=title, show_lab_x=show_x, cmap=act_map,
                        splits_x=splx, splits_c='gray', lw=0.5,
                        **{'norm': divnorm},)
-    ax.set_xlabel('stimuli', labelpad=0)
+    ax.set_xlabel('stimuli')#, labelpad=0)
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
-    ax.set_ylabel('ORNs', labelpad=0)
+    ax.set_ylabel('ORNs')#, labelpad=0)
     print('figure size:', fs)
 
     if cb:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                             CB_W / fs[0], axs[3]])
         clb = add_colorbar_crt(cp, ax_cb, 'a.u.', cb_ticks,
-                              extend='max')
-        clb.ax.set_yscale('linear')  # new option needed for
+                               extend='max')
         # clb = add_colorbar_crt(cp, ax_cb, r'$\Delta F/F$', [-2, 0, 2, 4, 6])
         # clb.ax.set_yticklabels(['0', '2', '4', '6'])
 
@@ -630,16 +644,37 @@ for data in datas:
 print('done')
 #%%
 
+# this is to arrange the ordering so that it it visually related to the
+# actual LNs
+
+LNs_M = ['Broad T M M', 'Broad D M M', 'Keystone M M', 'Picky 0 [dend] M']
+con_sel = con_strms3_cn[0][LNs_M].loc[par_act.ORN_order]
+
+K = 8
+LN_order[2] = [1, 2]
+LN_order[3] = [2, 1, 3]
+LN_order[4] = [4, 2, 1, 3]
+LN_order[8] = [8, 2, 4, 3, 1, 5, 7, 6]
+
+W_sel = FG.get_ctr_norm(W_nnc[K][LN_order[K]])
+W_sel.values.T @ con_sel
+#%%
+
+
 if SCAL_W == 2:
     datas = [['NNC8LN', Z_nnc[8].copy().loc[LN_order[8]], False, False, True, 8,
               f'NNC-8, LN activity {Ztex}', [0, 4, 8]],
-            ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 8,
+             ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 8,
+              f'NNC-4, LN activity {Ztex}', [0, 8]],
+             ['NNC8LN_noM', Z_nnc_noM[8].copy().loc[LN_order[8]], False, False, True, 8,
+              f'NNC-8, LN activity {Ztex}', [0, 4, 8]],
+             ['NNC4LN_noM', Z_nnc_noM[4].copy().loc[LN_order[4]], False, False, True, 8,
               f'NNC-4, LN activity {Ztex}', [0, 8]]
              ]
 elif SCAL_W ==10:
     datas = [['NNC8LN', Z_nnc[8].copy().loc[LN_order[8]], False, False, True, 16,
               f'NNC-8, LN activity {Ztex}', [0, 8, 16]],
-            ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 16,
+             ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 16,
               f'NNC-4, LN activity {Ztex}', [0, 16]]
              ]
 pads = [0.2, 0.4, 0.15, 0.2]
@@ -653,7 +688,7 @@ for data in datas:
     title = data[6]
     cb_ticks = data[7]
 
-    divnorm = matplotlib.colors.Normalize(0, v_max)
+    divnorm = mpl.colors.Normalize(0, v_max)
     # divnorm = None
     act_map = 'Oranges'
 
@@ -682,17 +717,17 @@ for data in datas:
                        title=title, show_lab_x=show_x, cmap=act_map,
                        splits_x=splx, splits_c='gray', lw=0.5,
                        **{'norm': divnorm})
-    ax.set_xlabel('stimuli', labelpad=0)
+    ax.set_xlabel('stimuli')
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
-    ax.set_ylabel('LNs', labelpad=0)
+    ax.set_ylabel('LNs')
     print('figure size:', fs)
 
     if cb:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                             CB_W / fs[0], axs[3]])
         clb = add_colorbar_crt(cp, ax_cb, 'a.u.', cb_ticks,
-                              extend='max')
+                               extend='max')
         # clb = add_colorbar_crt(cp, ax_cb, r'$\Delta F/F$', [-2, 0, 2, 4, 6])
         # clb.ax.set_yticklabels(['0', '2', '4', '6'])
 
@@ -720,24 +755,8 @@ print('done')
 # #############################################################################
 
 
-# in NNC
-if SCAL_W == 2:
-    LN_order = {}
-    LN_order[1] = [1]
-    LN_order[2] = [2, 1]
-    LN_order[3] = [3, 1, 2]
-    LN_order[4] = [2, 1, 3, 4]
-    LN_order[8] = [7, 1, 8, 3, 4 ,2, 5, 6]
-elif SCAL_W == 10:
-    LN_order = {}
-    LN_order[1] = [1]
-    LN_order[2] = [2, 1]
-    LN_order[3] = [1, 2, 3]
-    LN_order[4] = [2, 1, 4, 3]
-    LN_order[8] = [5, 3, 1, 4, 8, 6, 2, 7]
-
 for K in [1, 2, 3, 4, 8]:
-# for K in [8]:
+    # for K in [8]:
     name = f'NNC{K}Z'
     df = Z_nnc[K].copy()
     df = df.loc[LN_order[K], :]
@@ -746,7 +765,7 @@ for K in [1, 2, 3, 4, 8]:
     # vmin_to_show = -2
     vmax = np.ceil(np.max(df.values))
     # act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
-    divnorm = matplotlib.colors.Normalize(0, vmax)
+    divnorm = mpl.colors.Normalize(0, vmax)
     # divnorm = None
     act_map = 'Oranges'
 
@@ -757,7 +776,8 @@ for K in [1, 2, 3, 4, 8]:
         ylabel = 'LN'
     cb_ticks = [0, vmax]
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
-                                  extend='neither', cb_title_font=cb_title_font)
+                                     extend='neither', cb_title_font=cb_title_font,
+                                     squeeze=0.5)
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='')
 
     file_name = f'{PP_Z}/ORN_act-{pps}_conc-all_{name}'
@@ -767,8 +787,6 @@ for K in [1, 2, 3, 4, 8]:
 print('done')
 # %%
 # In LC
-# the issue here is that for the LC, we multiplied the activity Z
-# by a random matrix
 
 for K in [1, 8]:
     name = f'LC{K}Z'
@@ -787,7 +805,8 @@ for K in [1, 8]:
     title = f'LC-{K}, LNs activity {Ztex}'
     cb_ticks = [-vmax, 0, vmax]
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
-                                  extend='neither', cb_title_font=cb_title_font)
+                                     extend='neither', cb_title_font=cb_title_font,
+                                     squeeze=0.5)
     ax.set(xticks=[], yticks=[], ylabel='LNs', xlabel='')
 
     file_name = f'{PP_Z}/ORN_act-{pps}_conc-all_{name}'
@@ -836,20 +855,17 @@ def plot_sv1(datas, order=None):
         # if you want to have the variance, instead of the SD
         # s_data = s_data**2
         ax1.plot(x_i, s_data, data[1], lw=data[2], markersize=data[3],
-                c=data[4], label=data[5], markeredgewidth=data[6])
+                 c=data[4], label=data[5], markeredgewidth=data[6])
         ax2.plot(x_i, s_data, data[1], lw=data[2], markersize=data[3],
-                c=data[4], label=data[5], markeredgewidth=data[6])
+                 c=data[4], label=data[5], markeredgewidth=data[6])
     ax1.grid()
     ax1.set(ylabel='variance', xlabel=f'PCA direction of unctr. {Xtstex}  ',
-           xticks=[1, 5, 10, 15, 21], ylim=[-0.2 , 3.5],
-           yticks=[0, 3])
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
+            xticks=[1, 5, 10, 15, 21], ylim=[-0.2 , 3.5],
+            yticks=[0, 3])
+
     ax2.grid()
     ax2.set(xticks=[1, 5, 10, 15, 21], ylim=[7-3.7/dh1*dh2 , 7],
-           yticks=[7])
-    ax2.spines['top'].set_visible(False)
-    ax2.spines['right'].set_visible(False)
+            yticks=[7])
     ax2.spines['bottom'].set_visible(False)
     ax2.tick_params(bottom=False, labelbottom=False)
 
@@ -857,11 +873,10 @@ def plot_sv1(datas, order=None):
     if order is None:
         order = np.arange(len(handles))
     leg = ax2.legend([handles[idx] for idx in order],
-                    [labels[idx] for idx in order],
-                    bbox_to_anchor=(1.05, 1.5), loc='upper right')
-    leg.get_frame().set_linewidth(0.0)
+                     [labels[idx] for idx in order],
+                     bbox_to_anchor=(1.0, 1), loc='upper right', frameon=True)
     # leg = ax.legend()
-    # leg.get_frame().set_linewidth(0.0)
+    leg.get_frame().set_linewidth(0.0)
     d = .5  # proportion of vertical to horizontal extent of the slanted line
     kwargs = dict(marker=[(-1, -d), (1, d)], markersize=5,
                   linestyle="none", color='k', mec='k', mew=0.75, clip_on=False)
@@ -919,12 +934,12 @@ def plot_cov_ev2(datas, order=None):
     ax.grid(axis='x')
     if order is None:
         order = np.arange(len(datas))
-    rect = matplotlib.patches.Rectangle((0.45, 1), 0.55,
-                                         -(len(datas) + 1)*0.11,
-                                         linewidth=0,
-                                         facecolor='white', edgecolor='white',
-                                         alpha=0.7,
-                                         transform=ax.transAxes)
+    rect = mpl.patches.Rectangle((0.45, 1), 0.55,
+                                        -(len(datas) + 1)*0.11,
+                                        linewidth=0,
+                                        facecolor='white', edgecolor='white',
+                                        alpha=0.7,
+                                        transform=ax.transAxes)
 
     # Add the patch to the Axes
     ax.add_patch(rect)
@@ -947,8 +962,6 @@ def plot_cov_ev2(datas, order=None):
     ax.set(ylabel='scaled variance', xlabel='PCA direction',
            xticks=[1, 5, 10, 15, 21], ylim=[None, None],
            yticks=[0, 1, 2, 4, 6])
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
     # [line.set_zorder(10) for line in ax.lines]
     ax.set_axisbelow(True)
     # handles, labels = plt.gca().get_legend_handles_labels()
@@ -963,7 +976,7 @@ datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
          [Y_lc[k2], '+--', 1, 5, c_l2, Ll2, 0.5]]
 
 f = plot_cov_ev2(datas, [0, 3, 4, 1, 2])
-file =f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-{k1}-{k2}_cov-ev_div-mean'
+file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-{k1}-{k2}_cov-ev_div-mean'
 FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 # ax.set_ylim(0, None)
@@ -993,15 +1006,14 @@ l_norm = 2
 
 k1 = 1
 k2 = 8
-legend_opt = {'handletextpad':0., 'frameon':False, 'loc':'upper left',
-              'borderpad':0, 'bbox_to_anchor': (-0.07, 1.04)}
+legend_opt = {'loc':'upper left', 'bbox_to_anchor': (0, 1.0)}
 
 def scatter_norm_plot(datas, axis, xmax, ticks, xlab, ylab, do_fit=False,
                       VAR=False):
     pads = (0.5, 0.15, 0.35, 0.2)
     fs, axs = FP.calc_fs_ax(pads, 14 * SQ, 14 * SQ)
     # title = 'norm of activity patterns  '
-    title = ''
+    # title = ''
     # xlab = r'||$X_{:, i}$||'
     # ylab = r'||$Y_{:, i}$||'
 
@@ -1032,13 +1044,10 @@ def scatter_norm_plot(datas, axis, xmax, ticks, xlab, ylab, do_fit=False,
             # alpha=0.7)
 
     ax.set(xlabel=xlab, ylabel=ylab, ylim=(None, xmax), xlim=(None, xmax),
-           xticks=ticks, yticks=ticks, title=title)
+           xticks=ticks, yticks=ticks)
 
     _, xmax = ax.get_xlim()
     ax.plot([0, xmax], [0, xmax], lw=0.5, color='k', ls='--')
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
     plt.legend(**legend_opt)
     return f
 
@@ -1142,11 +1151,8 @@ for i in range(0, 5):
         # line.set_mfc('k')
         # line.set_mec('k')
 
-bplot.set_xticklabels(bplot.get_xticklabels(),
-                      rotation=25, horizontalalignment='right')
-ax.tick_params(axis='x', which='both', pad=0)
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
+bplot.set_xticklabels(bplot.get_xticklabels(),rotation=25, ha='right')
+ax.tick_params(axis='x', which='both', pad=-1)
 ax.set_ylabel('scaled\nORN variance')
 # ax.set_title('scaled channel norm')
 ax.set_ylim(0, 2.7)
@@ -1205,7 +1211,7 @@ FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 # FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
 
-3.0# %%
+# %%
 # ##########################  BOX PLOTS  ######################################
 dss = {Xtstex: X_sel.copy(),
        f'LC-1, {Ytex}': Y_lc_sel[k1].copy(),
@@ -1257,11 +1263,8 @@ for i in range(0, 5):
         # line.set_mfc('k')
         # line.set_mec('k')
 
-bplot.set_xticklabels(bplot.get_xticklabels(),
-                      rotation=25, horizontalalignment='right')
-ax.tick_params(axis='x', which='both', pad=0)
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
+bplot.set_xticklabels(bplot.get_xticklabels(), rotation=25, ha='right')
+ax.tick_params(axis='x', which='both', pad=-1)
 ax.set_ylabel('scaled\npattern magnitude')
 # ax.set_title('scaled channel norm')
 ax.set_ylim(0, 2.5)
@@ -1282,7 +1285,7 @@ print('done')
 # ##################### CORRELATION MATRICES PLOTS  ###########################
 # #############################################################################
 
-importlib.reload(FP)
+# importlib.reload(FP)
 # what would make sense i guess is to plot all of the
 # channel and patter correlation plots. And then you can decide which ones
 # you actually show. Maybe some in the main text, some in the supplement
@@ -1319,8 +1322,7 @@ for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
     cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=False,
                        title=titles[i], show_lab_x=False,
                        cmap=corr_cmap)
-    ax.set_xlabel('ORNs', labelpad=0)
-    ax.set_ylabel('ORNs', labelpad=0)
+    ax.set(xlabel='ORNs', ylabel='ORNs')
 
     if cond:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
@@ -1341,7 +1343,7 @@ titles = [f'{Xtstex}; {name}' for name in subtitles]
 X_corr = sim_func(X.T)
 # X_corr = sim_func(X_sel.T)  # in case one only wants to look at the higher concentration
 for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
-# for i, data in enumerate([X_sel, Y_nnc_sel[k1], Y_nnc_sel[k2], Y_nnc_sel[k1], Y_nnc_sel[k2]]):
+    # for i, data in enumerate([X_sel, Y_nnc_sel[k1], Y_nnc_sel[k2], Y_nnc_sel[k1], Y_nnc_sel[k2]]):
     if (i in [4] and SCAL_W in [1, 2]) or (i == 2 and SCAL_W == 10):
         pads = (0.2, 0.4, 0.35, 0.2)
     else:
@@ -1354,8 +1356,8 @@ for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
     cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=False,
                        title=titles[i], show_lab_x=False,
                        cmap=corr_cmap)
-    ax.set_xlabel('stimuli', labelpad=0)
-    ax.set_ylabel('stimuli', labelpad=0)
+    ax.set(xlabel='stimuli', ylabel='stimuli')
+
     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
     #                     CB_W / fs[0], axs[3]])
     # clb = add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
@@ -1393,13 +1395,8 @@ def plot_dists(datas, xlabel, ylabel, title, yticks, file, bw=1,
     # ax.axhline(0, clip_on=False)
     ax.set(xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=ylim,
            yticks=yticks, title=title)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
     if legend:
-        plt.legend(frameon=False, handletextpad=0.4, borderpad=0,
-                   handlelength=1, bbox_to_anchor=(1.1, 1.2),
-                   loc='upper right',
-                   ncol=3, columnspacing=0.7)
+        plt.legend(bbox_to_anchor=(1.08, 1.04),loc='lower right', ncol=3)
     else:
         ax.get_legend().remove()
 
@@ -1409,11 +1406,9 @@ def plot_dists(datas, xlabel, ylabel, title, yticks, file, bw=1,
         # axin = ax.inset_axes([0.35, 0.05, 0.7, 0.1])
         for data in datas:
             sns.kdeplot(data[0], ax=axin, color=data[1], #hist=hist_bl,
-                         bw_adjust=bw, label=data[2])
+                        bw_adjust=bw, label=data[2])
         axin.set(xlabel='', ylabel='', xlim=square[0], ylim=square[1],
                  xticks=[], yticks=[], facecolor='bisque')
-        axin.spines['top'].set_visible(False)
-        axin.spines['right'].set_visible(False)
         # axin.get_legend().remove()
         ax.indicate_inset_zoom(axin, edgecolor='grey', alpha=0.7, lw=1)
         # mark_inset(ax, axin, loc1=2, loc2=3, fc="none", ec="0.5")

@@ -2,9 +2,11 @@
 Created Aug 28 2019
 @author: Nikolai M Chapochnikov
 
-This file has as goal to compare the NMF and SNMF decompositions for the
-olfactory data
-
+This file generates the following results that are then for plotting the
+model behavior on the ORN dataset:
+NNC-Y_act-all.hdf
+NNC-Z_act-all.hdf
+NNC-W_act-all.hdf
 """
 
 

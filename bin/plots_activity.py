@@ -4,12 +4,39 @@
 Created on Tue Mar 26 11:56:59 2019
 
 @author: Nikolai M Chapochnikov
+
+External files that are read and used for this plotting:
+in plots_paper_import:
+f'cons/cons_full_{k}.hdf'
+/act3.hdf' FROM act_preprocess.py
+'cons/cons_ORN_all.hdf' FROM con_preprocess.py
+
+In this file (all inside RESULTS_PATH):
+'NNC-W_act-all.hdf' FROM olf_circ_offline_sims_ORN-data.py
+
+(f'{CELL_TYPE}_con{STRM}_vs_'
+              f'act-{act_pps1}-{act_pps2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+FROM act_odors_ORN_vs_con_ORN-LN.py
+
+file = (f'/corr_sign/act{DATASET}-{act_pps1}-{act_pps2}'
+        f'_conc-all_SVD-NNC_vs_con-ORN-all_')
+file_cc = f'{file}cc.hdf'
+file_cc_pv = f'{file}cc_pv.hdf'
+FROM act_ORN_vs_con_ORN-LN.py
+
+(f'NNC-{K}_con-W_vs_'
+              f'act-{act_pps1}-{act_pps2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+FROM act_odors_ORN_vs_con_NNC.py
+
+(f'{cell_type}_con{STRM}_vs_'
+                  f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_{LN}_recon_rand')
+FROM act_odors_ORN_vs_con_ORN-LN_recon.py
 """
 
 # %%
 # ################################# IMPORTS ###################################
+from plots_import import *
 
-from plots_paper_import import *
 # %%
 # ################################  RELOADS  ##################################
 importlib.reload(FO)
@@ -22,71 +49,6 @@ importlib.reload(par_act)
 # #############################################################################
 # ####################  ACTIVITY PLOTS  #######################################
 # #############################################################################
-
-# #############################################################################
-# #####################  ACTIVITY PLOT, different conc separately  ############
-# #############################################################################
-
-# this is not used in the publication anymore
-
-# the first plot shows the raw actiity
-# show = {8: False, 7: True, 6: False, 5: True, 4: True}
-# show_x = {8: True, 7: True, 6: False, 5: False, 4: False}
-#
-# pads = [0.01, 0.01, 0.05, 0.2]
-#
-# odor_order = par_act.odor_order_o # if we want the original order
-# odor_order = par_act.odor_order
-# ORN_order = par_act.ORN  # this is just the alphabetical order
-# ORN_order = par_act.ORN_order
-#
-# # colors
-# vmin_col = -2
-# vmin_to_show = -1
-# vmax = 6
-# act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, vmax)
-#
-#
-# for conc in [8, 7, 6, 5, 4]:
-#     # preparing the data:
-#     act_sel = act_m.xs(conc, axis=1, level='conc').copy()
-#     # putting the odors and cells in the same order as in the paper
-#
-#     act_sel = act_sel.loc[ORN_order, odor_order]
-#     print('max', np.max(act_sel.values))
-#     # removing 'ORN' from the cell names
-#     ORN_list = [name[4:] for name in act_sel.index]
-#     act_sel.index = ORN_list
-#     act_sel.columns.name = 'odors'
-#     act_sel.index.name = 'ORNs'
-#     # plotting
-#     _pads = pads.copy()
-#     if show[conc]:
-#         _pads[0] = 0.55
-#     if show_x[conc]:
-#         _pads[2] = 1.3
-#     if conc == 4:
-#         _pads[1] = 0.4
-#     df = act_sel
-#     _, fs, axs = FP.calc_fs_ax_df(df, _pads, sq=SQ)
-#     f = plt.figure(figsize=fs)
-#     ax = f.add_axes(axs)
-#     cp = FP.imshow_df2(df, ax, vlim=None, show_lab_y=show[conc],
-#                        title=r'dilution $10^{-%d}$' % conc, cmap=act_map,
-#                        show_lab_x=show_x[conc], **{'norm': divnorm})
-#     print(fs)
-#
-#     if conc == 4:
-#         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1],
-#                             CB_W/fs[0], axs[3]])
-#         clb = FP.add_colorbar(cp, ax_cb, r'$\Delta F/F$', [-1, 0, 2, 4, 6],
-#                               extend='max')
-#         # clb.ax.set_yticklabels(['0', '2', '4', '6'])
-#
-#     file = f'{PP_ACT}/ORN_act_conc-{conc}'
-#     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-#     FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
 
 # %%
 # prepare colors
@@ -110,13 +72,14 @@ df.index = ORN_list
 
 
 title = f'ORN soma activity patterns {Xdatatex}'
-cb_title = r'$\Delta F/F_0$'
+cb_title = '$\Delta F/F_0$'
 # cb_title = r'$\Delta$'
 cb_ticks = [-1, 0, 2, 4, 6]
 # cb_ticks = [-1, -0.1, 0, 0.1, 1, 8]  # for the log scale
 pads = [0.55, 0.4, 1.32, 0.2]
 f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
-                              pads=pads, cb_title_font=cb_title_font)
+                                 pads=pads, cb_title_font=cb_title_font,
+                                 squeeze=0.5)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
        ylabel='ORNs', xlabel='odors at different dilutions')
@@ -126,7 +89,8 @@ FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
 f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
-                                 cb_ticks, cb_title_font=cb_title_font)
+                                 cb_ticks, cb_title_font=cb_title_font,
+                                 squeeze=0.5)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 
@@ -159,7 +123,8 @@ title = f'Scaled ORN soma activity patterns {Xdatatex}'
 cb_title = ''
 cb_ticks = [0, 0.5, 1]
 f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
-                              extend='neither', cb_title_font=cb_title_font)
+                                 extend='neither', cb_title_font=cb_title_font,
+                                 squeeze=0.5)
 ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 
 file = f'{PP_ACT}/ORN_act_scaled_max.'
@@ -191,8 +156,7 @@ ax.grid()
 ax.set(ylabel='% variance explained', xlabel='principal component',
        xticks=[1, 5, 10, 15, 21],
        title=f'PCA of ORN activity {Xdatatex}')
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
+
 
 file = f'{PP_ACT}/ORN_act_SVD_s'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -220,7 +184,7 @@ cp = FP.imshow_df2(df, ax, vlim=[-0.85, 0.85], rot=0, cmap=plt.cm.plasma,
 
 cb_x = axs[0] + axs[2] + CB_DX/fs[0]
 ax_cb = f.add_axes([cb_x, axs[1], CB_W/fs[0], axs[3]])
-add_colorbar_crt(cp, ax_cb, '', [-0.8, -0.4, 0, 0.4, 0.8])
+add_colorbar_crt(cp, ax_cb, ticks=[-0.8, -0.4, 0, 0.4, 0.8])
 
 file = f'{PP_ACT}/ORN_act_SVD_U'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -279,7 +243,7 @@ for k in [4, 5]:
 print('done')
 # %%
 if scal == 1:
-    order_LN = {4: [3, 4, 1, 2], 5: [3, 1, 4, 5, 2]}
+    order_LN = {4: [3, 1, 4, 2], 5: [3, 4, 1, 5, 2]}
 else:
     order_LN = {4: [4, 2, 1, 3], 5: [2, 5, 3, 4, 1]}
 
@@ -307,7 +271,7 @@ for k in [4, 5]:
 
     cb_x = axs[0] + axs[2] + CB_DX/fs[0]
     ax_cb = f.add_axes([cb_x, axs[1], CB_W/fs[0], axs[3]])
-    add_colorbar_crt(cp, ax_cb, '', [0, 0.5])
+    add_colorbar_crt(cp, ax_cb, ticks=[0, 0.5])
 
     file = f'{PP_CON_PRED}/ORN_act-{pps}_NNC{k}_W'
     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -345,7 +309,7 @@ print('done')
 # #################  2 AXIS PLOT ORN ACT FOR ODOR VS CON  ####################
 # #############################################################################
 
-importlib.reload(FP)
+# importlib.reload(FP)
 ORN_order = par_act.ORN_order
 # ORN_order = par_act.ORN
 pads = (0.4, 0.3, 0.55, 0.15)
@@ -362,7 +326,7 @@ ORN_list = [name[4:] for name in ORN_order]
 
 conc = 4
 
-ylim2 = (-0.2, 5.4)
+ylim2 = (-0.2, 5.3)
 ylim = (-2, 45)
 c1 = 'k'
 c2 = 'g'
@@ -374,7 +338,9 @@ odor = odors[i]
 act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
 ax, ax2, lns = FP.plot_line_2yax(ax, con_w.values, act_vect.values,
                                  None, None, ORN_list, 'ORNs',
-                                 c1=c1, c2=c2, m1=',', m2=',')
+                                 c1=c1, c2=c2, m1=',', m2=',',
+                                 label1='\# of syn. ORNs$\rightarrow$BT',
+                                 label2='ORN $\Delta F/F_0$')
 # ax.set_xticks(np.arange(len(ORN_list)))
 # ax.set_xticklabels(ORN_list, rotation=70, ha='right')
 odor = odors[0]
@@ -386,13 +352,9 @@ ax2.set_xlim((-1, 21))
 ax.set_ylim(ylim)
 ax.set_yticks([0, 20, 40])
 ax2.set_yticks([0, 2, 4])
-ax2.set_ylabel(r'ORN $\Delta F/F_0$', color=c2)
-ax.set_ylabel(r'\# of syn. ORNs$\rightarrow$BT', color=c1)
 labs = ['\# syn.', 'odor A', 'odor B']
-leg = ax.legend(lns, labs, ncol=3, loc=10,
-                bbox_to_anchor=(0.1, 1.01, .8, 0.1), frameon=False,
-                handletextpad=0.5, columnspacing=1)
-leg.get_frame().set_linewidth(0.0)
+leg = ax.legend(lns, labs, ncol=3, loc='lower center',
+                bbox_to_anchor=(0.5, 1.01, 0, 0.), handlelength=2)
 
 file = f'{PP_ODOR_CON}/{LN}_2odors-{conc}_2axplot'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -404,6 +366,15 @@ print('done')
 # #################  SCATTER PLOT ORN ACT FOR ODOR VS CON  ####################
 # #############################################################################
 
+# importing the p-values of all LNs vs all odors:
+STRM = 0
+CONC = 'all'
+file = (f'{CELL_TYPE}_con{STRM}_vs_'
+              f'act-{act_pps1}-{act_pps2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+
+pvals = pd.read_hdf(RESULTS_PATH / file)
+
+
 pads = {0: (0.15, 0.15, 0.55, 0.2), 1: (0.15, 0.15, 0.55, 0.2),
         2: (0.15, 0.15, 0.55, 0.2)}
 
@@ -414,7 +385,6 @@ LN = f'Broad T M M'
 con_w = con_strms3[0][LN].loc[ORN_order]
 
 conc = 4
-
 scl1 = [0, 0.3, 0.3]
 scl2 = [0, 0.8, 0.8]
 # title = odors
@@ -428,18 +398,21 @@ for i, odor in enumerate(odors):
     act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
     FP.plot_scatter(ax, con_w.values, act_vect.values, '\# of synapses',
                     '', c1, c2, xticks=[0, 20, 40],
-                    yticks=[0, 2, 4],
+                    yticks=[0, 2, 4], clip_on=False,
                     pca_line_scale1=scl1[i], pca_line_scale2=scl2[i],
-                    s=5, c='indigo')
+                    s=5, c='indigo', pvalue=None, show_cc=False)
+    # corr coef and pvalues:
+    corr_coef = np.corrcoef(con_w.values, act_vect.values)[0, 1]
+    ax.text(0.01, 1, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes,
+            va='top')
+    ax.text(0.01, 0.9, "pv = %0.1g" % pvals.loc[LN, (odor, conc)],
+            transform=ax.transAxes, va='top')
+
+
     ax.set_title(title[i], color=c2)
     ax.set_xlim(ylim)
     ax.set_ylim(ylim2)
-    # ax.set_ylim(-0.5, None)
     FP.set_aspect_ratio(ax, 1)
-    # ax.spines['top'].set_visible(True)
-    # ax.spines['right'].set_visible(True)
-    # FP.save_plot(f, PATH_PLOTS + 'PCA1+conBrT1L_scatter_3.pdf', SAVE_PLOTS,
-    #              **pdf_opts)
     file = f'{PP_ODOR_CON}/{LN}_{odor}-{conc}_scatter'
     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
@@ -451,6 +424,21 @@ print('done')
 # #############################################################################
 # #############################################################################
 # plotting the same as above but with using PCA
+
+# importing some data
+file = (f'{RESULTS_PATH}/corr_sign/act{DATASET}-{act_pps1}-{act_pps2}'
+        f'_conc-all_SVD-NNC_vs_con-ORN-all_')
+
+file_cc = f'{file}cc.hdf'
+file_cc_pv = f'{file}cc_pv.hdf'
+
+data_cc = pd.DataFrame(pd.read_hdf(file_cc))[STRM]
+data_cc = data_cc.reset_index(level=['par1', 'par2'], drop=True)
+
+data_cc_pv = pd.DataFrame(pd.read_hdf(file_cc_pv))[STRM]
+data_cc_pv = data_cc_pv.reset_index(level=['par1', 'par2'], drop=True)
+
+
 
 def plot_2lines(LN, LN_label, vect, vect_label, ylims,
                 yticks1=[0, 20, 40], yticks2=[0, 0.5]):
@@ -486,8 +474,7 @@ def plot_2lines(LN, LN_label, vect, vect_label, ylims,
     ax.set_ylabel(r'\# of syn. ORNs$\rightarrow$' + LN_label, color=c1)
     labs = ['\# syn.', vect_label]
     leg = ax.legend(lns, labs, ncol=3, loc=10,
-                    bbox_to_anchor=(0.1, 1.01, .8, 0.1), frameon=False,
-                    handletextpad=0.5, columnspacing=1)
+                    bbox_to_anchor=(0.1, 1.01, .8, 0.1), handlelength=2)
     leg.get_frame().set_linewidth(0.0)
     return f
 
@@ -515,7 +502,7 @@ FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
 # ########## scatter plot ##########
 
-importlib.reload(FP)
+# importlib.reload(FP)
 c1 = 'k'
 c2 = 'g'
 pads = [0.4, 0.15, 0.55, 0.1]
@@ -542,355 +529,25 @@ FP.plot_scatter(ax, con_w.values, act_vect.values,
                 pca_line_scale1=scl1, pca_line_scale2=scl2,
                 c='indigo', s=5)
 corr_coef = np.corrcoef(con_w.values, act_vect.values)[0, 1]
-ax.text(0.65, 0.05, r'$r$'+" = %0.2f" % corr_coef, transform=ax.transAxes)
+assert np.abs(corr_coef - data_cc.loc[('o', 'SVD', 1), LN]) < 1e-10
+# ax.text(0.65, 0.05, r'$r$'+" = %0.2f" % corr_coef, transform=ax.transAxes)
+ax.text(0.01, 1, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes,
+        va='top')
+ax.text(0.01, 0.9, "pv = %0.1g" % data_cc_pv.loc[('o', 'SVD', 1), LN],
+        transform=ax.transAxes, va='top')
 # ax.set_title('PCA 1', color=c1)
 ax.set_xlim(-2, 45)
 ax.set_ylim(-0.02, 0.55)
 # ax.set_ylim(-0.5, None)
 FP.set_aspect_ratio(ax, 1)
-# ax.spines['top'].set_visible(True)
-# ax.spines['right'].set_visible(True)
+
 # FP.save_plot(f, PATH_PLOTS + 'PCA1+conBrT1L_scatter_3.pdf', SAVE_PLOTS,
 #              **pdf_opts)
 file = f'{PP_COMP_CON}/{LN}_PCA1_scatter'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
-# %%
-# #############################################################################
-# ###################  CDF OF 1 LN AND OF MEAN FROM SHUFFLED  #################
-# #############################################################################
 
-# ###################         IMPORTING                      ##################
-
-STRM = 0
-CONC = 'all'
-
-file_begin = (f'{RESULTS_PATH}/{CELL_TYPE}_con{STRM}_vs_act-{act_pps1}'
-              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-')
-
-cdfs_true = pd.DataFrame(pd.read_hdf(f'{file_begin}true.hdf'))
-cdfs_shfl_m = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-m.hdf'))
-cdfs_shfl_std = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-std.hdf'))
-
-xmin = -1
-xmax = 1
-n_bins_cdf = 100
-n_bins_cdf = 500
-bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
-
-
-# also adding the pvalue on the graph directly
-
-file_begin = (f'{RESULTS_PATH}/{CELL_TYPE}_con{STRM}_vs_act-{act_pps1}'
-              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-shfl-diff-min')
-
-cdf_diff_min = pd.DataFrame(pd.read_hdf(f'{file_begin}.hdf'))
-cdf_diff_min_pv = pd.DataFrame(pd.read_hdf(f'{file_begin}_pv.hdf'))
-
-LN_idx = LNs_MM
-pvals = cdf_diff_min_pv.loc[LN_idx].squeeze()  # converts into a series
-alpha = 0.05
-reject, pvals_corrected, _, _ = smsm.multipletests(pvals, method='fdr_bh',
-                                                   alpha=alpha)
-
-print('done')
-# %%
-# #########################  PLOTTING   #######################################
-# ########################  CDFs with a cdf from shuffling  ###################
-# for the paper I will use the graph that shows all lines: mean, true, fake
-# also i will separate the 2 graphs, just for simplicity.
-
-# side = 'L'
-# LN = f'Broad T1 {side}'
-# LN = f'Broad T M M'
-LNs_m = {'BT': 'Broad T M M',
-         'BD': 'Broad D M M',
-         'KS': 'Keystone M M',
-         'P0': 'Picky 0 [dend] M'}
-
-# adding the gaussian fitting:
-from scipy.optimize import curve_fit
-from scipy.stats import norm
-
-
-
-for LN_i, LN_m in enumerate(LNs_m):
-    LN = LNs_m[LN_m]
-    pval_crt = pvals_corrected[LN_i]
-
-    cdf_mean = cdfs_shfl_m.loc[LN]
-    cdf_std = cdfs_shfl_std.loc[LN]
-    lw = 1
-
-    # Plotting the 2 plots separately
-
-    pads = (0.52, 0.05, 0.35, 0.1)
-    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
-    f = plt.figure(figsize=fs)
-    ax = f.add_axes(axs)
-
-    ax.plot(bins_cdf, cdf_mean, drawstyle='steps-post', label='mean', lw=lw,
-            color='k')
-    ax.fill_between(bins_cdf, cdf_mean - cdf_std, cdf_mean + cdf_std,
-                    facecolor='grey', step='post', label='s.d.')
-    # this might not be exactly correct, to verify
-    dbin = bins_cdf[1] - bins_cdf[0]
-    mu, sigma = curve_fit(norm.cdf, bins_cdf[:-1] + dbin/2, cdf_mean[:-1],
-                          p0=[0, 0.3])[0]
-    print(mu, sigma)
-    ax.plot(bins_cdf, norm.cdf(bins_cdf, mu, sigma), label='gauss', lw=0.5,
-            color='c')
-
-    ax.plot(bins_cdf, cdfs_true.loc[LN], drawstyle='steps-post', c='r',
-            label='true', lw=lw)
-
-
-
-    ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency '+
-                                             r'($RCF$)',
-           xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    # legend
-    handles, labels = ax.get_legend_handles_labels()
-    # order = [0, 3, 2, 1]
-    order = [0, 1, 3, 2]
-    # order = [0, 2, 1]
-    ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
-              frameon=False, bbox_to_anchor=(-0.04, 1.1), loc='upper left',
-              handlelength=1, handletextpad=0.4)
-
-    ax.text(0.4, 0.12, f'LN type: {LN_m}', transform=ax.transAxes)
-    ax.text(0.4, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
-
-    file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std1'
-    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-
-    # pads = (0.5, 0.05, 0.35, 0.1)
-    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
-    f = plt.figure(figsize=fs)
-    ax = f.add_axes(axs)
-
-    cdf_diff = cdfs_true.loc[LN] - cdf_mean
-    ax.plot([-1, 1], [0, 0], label='mean', lw=lw, c='k')
-    ax.fill_between(bins_cdf, - cdf_std, + cdf_std, facecolor='grey', step='post',
-                    label='s.d.')
-    ax.plot(bins_cdf, cdf_diff, drawstyle='steps-post', c='r', label='true',
-            lw=lw)
-
-    ax.set(xlabel=r'corr. coef. $r$', ylabel=r'$RC F - \overline{RCF}$',
-           xticks=[-1, 0, 1], yticks=[-0.4, -0.2, 0, 0.2], xlim=(-1, 1))
-
-    i_min = np.argmin(cdf_diff.values)
-    col_ann = 'magenta'
-    plt.annotate('', xy=(bins_cdf[i_min], 0), xycoords='data',
-                 xytext=(bins_cdf[i_min], cdf_diff[i_min]), textcoords='data',
-                 arrowprops={'arrowstyle': '<->', 'color': col_ann})
-    plt.text(bins_cdf[i_min] + 0.05, cdf_diff[i_min]/2, 'max dev.',
-             color=col_ann)
-    ax.text(0.4, 0.12, f'LN type: {LN_m}', transform=ax.transAxes)
-    ax.text(0.4, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std2'
-    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-
-
-LN_m = 'BT'
-LN = f'Broad T M M'
-
-cdf_mean = cdfs_shfl_m.loc[LN]
-cdf_std = cdfs_shfl_std.loc[LN]
-lw = 1
-
-# Plotting the 2 plots separately
-
-pads = (0.52, 0.05, 0.35, 0.1)
-fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
-
-ax.plot(bins_cdf, cdf_mean, drawstyle='steps-post', label='mean', lw=lw,
-        color='k')
-ax.fill_between(bins_cdf, cdf_mean - cdf_std, cdf_mean + cdf_std,
-                facecolor='grey', step='post', label='s.d.')
-
-ax.plot(bins_cdf, cdfs_true.loc[LN], drawstyle='steps-post', c='r',
-        label='true', lw=lw)
-
-
-
-ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency '+
-                                         r'($RCF$)',
-       xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-
-# legend
-handles, labels = ax.get_legend_handles_labels()
-order = [0, 1, 2]
-ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
-          frameon=False, bbox_to_anchor=(-0.04, 1.1), loc='upper left',
-          handlelength=1, handletextpad=0.4)
-
-ax.text(0.4, 0.025, f'LN type: {LN_m}', transform=ax.transAxes)
-
-file = f'{PP_ODOR_CON}/cors_{LN}_rcf-m-std1_nofit'
-FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-print('done')
-# %%
-# #############################################################################
-# ##################  CDF OF 1 NNC-4 W AND OF MEAN FROM SHUFFLED  #############
-# #############################################################################
-# basically same as above, but for the W of NNC-4
-# ###################         IMPORTING                      ##################
-
-K = 4
-CONC = 'all'
-
-file_begin = (f'{RESULTS_PATH}/NNC-{K}_con-W_vs_act-{act_pps1}'
-              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-')
-
-cdfs_true = pd.DataFrame(pd.read_hdf(f'{file_begin}true.hdf'))
-cdfs_shfl_m = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-m.hdf'))
-cdfs_shfl_std = pd.DataFrame(pd.read_hdf(f'{file_begin}shfl-std.hdf'))
-
-xmin = -1
-xmax = 1
-n_bins_cdf = 100
-n_bins_cdf = 500
-bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
-
-
-# also importing p-values to put them directly in the graph:
-CONC = 'all'
-
-file_begin = (f'{RESULTS_PATH}/NNC-{K}_con-W_vs_act-{act_pps1}'
-              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-shfl-diff-min')
-
-cdf_diff_min = pd.DataFrame(pd.read_hdf(f'{file_begin}.hdf'))
-cdf_diff_min_pv = pd.DataFrame(pd.read_hdf(f'{file_begin}_pv.hdf'))
-
-pvals = cdf_diff_min_pv.squeeze()  # converts into a series
-alpha = 0.05
-reject, pvals_corrected, _, _ = smsm.multipletests(pvals, method='fdr_bh',
-                                                   alpha=alpha)
-pvals_fdr = pvals.copy()
-pvals_fdr[:] = pvals_corrected
-
-print('done')
-# %%
-# #########################  PLOTTING   #######################################
-# ########################  CDFs with a cdf from shuffling  ###################
-# for the paper I will use the graph that shows all lines: mean, true, fake
-# also i will separate the 2 graphs, just for simplicity.
-
-# adding the gaussian fitting:
-from scipy.optimize import curve_fit
-from scipy.stats import norm
-
-LN_order = [3, 4, 1, 2]
-LN_text = {1:r'$\mathbf{w}_1$', 2: r'$\mathbf{w}_2$',
-           3:r'$\mathbf{w}_3$', 4: r'$\mathbf{w}_4$'}
-
-for LN_i in range(1, K+1):
-    LN_i_new = LN_order[LN_i-1]
-    LN_text_crt = f'NNC-{K}, ' + LN_text[LN_i_new]
-    pval_crt = pvals_fdr[LN_i]
-    cdf_mean = cdfs_shfl_m.loc[LN_i]
-    cdf_std = cdfs_shfl_std.loc[LN_i]
-    lw = 1
-
-    # Plotting the 2 plots separately
-
-    pads = (0.52, 0.05, 0.35, 0.1)
-    pads = (0.52, 0.15, 0.35, 0.1)
-    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
-    f = plt.figure(figsize=fs)
-    ax = f.add_axes(axs)
-
-    ax.plot(bins_cdf, cdf_mean, drawstyle='steps-post', label='mean', lw=lw,
-            color='k')
-    ax.fill_between(bins_cdf, cdf_mean - cdf_std, cdf_mean + cdf_std,
-                    facecolor='grey', step='post', label='s.d.')
-    # this might not be exactly correct, to verify
-    dbin = bins_cdf[1] - bins_cdf[0]
-    mu, sigma = curve_fit(norm.cdf, bins_cdf[:-1] + dbin/2, cdf_mean[:-1],
-                          p0=[0, 0.3])[0]
-    print(mu, sigma)
-    ax.plot(bins_cdf, norm.cdf(bins_cdf, mu, sigma), label='gauss', lw=0.5,
-            color='c')
-
-    ax.plot(bins_cdf, cdfs_true.loc[LN_i], drawstyle='steps-post', c='r',
-            label='true', lw=lw)
-
-
-
-    ax.set(xlabel=r'corr. coef. $r$', ylabel='relative cumulative\nfrequency '+
-                                             r'($RCF$)',
-           xticks=[-1, 0, 1], yticks=[0, 0.5, 1], xlim=(-1, 1))
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    # legend
-    handles, labels = ax.get_legend_handles_labels()
-    order = [0, 1, 3, 2]
-    # order = [0, 3, 2, 1]
-    # order = [0, 2, 1]
-    ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
-              frameon=False, bbox_to_anchor=(-0.04, 1.1), loc='upper left',
-              handlelength=1, handletextpad=0.4)
-
-    ax.text(0.5, 0.12, LN_text_crt, transform=ax.transAxes)
-    ax.text(0.5, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
-
-    file = f'{PP_ODOR_CON}/cors_W{LN_i_new}_rcf-m-std1'
-    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-
-    # pads = (0.5, 0.05, 0.35, 0.1)
-    fs, axs = FP.calc_fs_ax(pads, 12*SQ, 14*SQ)
-    f = plt.figure(figsize=fs)
-    ax = f.add_axes(axs)
-
-    cdf_diff = cdfs_true.loc[LN_i] - cdf_mean
-    ax.plot([-1, 1], [0, 0], label='mean', lw=lw, c='k')
-    ax.fill_between(bins_cdf, - cdf_std, + cdf_std, facecolor='grey', step='post',
-                    label='s.d.')
-    ax.plot(bins_cdf, cdf_diff, drawstyle='steps-post', c='r', label='true',
-            lw=lw)
-
-    ax.set(xlabel=r'corr. coef. $r$', ylabel=r'$RC F - \overline{RCF}$',
-           xticks=[-1, 0, 1], yticks=[-0.4, -0.2, 0, 0.2], xlim=(-1, 1))
-
-    i_min = np.argmin(cdf_diff.values)
-    col_ann = 'magenta'
-    plt.annotate('', xy=(bins_cdf[i_min], 0), xycoords='data',
-                 xytext=(bins_cdf[i_min], cdf_diff[i_min]), textcoords='data',
-                 arrowprops={'arrowstyle': '<->', 'color': col_ann})
-    plt.text(bins_cdf[i_min] + 0.05, cdf_diff[i_min]/2, 'max dev.',
-             color=col_ann)
-    ax.text(0.5, 0.12, LN_text_crt, transform=ax.transAxes)
-    ax.text(0.5, 0.03, f"pv = {pval_crt:.1}", transform=ax.transAxes)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    file = f'{PP_ODOR_CON}/cors_W{LN_i_new}_rcf-m-std2'
-    FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-    FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
-
-print('done')
 # %%
 # #############################################################################
 # #############################################################################
@@ -900,7 +557,30 @@ print('done')
 # #############################################################################
 # ###########  CORRELATION COEFFICIENTS FOR ALL ODORS AND ALL LNs  ############
 # #############################################################################
-wLNtex = r'$\mathbf{w}_{\mathrm{LN}}$'
+import statsmodels.stats.multitest as mt
+
+# https://stackoverflow.com/questions/56654952/how-to-mark-cells-in-matplotlib-pyplot-imshow-drawing-cell-borders
+def highlight_cell(x,y, ax=None, linewidth=0.5, **kwargs):
+    rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, linewidth=linewidth, **kwargs)
+    ax = ax or plt.gca()
+    ax.add_patch(rect)
+    return rect
+
+# ordering of the concentration so that it is as before, maybe quicker way of doing it
+odor_order = par_act.odor_order
+idx = [(o, c) for o, c in itertools.product(odor_order, [8, 7, 6, 5, 4])]
+
+# importing the p-values of all LNs vs all odors:
+STRM = 0
+CONC = 'all'
+file = (f'{CELL_TYPE}_con{STRM}_vs_'
+              f'act-{act_pps1}-{act_pps2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+
+pvals = pd.read_hdf(RESULTS_PATH / file).loc[:, idx]
+pvals_fdr = pvals.copy()
+for i in range(pvals.shape[0]):
+    pvals_fdr.iloc[i] = mt.multipletests(pvals_fdr.iloc[i].values, method='fdr_bh')[1]
+
 
 # calculation of the correlation coefficients
 # con_W = con_strms3.loc[:, 0].loc[:, LNs_sel_LR_d]
@@ -917,19 +597,15 @@ act_cn = FG.get_ctr_norm(act_m)
 # correlation coefficient calculation is done correctly
 act_cn2, con_W_cn2 = FG.align_indices(act_cn, con_W_cn)
 cors = con_W_cn2.T @ act_cn2
-
-# ordering of the concentration so that it is as before
-odor_order = par_act.odor_order
-# not sure if there is a quicker way of doing it
-idx = [(o, c) for o, c in itertools.product(odor_order, [8, 7, 6, 5, 4])]
 df = cors.loc[:, idx]
+
 
 # plotting
 splx = np.arange(5, len(idx), 5)
 # sply = [6, 6+4, 6+4+4]
 sply = [7, 7+5, 7+5+5]
 pads = (0.95, 0.41, 1.32, 0.2)
-fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.4, SQ*len(df))  # pads, gw, gh
+fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.45, SQ*len(df))  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
@@ -937,7 +613,17 @@ cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
        xlabel=f'ORN activation patterns {Xttex} to odors at different dilutions',
        ylabel=wLNtex)
-       # ylabel = r'data, ' + wLNtex)
+for (y, x) in np.argwhere(pvals.values < 0.05):
+    highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+
+for (y, x) in np.argwhere(pvals_fdr.values < 0.05):
+    highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
+
+# doesn't do anything like I want
+# x_lin = np.arange(pvals.shape[1])
+# y_lin = np.arange(pvals.shape[0])
+# X, Y = np.meshgrid(x_lin, y_lin)
+# ax.contour(X, Y, pvals, [0.05])
 
 plt.title(f'Correlation between ORN activity patterns {Xttex} '
           r'and ORNs$\rightarrow$LN connection weight vectors '
@@ -954,7 +640,6 @@ print('done')
 # %%
 # just for LN M
 # calculation of the correlation coefficients
-wLNtex = r'$\mathbf{w}_\mathrm{LNtype}$'
 
 # con_W = con_strms3.loc[:, 0].loc[:, LNs_sel_LR_d]
 con_W = con_strms3.loc[:, 0].loc[:, LNs_MM]
@@ -980,23 +665,29 @@ df = cors.loc[:, idx]
 # plotting
 splx = np.arange(5, len(idx), 5)
 pads = (0.55, 0.4, 0.2, 0.2)
-fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.4, SQ*len(df))  # pads, gw, gh
+fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.5, SQ*len(df))  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
                    aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=[])
 ax.set_xlabel(f'ORN activation patterns {Xttex} to odors at different dilutions')
-ax.set_ylabel(wLNtex)
+ax.set_ylabel(wLNtypetex)
 # ax.set_ylabel('from\nORNs\nto', rotation=0, fontsize=ft_s_tk, labelpad=3,
 #               va='center', ha='right')
-# f.text(0.005, 0.5, wLNtex + ':', rotation=90, va='center', ha='left')
+# f.text(0.005, 0.5, wLNtypetex + ':', rotation=90, va='center', ha='left')
 # ax.annotate('', xy=(-6.5, -1), xytext=(-6.5, 4), xycoords='data',
 #             arrowprops={'arrowstyle': '-', 'lw': 0.5},
 #             annotation_clip=False)
 
+for (y, x) in np.argwhere(pvals.loc[LNs_MM].values < 0.05):
+    highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+
+for (y, x) in np.argwhere(pvals_fdr.loc[LNs_MM].values < 0.05):
+    highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
+
 plt.title(f'Correlation between ORN activity patterns {Xttex}'
-          r' and ORNs$\rightarrow$LN conn. weight vectors '+ f'{wLNtex}')
+          r' and ORNs$\rightarrow$LN conn. weight vectors '+ f'{wLNtypetex}')
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
 
@@ -1006,7 +697,8 @@ FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
 print('done')
 # %%
-# Histogram for each LN
+# Cumulative distribution of the correlations
+# coefficients for each LN to then plot the "tuning curves" for each LN
 con_W = con_strms3.loc[:, 0].loc[:, LNs_MM]
 con_W = con_W.rename(columns={'Broad T M M': 'BT',
                               'Broad D M M': 'BD',
@@ -1025,29 +717,27 @@ print('done')
 #
 #
 # %%
-pads = (0.4, 0.1, 0.35, 0.15)
-fs, axs = FP.calc_fs_ax(pads, SQ*11, SQ*14)  # pads, gw, gh
+pads = (0.4, 0.1, 0.55, 0.15)
+fs, axs = FP.calc_fs_ax(pads, SQ*15, SQ*11)  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
-ax.plot([0, 170 * 2 - 1], [0, 0], c='gray', lw=0.5)
+ax.plot([-10, 180], [0, 0], c='gray', lw=0.5)
 for i in range(4):
     # plt.figure()
     my_sorted = np.sort(cors.iloc[i].values)[::-1]
     # sorted2 = np.concatenate([sorted, sorted[::-1]])
     ax.plot(my_sorted, label=cors.index[i], lw=1)
 # ax.legend([handles[idx] for idx in order],[labels[idx] for idx in order],
-#           frameon=False, bbox_to_anchor=(0.5, 1.1), loc='upper left',
+#           bbox_to_anchor=(0.5, 1.1), loc='upper left',
 #           handlelength = 1, handletextpad=0.4)
-plt.legend(frameon=False, loc='upper left', handlelength=1,
-           handletextpad=0.4, bbox_to_anchor=(0.5, 1.1))
-ax.set_ylim(-0.5, 0.9)
+plt.legend(loc='upper right', bbox_to_anchor=(1, 1))
+ax.set_ylim(-0.5, 0.85)
 ax.set_xlim(-5, 170)
-ax.set_yticks([-0.5, 0, 0.5, 1])
+ax.set_yticks([-0.5, 0, 0.5])
 ax.set_xticks([0, 50, 100, 150])
-ax.set_ylabel(r'corr. coef. $r$', labelpad=-2)
+ax.set_ylabel(r'corr. coef. $r$')
 ax.set_xlabel('ordered stimuli')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
+
 
 file = f'{PP_ODOR_CON}/LN_tuning_curves.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -1055,142 +745,320 @@ FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
 #
 #
-#
 # %%
 # #############################################################################
-# #########################  CDF DIFF MIN AND PVAL  ###########################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #########  CORRELATION COEFFICIENTS FOR ALL ODORS AND W from NNC-4 ##########
+# #############################################################################
+import statsmodels.stats.multitest as mt
+
+# https://stackoverflow.com/questions/56654952/how-to-mark-cells-in-matplotlib-pyplot-imshow-drawing-cell-borders
+def highlight_cell(x,y, ax=None, linewidth=0.5, **kwargs):
+    rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, linewidth=linewidth, **kwargs)
+    ax = ax or plt.gca()
+    ax.add_patch(rect)
+    return rect
+
+# ordering of the concentration so that it is as before, maybe quicker way of doing it
+odor_order = par_act.odor_order
+idx = [(o, c) for o, c in itertools.product(odor_order, [8, 7, 6, 5, 4])]
+
+# importing the p-values of all W from NNC vs all odors:
+CONC = 'all'
+K = 4
+file = (f'NNC-{K}_con-W_vs_'
+              f'act-{act_pps1}-{act_pps2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+
+pvals = pd.read_hdf(RESULTS_PATH / file).loc[:, idx]
+pvals = pvals.loc[order_LN[4], :]
+pvals_fdr = pvals.copy()
+for i in range(pvals.shape[0]):
+    pvals_fdr.iloc[i] = mt.multipletests(pvals_fdr.iloc[i].values, method='fdr_bh')[1]
+
+
+# calculation of the correlation coefficients
+# con_W = con_strms3.loc[:, 0].loc[:, LNs_sel_LR_d]
+file = RESULTS_PATH / 'NNC-W_act-all.hdf'
+Ws = pd.DataFrame(pd.read_hdf(file))
+conc = 'all'
+scal = 1  # so this is the same as in the figure 3 of the paper
+pps = f'{scal}o'
+meth = f'NNC_{K}'
+W = Ws[conc, pps, meth, '', '']/scal
+con_W_cn = FG.get_ctr_norm(W)
+con_W_cn = con_W_cn.loc[:, order_LN[4]]
+con_W_cn.columns = [1, 2, 3, 4]
+act_cn = FG.get_ctr_norm(act_m)
+
+# the alignment (which changes the names of the ORNs so that both
+# datasets have the same names) is necessary so that the
+# correlation coefficient calculation is done correctly
+act_cn2, con_W_cn2 = FG.align_indices(act_cn, con_W_cn)
+cors = con_W_cn2.T @ act_cn2
+df = cors.loc[:, idx]
+
+
+# plotting
+splx = np.arange(5, len(idx), 5)
+pads = (0.25, 0.4, 0.2, 0.2)
+fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.5, SQ*len(df))  # pads, gw, gh
+f = plt.figure(figsize=fs)
+ax = f.add_axes(axs)
+cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
+                   aspect='auto', splits_c='gray', lw=0.5)
+ax.set(xticks=[],
+       xlabel=f'ORN activation patterns {Xttex} to odors at different dilutions',
+       ylabel='$\mathbf{w}_k$')
+for (y, x) in np.argwhere(pvals.values < 0.05):
+    highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+
+for (y, x) in np.argwhere(pvals_fdr.values < 0.05):
+    highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
+
+# doesn't do anything like I want
+# x_lin = np.arange(pvals.shape[1])
+# y_lin = np.arange(pvals.shape[0])
+# X, Y = np.meshgrid(x_lin, y_lin)
+# ax.contour(X, Y, pvals, [0.05])
+
+plt.title(f'Correlation between ORN activity patterns {Xttex} '
+          r'and ORNs$\rightarrow$LN connection weight vectors '
+          r'$\mathbf{w}_k$ from NNC-4')
+
+ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
+add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
+
+file = f'{PP_ODOR_CON}/NNC{K}w_vs_act3_raw_mean_all-odors_corr'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+print('done')
+
+# %%
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #####  PVALUES OF CORRELATION COEFFICIENTS FOR ALL ODORS AND ALL LNs  #######
+# #############################################################################
+# importing the p-values of all LNs vs all odors:
+STRM = 0
+CONC = 'all'
+file = (f'{CELL_TYPE}_con{STRM}_vs_'
+              f'act-{act_pps1}-{act_pps2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
+
+pvals = pd.read_hdf(RESULTS_PATH / file)
+
+pvals_sel = pvals.loc[LNs_MM]
+# cors_sel = cors.loc[['Broad T', 'Broad D', 'Keystone', 'Picky 0 [dend]']]
+#%%
+# let's do 2 plots, one showing the raw pvalues and a violin plot or histogram
+# on top
+
+pads = (0.3, 0.1, 0.3, 0.2)
+fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*14)  # pads, gw, gh
+f = plt.figure(figsize=fs)
+ax = f.add_axes(axs)
+
+ax.violinplot(pvals_sel.T, bw_method=0.1, positions=np.arange(len(pvals_sel)),
+              showextrema=False)
+sns.swarmplot(ax=ax, data=pvals_sel.T, color='black', size=0.5)
+ax.set_xticks([0, 1, 2, 3], ['BT', 'BD', 'KS', 'P0'])
+ax.set_yticks([0, 0.1, 0.5, 1])
+ax.set_ylabel('p-value')
+ax.set_xlabel(wLNtypetex)
+file = f'{PP_ODOR_CON}/LN_p-values.'
+FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+print('done')
+#%%
+
+# doing additional tests on the distribution of p-values.
+
+# import scipy.stats as stats
+# for i in range(0,4):
+#     print(stats.kstest(pvals_sel.iloc[i].loc[(slice(None), 5)], 'uniform', alternative='greater')[1])
+#
+#
+#
+# #%%
+# for i in range(0,4):
+#     pv1 = pvals_sel.iloc[i]
+#     print(np.sum(pv1<0.05)/len(pv1))
+#
+# #%%
+# idx = [(o, c) for o, c in itertools.product(odor_order, [8, 7, 6, 5, 4])]
+# cors_sel = cors_sel.loc[:, idx]
+# pvals_sel = pvals_sel.loc[:, idx]
+# for i in range(0,4):
+#     pv1 = -np.log10(pvals_sel.iloc[i])
+#     cr1 = cors_sel.iloc[i]
+#     plt.figure()
+#     plt.scatter(cr1, pv1)
+#     plt.show()
+#
+#     # print(np.sum(pv1<0.05)/len(pv1))
+#
+# #%%
+#
+# df = cors_sel.loc[:, idx]
+# plt.figure()
+# plt.imshow(df, aspect='auto', vmin=-1, vmax=1)
+# plt.show()
+# #%%
+# idx = [(o, c) for o, c in itertools.product(odor_order, [8, 7, 6, 5, 4])]
+# df = -np.log10(pvals_sel.loc[:, idx])
+# plt.figure()
+# plt.imshow(df, aspect='auto', vmin=0, vmax=3)
+# plt.show()
+
+# =============================================================================
+# %%
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# #############################################################################
+# ########################  RECON of CON with Activity  #######################
 # #############################################################################
 
-# ###################         IMPORTING             ###########################
+from sklearn import linear_model
+import scipy.interpolate
+import scipy.linalg as LA
 
+ORN_order = par_act.ORN_order
+act_o_np = act_m.loc[ORN_order, :].values
+act_n_np = act_o_np / LA.norm(act_o_np, axis=0)
+# act_o_np
+
+con_o = con_strms3.loc[ORN_order, 0]
+
+
+
+cell_type = 'ORN'
+act_pps_k1 = 'raw'
+act_pps_k2 = 'mean'
 CONC = 'all'
 
-file_begin = (f'{RESULTS_PATH}/{CELL_TYPE}_con{STRM}_vs_act-{act_pps1}'
-              f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-shfl-diff-min')
-
-cdf_diff_min = pd.DataFrame(pd.read_hdf(f'{file_begin}.hdf'))
-cdf_diff_min_pv = pd.DataFrame(pd.read_hdf(f'{file_begin}_pv.hdf'))
-print('done')
-# %%
-# ##################      PLOTTING FOR INDIVIDUAL CELLS      ##################
-LN_idx = LNs_sel_LR_d
-pvals = cdf_diff_min_pv.loc[LN_idx].squeeze()  # converts into a series
-alpha = 0.05
-reject, pvals_corrected, _, _ = smsm.multipletests(pvals, method='fdr_bh',
-                                                   alpha=alpha)
-pvals_fdr = pvals.copy()
-pvals_fdr[:] = pvals_corrected
-x = np.arange(len(LN_idx), dtype=float)
-x[6:] += 0.5
-x[10:] += 0.5
-x[14:] += 0.5
-
-pads = (0.4, 0.35, 0.9, 0.15)
-fs, axs = FP.calc_fs_ax(pads, SQ*(len(x)+1.5), SQ*15)  # pads, gw, gh
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
-
-axx = FP.plot_double_series_unevenX(ax, x, cdf_diff_min.loc[LN_idx],
-                                    -np.log10(pvals_fdr),
-                                    'magenta', 'b', 'RCF max deviation (\enspace)',
-                                    r'$-\log_{10}$(p-value) (\enspace)',
-                                    ylim1=(0, 0.37), ylim2=(0, 2.1))
-# axx[1].annotate('', xy=(-2, -1.5), xytext=(18.5, -1.5), xycoords='data',
-#                 arrowprops={'arrowstyle': '-', 'lw': 0.5},
-#                 annotation_clip=False)
-axx[1].plot([20.85], [1.76], ls='None', marker='+', color='b', markersize=5,
-            clip_on=False)
-axx[0].plot([-5.3], [0.335], ls='None', marker='.', color='magenta',
-            markersize=5, clip_on=False)
-axx[0].set_yticks([0, 0.1, 0.2, 0.3])
-axx[1].set_yticks([0, 1, 2])
-axx[1].set_xlabel(r'$\mathbf{w}_\mathrm{LN}$')
-# f.text(0.5, 0., 'conn. weight vectors from ORNs to',
-#    fontsize=matplotlib.rcParams['axes.labelsize'], va='bottom', ha='center')
-# axx[1].set_xlabel('ORNs -> LN weight vectors')
-
-# adding the info about the significance
-# pvals = cdf_diff_min_pv.loc[LN_idx].values
-for alpha, y, sign in [[0.05, 2.1, '*']]:
-    FP.add_sign_stars(axx[1], pvals, alpha, x, y, sign, fontdict={'size': 14})
-
-file = (f'{PP_ODOR_CON}/{CELL_TYPE}_con{STRM}_vs_act'
-        f'-{act_pps1}-{act_pps2}-{ACT_PPS}_corr_rcf_min_diff')
-FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-print('done')
- # %%
-# #############      PLOTTING FOR INDIVIDUAL SUMMARY CELLS      ###############
-
-# strm = 0
-# con_ff_sel = con_strms3.loc[:, strm]
-# con_W = con_ff_sel.loc[:, LNs_MM].copy()
-# con_W_cn = FG.get_ctr_norm(con_W)
-# act_cn = FG.get_ctr_norm(act_m)
-# res = FG.characterize_raw_responses(act_cn, con_W_cn, N1=10, N2=50000)
-# corr, corr_pv, corr_m_per_cell, corr_m_per_cell_pv = res[0:4]
-# cdf_diff_max, cdf_diff_max_pv, cdfs_true, cdfs = res[4:]
-# pvals = cdf_diff_max_pv
-
-LN_idx = LNs_MM
-pvals = cdf_diff_min_pv.loc[LNs_MM].squeeze()
-
-alpha = 0.05
-_, pvals_corrected, _, _ = smsm.multipletests(pvals, method='fdr_bh',
-                                              alpha=alpha)
-pvals_fdr = pvals.copy()
-pvals_fdr[:] = pvals_corrected
-# df1 = cdf_diff_max.copy()
-df1 = cdf_diff_min.loc[LN_idx].copy()
-df2 = -np.log10(pvals_fdr)
-print('done')
-# %%
-
-LN_name_change_dict = {'Broad T M M': 'BT',
-                       'Broad D M M': 'BD',
-                       'Picky 0 [dend] M': 'P0',
-                       'Keystone M M': 'KS'}
-df1 = df1.rename(index=LN_name_change_dict)
-df2 = df2.rename(index=LN_name_change_dict)
-
-x = np.arange(len(LNs_MM), dtype=float)
-x[1:] += 0.5
-x[2:] += 0.5
-x[3:] += 0.5
-
-pads = (0.4, 0.35, 0.35, 0.15)
-fs, axs = FP.calc_fs_ax(pads, SQ*(len(x)+2), SQ*14)  # pads, gw, gh
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
-
-axx = FP.plot_double_series_unevenX(ax, x, df1, df2, 'magenta', 'b',
-                  r'RCF max deviation (\enspace)', r'$-\log_{10}$(p-value) (\enspace)',
-                   ylim1=(0, 0.37), ylim2=(0, 2.5))
-axx[1].plot([8.75], [2.155], ls='None', marker='+', color='b', markersize=5,
-            clip_on=False)
-axx[0].plot([-5.2], [0.345], ls='None', marker='.', color='magenta',
-            markersize=5, clip_on=False)
-axx[0].set_yticks([0, 0.1, 0.2, 0.3])
-axx[1].set_yticks([0, 1, 2])
-axx[1].set_xlabel('from ORNs to', fontsize=ft_s_tk)
-axx[1].set_xlabel(r'$\mathbf{w}_\mathrm{LNtype}$')
-axx[1].set_xticklabels(df1.index, rotation=45, ha='center')
-# axx[1].annotate('', xy=(-1.5, -0.5), xytext=(6, -0.5), xycoords='data',
-#              arrowprops={'arrowstyle': '-', 'lw': 0.5},
-#              annotation_clip=False)
-# f.text(0.5, 0., 'ORNs -> LN vect.',
-#    fontsize=matplotlib.rcParams['axes.labelsize'], va='bottom', ha='center')
 
 
-for alpha, y, sign in [[0.05, 2.4, '*']]:
-    FP.add_sign_stars(axx[1], pvals, alpha, x, y, sign, fontdict={'size': 14})
+lasso = True
+# lasso = False
 
-file = (f'{PP_ODOR_CON}/{CELL_TYPE}_con{STRM}_vs_act'
-        f'-{act_pps1}-{act_pps2}-{ACT_PPS}_corr_rcf_min_diff_sum2')
-FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-print('done')
-#
+if lasso:
+    l_norm = 1
+    alphas1 = np.logspace(-4, -1, 50)
+    alphas2 = np.logspace(-4, -1, 20)
+
+    N = 1000
+    def model(alpha):
+        return linear_model.Lasso(alpha=alpha, max_iter=int(1e6))#, tol=1e-10)
+else:
+    l_norm = 2
+    alphas1 = np.logspace(-3, 2, 20)
+    alphas2 = np.logspace(-3, 2, 20)
+    N = 1000
+    def model(alpha):
+        return linear_model.Ridge(alpha=alpha)
+
+res_rand = {}
+results = {}
+v_pval = {}
+for LN in LNs_MM:
+    print(LN)
+    w = con_o[LN].values
+    w1 = w / LA.norm(w)
+
+    res = pd.DataFrame(index=np.arange(len(alphas1)),
+                           columns=['alpha', 'error', 'coef_norm'])
+    for i, alph in enumerate(alphas1):
+        clf = model(alph)
+        clf.fit(act_n_np, w1)
+        bias = clf.intercept_
+        error = LA.norm(w1 - act_n_np @ clf.coef_ - bias)
+        coef_norm = LA.norm(clf.coef_, ord=l_norm)
+        res.loc[i, 'alpha'] = alph
+        res.loc[i, 'error'] = error
+        res.loc[i, 'coef_norm'] = coef_norm
+    results[LN] = res.copy()
+
+
+    # reading the data that was generated in the file
+    # act_odors_ORN_vs_con_ORN-LN_recon.py
+    file_begin = (f'{cell_type}_con{STRM}_vs_'
+                  f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_{LN}_recon_rand')
+    res_rand[LN] = pd.read_hdf(RESULTS_PATH / f'{file_begin}.h5')
+
+    gr = res_rand[LN].groupby('w')
+    y_interps = [
+        scipy.interpolate.interp1d(gr.get_group(i)['coef_norm'],
+                                   gr.get_group(i)['error'],
+                                   fill_value='extrapolate')
+        for i in range(N)]
+
+    v_p = []
+    for i in range(0, len(alphas1) - 1):
+        x = res['coef_norm'].iloc[i]
+        if x == 0:
+            continue
+        y = res['error'].iloc[i]
+        ys = np.array([y_interps[i](x) for i in range(N)])
+        p = np.mean(ys < y)
+        print(alphas1[i], x, p)
+        v_p.append([x, p])
+    v_p = np.array(v_p)
+    v_pval[LN] = v_p.copy()
+#%%
+
+dict_LN = {'Broad T M M': 'BT',
+                              'Broad D M M': 'BD',
+                              'Keystone M M': 'KS',
+                              'Picky 0 [dend] M': 'P0'}
+
+for LN in LNs_MM:
+    pads = (0.35, 0.4, 0.3, 0.2)
+    fs, axs = FP.calc_fs_ax(pads, SQ * 11, SQ * 14)  # pads, gw, gh
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+    # plt.scatter(errors, coef_norms)
+    groups = res_rand[LN].groupby('w')
+    for i in range(N):
+        res_rand_sel = groups.get_group(i)
+        # if i ==0:
+        #     plt.plot(res_rand_sel['coef_norm'], res_rand_sel['error'],color='gray',
+        #              lw=0.2, alpha=0.1, label='shuffled $\mathbf{w}$')
+        # else:
+        plt.plot(res_rand_sel['coef_norm'], res_rand_sel['error'],color='gray',
+                     lw=0.2, alpha=0.1)
+
+    ax.plot(results[LN]['coef_norm'], results[LN]['error'], color='gray', lw=0.2,
+            label='shuffled $\mathbf{w}$')
+    ax.plot(results[LN]['coef_norm'], results[LN]['error'], color='k', lw=0.75,
+            label='true $\mathbf{w}$')
+    ax.legend(borderaxespad=0.2)
+    ax.set_xlabel('norm of $\mathbf{v}$')
+    ax.set_ylabel('reconstruction error')
+    ax.set_title(dict_LN[LN])
+    col = 'r'
+    ax2 = ax.twinx()
+    ax2.plot(v_pval[LN][:, 0], v_pval[LN][:, 1], color=col, lw=0.75)
+    ax2.set_ylim(0, 0.2)
+    ax2.spines['right'].set(visible=True, color=col)
+    ax2.set_ylabel('p-value', color=col)
+    ax2.tick_params('y', colors=col)
+    file = f'{PP_ODOR_CON}/recon_{LN}.'
+    FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 # =============================================================================
 # %%
 # #############################################################################
@@ -1210,7 +1078,6 @@ print('done')
 # NMF_n = 4
 # NMF_name = f'NMF_{NMF_n}'
 # SVD_n = 6
-RESULTS_PATH = OLF_PATH / 'results'
 # file = (f'{RESULTS_PATH}/corr_sign/act{DATASET}-{act_pps1}-{act_pps2}'
 #        f'_conc-all_NMF{NMF_n}-SVD{SVD_n}_vs_con-ORN-all_')
 file = (f'{RESULTS_PATH}/corr_sign/act{DATASET}-{act_pps1}-{act_pps2}'
@@ -1247,61 +1114,32 @@ data_cc_pv = data_cc_pv.reset_index(level=['par1', 'par2'], drop=True)
 print('done')
 # %%
 
-
 scal = 1
 pps = f'{scal}o'
-SVD_n = 5
-NNC_n = 4
 
 idy = {}
-ylabels_new = {}
 
-if scal == 1:
-    order_LN = {4: [3, 4, 1, 2], 5: [3, 1, 4, 5, 2]}
-else:
-    order_LN = {4: [4, 2, 1, 3], 5: [2, 5, 3, 4, 1]}
 
+SVD_n = 5
+NNC_n = 4
 idy[0] = [('o', 'SVD', i) for i in range(1, SVD_n + 1)]
-idy[1] = [(pps, f'NNC_{NNC_n}', i) for i in order_LN[4]]
-
-
-ylabels_new[0] = [f'{i}' for i in range(1, SVD_n + 1)]
-ylabels_new[1] = [f'{i}' for i in range(1, NNC_n + 1)]
-
+idy[1] = [(pps, f'NNC_{NNC_n}', i) for i in order_LN[NNC_n]]
 NNC_n = 5
-idy[2] = [(pps, f'NNC_{NNC_n}', i) for i in order_LN[5]]
-ylabels_new[2] = [f'{i}' for i in range(1, NNC_n + 1)]
-
-for k in [2, 3]:
-    idy[k + 9] = [(pps, f'NNC_{k}', i) for i in range(1, k + 1)]
-    ylabels_new[k + 9] = [f'{i}' for i in range(1, k + 1)]
+idy[2] = [(pps, f'NNC_{NNC_n}', i) for i in order_LN[NNC_n]]
 
 ylabel = [f'PCA directions\nof {Xdatatex}',
-          r'NNC-4, $\mathbf{w}_k$',
-          r'NNC-5, $\mathbf{w}_k$']
+          'NNC-4, $\mathbf{w}_k$',
+          'NNC-5, $\mathbf{w}_k$']
 
-xlabel = {0: r'$\mathbf{w}_\mathrm{LNtype}$',
-          1: 'connection on ORNs from',
-          2: 'connection on ORNs from',
-          3: 'connection of ORNs with'}
-
-xlabel_short = {0: 'from ORNs to',
-                1: 'conn. on ORNs from',
-                2: 'conn. on ORNs from',
-                3: 'conn. of ORNs with'}
+xlabel = {'raw': '$\mathbf{w}_\mathrm{LN}$',
+         'M':'$\mathbf{w}_\mathrm{LNtype}$'}
+splx = {'raw': [6, 6+4, 10+4], 'M': [1, 2, 3]}
+LNs_k = {'raw': LNs_sel_LR_d, 'M': LNs_MM}
+sqs = {'raw': 1.1 * SQ, 'M': 2.2 * SQ}
+pads = [0.4, 0.45, 0.35, 0.2] # for the correlation plot
+pads1 = [0.4, 0.5, 0.35, 0.2] # for the pv plot
 print('done')
 # %%
-splx = {'raw': [6, 6+4, 10+4], 'M': [1, 2, 3]}
-spl = SVD_n
-LNs_k = {'raw': LNs_sel_LR_d, 'M': LNs_MM}
-
-pads = [0.4, 0.45, 0.35, 0.2] # for the correlation plot
-pads1 = [0.1, 0.47, 0.35, 0.2] # for the pv plot
-d_h = 0.05
-
-show_lab_x = {0: False, 1: False, 2: True, 3: True, 4: True, 5: True, 6: True,
-              7: True, 8: True, 9: True, 10: True, 11: True, 12: True}
-# show_lab_x = {0: False, 1: False, 2: True}
 
 def plot_pv_measure(df1, df2, splx, cmap, vlim, i=None):
     """
@@ -1309,96 +1147,50 @@ def plot_pv_measure(df1, df2, splx, cmap, vlim, i=None):
     """
     _pads = pads.copy()
     _pads1 = pads1.copy()
-    sq = 2.2 * SQ
-    showlabx = True
-    if len(df1.columns) > 5:
-        _pads = [0.4, 0.45, 0.9, 0.2]  # for the correlation plot
-        _pads1 = [0.04, 0.47, 0.9, 0.2]  # for the pv plot
-        sq = 1.1 * SQ
-        showlabx = show_lab_x[i]
-        if i != 2:
-            _pads = [0.4, 0.45, 0.2, 0.2]  # for the correlation plot
-            _pads1 = [0.04, 0.47, 0.2, 0.2]  # for the pv plot
-    if len(df1.columns) < 5 and i == 0:
-        _pads[2] = 0.55
-        _pads1[2] = 0.55
 
-    _, fs, axs = FP.calc_fs_ax_df(df1, _pads, sq=sq)
+    if len(df1.columns) > 5:  # for the raw plots
+        _pads[2] = 0.9  # for the correlation plot
+        _pads1[2] = 0.9 # for the PV plot
+        state = 'raw'
+        if i < 2: # not NNC-5
+            _pads[2] = 0.2  # for the correlation plot
+    if len(df1.columns) < 5:  # for the mean plots
+        state = 'M'
+        if i == 0: # for the PCA plot
+            _pads[2] = 0.55
+
+    _, fs, axs = FP.calc_fs_ax_df(df1, _pads, sq=sqs[state])
     f = plt.figure(figsize=fs)
     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0],
                         axs[1], CB_W / fs[0], axs[3]])
-    ax1 = f.add_axes(axs)  # left, bottom, width, height
+    ax = f.add_axes(axs)  # left, bottom, width, height
 
-    cp = FP.imshow_df2(df1, ax1, vlim=vlim, cmap=cmap, splits_x=splx,
-                       lw=0.5, show_lab_x=False)
-    if show_lab_x and len(df1.columns) < 5:
-        ax1.set_xticks(np.arange(len(df1.T)) + 0.5)
-        ax1.set_xticklabels(list(df1.columns), rotation=45, ha='right')
-        ax1.tick_params('x', bottom=False, pad=-1)
-        ax1.set_xlabel(df1.columns.name)
-        # ax1.set_xlabel(df1.columns.name, fontsize=ft_s_tk,
-        #                labelpad=2, rotation_mode='default', ha='center',
-        #                va='top')
-        # ax1.annotate('', xy=(-1, len(df1.index) + 1.3),
-        #              xytext=(len(df1.columns), len(df1.index) + 1.3),
-        #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
-        #              xycoords='data', annotation_clip=False)
+    if state == 'M':
+        kwargs = {'x_offset': 0.5, 'ha':'right', 'rot': 45}
+    elif state == 'raw' and i==2:
+        kwargs = {}
+    else:
+        kwargs = {'show_lab_x':False}
 
-    if show_lab_x and len(df1.columns) > 5 and i == 2:
-        ax1.set_xticks(np.arange(len(df1.T)))
-        ax1.set_xticklabels(list(df1.columns), rotation=90, ha='center')
-        ax1.tick_params('x', bottom=False, pad=-1)
-        ax1.set_xlabel(r'$\mathbf{w}_\mathrm{LN}$')
-        # ax1.set_xlabel(df1.columns.name, fontsize=ft_s_tk,
-        #                labelpad=2, rotation_mode='default', ha='center',
-        #                va='top')
-        # ax1.annotate('', xy=(-1, len(df1.index) + 9),
-        #              xytext=(len(df1.columns), len(df1.index) + 9),
-        #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
-        #              xycoords='data', annotation_clip=False)
+    cp = FP.imshow_df2(df1, ax, vlim=vlim, cmap=cmap, splits_x=splx,
+                       lw=0.5, **kwargs)
 
     add_colorbar_crt(cp, ax_cb, r'$r$', [-1 , 0, 1])
-    f1 = (f, ax1, ax_cb, cp)
+    f1 = (f, ax, ax_cb, cp)
 
-    # p value plot
-    _, fs, axs = FP.calc_fs_ax_df(df2, _pads1, sq=sq)
+    # p value plot, not shown in paper
+    _, fs, axs = FP.calc_fs_ax_df(df2, _pads1, sq=sqs[state])
     f = plt.figure(figsize=fs)
     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0],
                         axs[1], CB_W/fs[0], axs[3]])
-    ax1 = f.add_axes(axs)  # left, bottom, widgth, height
-    cp = FP.imshow_df2(df2, ax1, vlim=[-3, -1], lw=0.5,
-                       cmap=plt.cm.viridis_r, splits_x=splx, show_lab_y=True,
-                       show_lab_x=False)
-    if show_lab_x and len(df1.columns) < 5:
-        ax1.set_xticks(np.arange(len(df1.T)) + 0.5)
-        ax1.set_xticklabels(list(df1.columns), rotation=45, ha='right')
-        ax1.tick_params('x', bottom=False, pad=-1)
-        ax1.set_xlabel(df1.columns.name)
-        # ax1.set_xlabel(df1.columns.name, rotation=0, fontsize=ft_s_tk,
-        #                labelpad=2, rotation_mode='default', ha='center',
-        #                va='top')
-        # ax1.annotate('', xy=(-1, len(df1.index) + 1.3),
-        #              xytext=(len(df1.columns), len(df1.index) + 1.3),
-        #              arrowprops={'arrowstyle': '-', 'lw': 0.5}, xycoords='data',
-        #              annotation_clip=False)
-    if show_lab_x and len(df1.columns) > 5 and i == 2:
-        ax1.set_xticks(np.arange(len(df1.T)))
-        ax1.set_xticklabels(list(df1.columns), rotation=90, ha='center')
-        ax1.tick_params('x', bottom=False, pad=-1)
-        ax1.set_xlabel(r'$\mathbf{w}_\mathrm{LN}$')
-        # ax1.set_xlabel(df1.columns.name)
-        # ax1.set_xlabel(df1.columns.name, fontsize=ft_s_tk,
-        #                labelpad=2, rotation_mode='default', ha='center',
-        #                va='top')
-        # ax1.annotate('', xy=(-1, len(df1.index) + 9),
-        #              xytext=(len(df1.columns), len(df1.index) + 9),
-        #              arrowprops={'arrowstyle': '-', 'lw': 0.5}, xycoords='data',
-        #              annotation_clip=False)
+    ax = f.add_axes(axs)  # left, bottom, widgth, height
+    cp = FP.imshow_df2(df2, ax, vlim=[-3, -1], lw=0.5,
+                       cmap=plt.cm.viridis_r, splits_x=splx)
 
     clb = add_colorbar_crt(cp, ax_cb, 'pv', [-3, -2, -1], extend='both')
     cp.cmap.set_over('k')
     clb.set_ticklabels([0.001, 0.01, 0.1])
-    f2 = (f, ax1, ax_cb, cp)
+    f2 = (f, ax, ax_cb, cp)
     return f1, f2
 
 
@@ -1409,15 +1201,20 @@ dict_M = {'Broad T M M': 'BT',
           'Keystone M M': 'KS',
           'Picky 0 [dend] M': 'P0'}
 
-
+# i = 0: PCA
+# i = 1: NNC-4
+# i = 2: NNC-5
+# raw: all original connectivity
+# M: the LNtype connectivity
 for i, k in itertools.product(range(3), ['raw', 'M']):  # k as key
     print(i, k)
     df1 = data_cc.loc[idy[i], LNs_k[k]].copy()
     if i == 0:
         df1.iloc[1] = -df1.iloc[1]
-    df1.index = ylabels_new[i]
+    ylabels_new = np.arange(1, df1.shape[0]+1, dtype=int)
+    df1.index = ylabels_new
     df1.index.name = ylabel[i]
-    df1.columns.name = xlabel[0]
+    df1.columns.name = xlabel[k]
 
     pvals = data_cc_pv.loc[idy[i], LNs_k[k]]
     alpha = 0.05
@@ -1431,11 +1228,9 @@ for i, k in itertools.product(range(3), ['raw', 'M']):  # k as key
 
     # df2 = np.log10(pvals_fdr)
     df2 = np.log10(pvals)
-    df2.index = ylabels_new[i]
-    df2.columns.name = xlabel[0]
-    file = f'{PP_COMP_CON}/act-{pps}-comps{i}_con{STRM}-{k}_cc'
-    if i >= 1:
-        file = f'{PP_CON_PRED}/act-{pps}-comps{i}_con{STRM}-{k}_cc'
+    df2.index = ylabels_new
+    df2.index.name = ylabel[i]
+    df2.columns.name = xlabel[k]
 
     df1 = df1.rename(dict_M, axis='columns')
     df2 = df2.rename(dict_M, axis='columns')
@@ -1444,12 +1239,15 @@ for i, k in itertools.product(range(3), ['raw', 'M']):  # k as key
                              [-1, 1], i)
 
     for (m, n), label in np.ndenumerate(stars):
-        f1[1].text(n, m+0.1, label, ha='center', va='center',
-                   size=matplotlib.rcParams['font.size']*0.8**0)
+        f1[1].text(n, m, label, ha='center', va='top',
+                   size=ft_s_lb)
 
+    path_crt = PP_COMP_CON
+    if i >= 1:
+        path_crt = PP_CON_PRED
+    file = f'{path_crt}/act-{pps}-comps{i}_con{STRM}-{k}_cc'
     FP.save_plot(f1[0], f'{file}.png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f1[0], f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
-    # FP.save_plot(f2[0], f'{file}_pv_adjusted.png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f2[0], f'{file}_pv.png', SAVE_PLOTS, **png_opts)
     FP.save_plot(f2[0], f'{file}_pv.pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
@@ -1503,15 +1301,12 @@ for i in range(4):
     ax.plot(x, y, lw=1, label=LNs_short[i])
     ax.fill_between(x, y-e, y+e, alpha=0.5)
 ax.set_yticks([0, 0.4, 0.8])
-ax.set_xticks([-1, 0, 1])
-ax.set_xticklabels([0.1, 1, 10])
+ax.set_xticks([-1, 0, 1], [0.1, 1, 10])
 ax.set_ylim(0, 0.8)
 ax.set_ylabel(r'corr. coef. $r$')
 ax.set_xlabel(r'model inhibition strength $\rho$')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-plt.legend(ncol=4, frameon=False, columnspacing=1, handlelength=1,
-           handletextpad=0.4)
+
+plt.legend(ncol=4, bbox_to_anchor=[0.5, 0.05], loc='lower center')
 
 file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
         f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-4_rho-range')
@@ -1521,7 +1316,7 @@ print('done')
 # %%
 
 # Now i want to calculate the p values for each individual case
-cor, pv_o, pv_l, pv_r = FG.get_signif_corr_v2(Ws_cn, con_sel, N=20000)
+cor, pv_o, pv_l, pv_r = FG.get_signif_v1(Ws_cn, con_sel, N=20000)
 alpha = 0.05
 pv_fdr = pv_o.copy()
 for rho in pv_fdr.index.unique('rho'):
@@ -1556,15 +1351,12 @@ ax = f.add_axes(axs)
 x = corr.index.unique('rho')/10
 ax.plot(x, y, lw=1, c='k')
 ax.fill_between(x, y-e, y+e, alpha=0.5, facecolor='k')
-ax.set_yticks([0, 1, 2, 3, 4])
-ax.set_yticklabels([0, '', 2, '', 4])
-ax.set_xticks([-1, 0, 1])
-ax.set_xticklabels([])
+ax.set_yticks([0, 1, 2, 3, 4], [0, '', 2, '', 4])
+ax.set_xticks([-1, 0, 1], [])
 ax.set_ylim(0, 4)
 ax.set_ylabel('\# signif.')
 # ax.set_xlabel(r'$\rho$')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
+
 file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
         f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-4_rho-range_pv')
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -1676,8 +1468,7 @@ ax.hist((9-overlaps_rdm[5])/2, bins=bins, alpha=0.7, color='darkslategray',
         density=True, label='shuffled')
 ax.plot([(9-overlap_true)/2, (9-overlap_true)/2], [0, 1.8], color='k', lw=1,
         label='true')
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
+
 ax.set(xlabel=r'~ \# of aligned dimensions $\Gamma$',
        ylabel='probability density',
        xticks=[0, 1, 2, 3, 4], xticklabels=[0, '', 2, '', 4], yticks=[0, 1, 2],
@@ -1686,13 +1477,12 @@ ax.set(xlabel=r'~ \# of aligned dimensions $\Gamma$',
 handles, labels = ax.get_legend_handles_labels()
 order = [1, 2, 0]
 ax.legend([handles[idx] for idx in order], [labels[idx] for idx in order],
-          frameon=False, bbox_to_anchor=(1.1, 1.1), loc='upper right',
-          handlelength=1, handletextpad=0.4)
+          bbox_to_anchor=(1, 1), loc='upper right')
 
 ax.text(0.65, 0.17, f"pv = {overlaps_pvs[0]:.0e}", transform=ax.transAxes,
-        color='grey', fontsize=5)
+        color='grey')
 ax.text(0.65, 0.05, f"pv = {overlaps_pvs[5]:.0e}", transform=ax.transAxes,
-        color='darkslategray', fontsize=5)
+        color='darkslategray')
 
 file = f'{PP_COMP_CON}/con_act{SVD_N}_subspc_overlap_hist3'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)

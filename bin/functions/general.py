@@ -303,7 +303,7 @@ def func_hill(x, y_max, EC_50, n):
 
 def get_ctr_norm(X, opt=0):
     """
-    for dataframes, each columns is cetered and normalized
+    for dataframes, each column is centered and normalized
     for series, the serie is centered and normalized
     """
     if X.ndim == 1:
@@ -668,9 +668,8 @@ def get_max_diff(curves, curve1):
     of one individual curve
     curve1 is (are) the mean curve(s)
     """
-    n_dim = curves.ndim
     diffs = curves - curve1
-    return np.max(diffs, axis=n_dim-1)
+    return np.max(diffs, axis=-1)
 
 
 def get_min_diff(curves, curve1):
@@ -681,9 +680,23 @@ def get_min_diff(curves, curve1):
     curve1 is (are) the mean curve(s)
     returning the absolute deviation
     """
-    n_dim = curves.ndim
     diffs = curves - curve1
-    return -np.min(diffs, axis=n_dim-1)
+    return -np.min(diffs, axis=-1)
+
+
+def get_andersondarling_dist(curves, curve1):
+    """
+    curves can be 1D, 2D, 3D.
+    the max is always done on the last dimension which is the dimension
+    of one individual curve
+    curve1 is (are) the mean curve(s)
+    returning Anderson Darling statistic
+    """
+    diffs = curves - curve1
+    dF = np.diff(curve1, axis=-1, append=1)/ (curve1 * (1-curve1))
+    dF[~np.isfinite(dF)] = 1
+    dF[dF==0] = 1
+    return np.sum(diffs**2 * dF , axis=-1)
 
 
 def get_entries(A: Union[pd.DataFrame, np.ndarray], diag: bool=False)\
@@ -882,9 +895,10 @@ def get_corr(A, B, check=True):
     # return A.values.T @ B.values
 
 
-def get_cos_sim(A, B, check=True):
+def get_CS(A, B, check=True):
     """
-    getting the cos similarity between each columns of dataframe A
+
+    getting the Cosine Similarity between each column of dataframe A
     with each column of dataframe B.
     We are only considering positive angles, i.e., between 0 and 1
     angles smaller than 0 are switched sign
@@ -944,7 +958,7 @@ def get_cos_sim(A, B, check=True):
 
 # almost similar functions to above but for cos similarity
 # CS stands for cos-similarity
-def get_signif_general_2(A, B, func, N=10, dist=False):
+def get_signif_general(A, B, func, N=10):
     """
     we assume that the given vectors are already aligned and normalized
 
@@ -957,8 +971,8 @@ def get_signif_general_2(A, B, func, N=10, dist=False):
     the option dist returns the cosine similarities that are issued
     from the shuffling
 
-    func is usually either get_corr or get_cos_sim, that's why it is called
-    general
+    func is usually either get_corr or get_CS, that's why it is called
+    get_signif_general
 
     return 3 types of pvalues:
     prob_o, it is the right one-tailed pvalue
@@ -967,30 +981,27 @@ def get_signif_general_2(A, B, func, N=10, dist=False):
     prob_l, it is the prob of value coming from random generation comes
     is on the left of -abs(real_value)
     """
-    # CS = np.abs(B @ A)  # only positive values here
-    CS = func(A, B, check=False)
+    measure = func(A, B, check=False)
     # CS is a 1D vector, so it is the same as abs(A.T @ B)
     # the length of the vector is the same as the number of columns of A, n
-    CS_shuffled = np.zeros((N, len(A.T)))  # N x n
+    measure_shuffled = np.zeros((N, len(A.T)))  # N x n
     for i in range(N):
         B1 = np.random.permutation(B)
-        CS_shuffled[i] = func(A, B1, check=False)
-
-    if dist:
-        return CS, CS_shuffled  # n, N x n
+        measure_shuffled[i] = func(A, B1, check=False)
 
     # we need to look at both the right and left probabilities,
     # as in the case of SVD, the vectors could be oriented in both
     # directions
-    prob_o = np.mean(CS_shuffled >= CS, axis=0)  # o - original: 1 tailed
-    prob_r = np.mean(CS_shuffled >= np.abs(CS), axis=0)
-    prob_l = np.mean(CS_shuffled <= -np.abs(CS), axis=0)
-    return (CS, np.mean(CS_shuffled, axis=0), prob_o, prob_l, prob_r)
+    prob_o = np.mean(measure_shuffled >= measure, axis=0)  # o - original: 1 tailed
+    prob_r = np.mean(measure_shuffled >= np.abs(measure), axis=0)
+    prob_l = np.mean(measure_shuffled <= -np.abs(measure), axis=0)
+    return measure, measure_shuffled, np.mean(measure_shuffled, axis=0),\
+           prob_o, prob_l, prob_r
 
 
-def get_signif_general_v1(A, B, func1, func2, N=10, dist=False):
+def get_signif_general_v1(A, B, measure_func, N=10, dist=False):
     """
-    this version of significance testing is slower, it shuffles each column
+    this version of significance testing is slower than v2, it shuffles each column
     of B.
     It would make sense to choose as B the data that has less columns,
     so that the shuffling procedure would be faster
@@ -998,11 +1009,11 @@ def get_signif_general_v1(A, B, func1, func2, N=10, dist=False):
     the option dist returns the correlation coefficients that are issued
     from the shuffling, i.e., the full distribution
 
-    func1 is usually either get_corr or get_cos_sim
+    measure_func is usually either get_corr or get_CS
     """
     # aligning the 2 datasets, the order in B is kept, A is reordered
     A, B = align_indices(A, B)
-    corr_df = func1(A, B)
+    measure_df = measure_func(A, B)
     # the corr_df will have as rows the columns of A and
     # as columns the columns of B
 
@@ -1010,178 +1021,165 @@ def get_signif_general_v1(A, B, func1, func2, N=10, dist=False):
     # calculate the distributions of correlations coefficients
     # when the connectivity is shuffled
 
-    # in the commented version, it seems that both matrices are shuffled
-# =============================================================================
-#     for i in range(len(U.columns)):
-#         U_1 = U.iloc[:, i].values
-#         for j in range(len(con1_df.columns)):
-#             con_1 = con1_df.iloc[:, j].values
-#             (corr1, _, _, prob1) = test_signif_1(U_1, con_1, N)
-#             prob1_df.iloc[i, j] = prob1
-# =============================================================================
-
     A_np = A.values
     B_np = B.values
 
     if dist:
-        corr_collection = np.zeros((N, *corr_df.shape))
-        for i in range(len(B.columns)):  # iterating over the columns of B
-            _, corr_coll = func2(A_np, B_np[:, i], N, dist=True)
-            corr_collection[:, :, i] = corr_coll
-
-        return corr_df, corr_collection
-
-    pv_o_df = pd.DataFrame().reindex_like(corr_df)
-    pv_l_df = pd.DataFrame().reindex_like(corr_df)
-    pv_r_df = pd.DataFrame().reindex_like(corr_df)
-    for i in range(len(B.columns)):  # iterating over the columns of B
-        _, _, pv_o, pv_l, pv_r = func2(A_np, B_np[:, i], N, dist=False)
-        pv_o_df.iloc[:, i] = pv_o
-        pv_l_df.iloc[:, i] = pv_l
-        pv_r_df.iloc[:, i] = pv_r
-
-    return corr_df, pv_o_df, pv_l_df, pv_r_df
+        measure_collection = np.zeros((N, *measure_df.shape))
+    pv_o_df = pd.DataFrame().reindex_like(measure_df)
+    pv_l_df = pd.DataFrame().reindex_like(measure_df)
+    pv_r_df = pd.DataFrame().reindex_like(measure_df)
 
 
-def get_signif_general_v2(A, B, func, N=10, dist=False):
-    """
-    this version of significance testing is much faster than the v1
-    but it might bring some bias.
-    It is basically shuffling all the A matrix at once, and not
-    columns by column as in the test_signif_v1 version
+    for i in range(len(B.columns)):  # iterating over the columns of B, i.e., each cell
+        res = get_signif_general(A_np, B_np[:, i], measure_func, N)
+        if dist:
+            measure_collection[:, :, i] = res[1]
 
-    the option dist returns the correlation coefficients that are issued
-    from the shuffling, i.e., the full distribution
-
-    theoretically we should have that
-    pv_o = combine_pval(CS, pv_l, pv_r)
-    however it is not always exactly the case when CS is negative
-    because in that case in the combine pval it is
-    pval_l that is taken, but pval_l was calculated as
-    np.mean(CS_collection <= -np.abs(CS_df.values), axis=0)
-    that means if certain values in CS_collections are exactly equal
-    (happens in the case when the A or B have some sparcity)
-    and so the CS will be assigned as significative when they are not
-    In any case pv_o is more correct than the combine and should
-    always be preferred.
-    """
-    # aligning the 2 datasets
-    (A, B) = align_indices(A, B)
-    CS_df = func(A, B, check=True)
-
-    A_np = A.values
-    B_np = B.values
-    # CS_collection is a 3D matrix, the first dim are the repetitions
-    # from shuffling, the next 2 dims are the same as for the real CS.
-    CS_collection = np.zeros((N, *CS_df.shape))
-    for i in range(N):
-        CS_collection[i] = func(A_np, np.random.permutation(B_np),
-                                check=False)
+        pv_o_df.iloc[:, i] = res[3]
+        pv_l_df.iloc[:, i] = res[4]
+        pv_r_df.iloc[:, i] = res[5]
 
     if dist:
-        return CS_df, CS_collection
+        return measure_df, measure_collection, pv_o_df, pv_l_df, pv_r_df
+    return measure_df, pv_o_df, pv_l_df, pv_r_df
 
-    pv_o_df = pd.DataFrame().reindex_like(CS_df)
-    pv_l_df = pd.DataFrame().reindex_like(CS_df)
-    pv_r_df = pd.DataFrame().reindex_like(CS_df)
-    pv = np.mean(CS_collection >= CS_df.values, axis=0)
-    pv_o_df[:] = pv
-    pv = np.mean(CS_collection >= np.abs(CS_df.values), axis=0)
-    pv_r_df[:] = pv
-    pv = np.mean(CS_collection <= -np.abs(CS_df.values), axis=0)
-    pv_l_df[:] = pv
+#
+# def get_signif_general_v2(A, B, func, N=10, dist=False):
+#     """
+#     this version of significance testing is much faster than the v1
+#     but it might bring some bias.
+#     It is basically shuffling all the A matrix at once, and not
+#     columns by column as in the test_signif_v1 version
+#
+#     the option dist returns the correlation coefficients that are issued
+#     from the shuffling, i.e., the full distribution
+#
+#     theoretically we should have that
+#     pv_o = combine_pval(CS, pv_l, pv_r)
+#     however it is not always exactly the case when CS is negative
+#     because in that case in the combine pval it is
+#     pval_l that is taken, but pval_l was calculated as
+#     np.mean(CS_collection <= -np.abs(CS_df.values), axis=0)
+#     that means if certain values in CS_collections are exactly equal
+#     (happens in the case when the A or B have some sparcity)
+#     and so the CS will be assigned as significative when they are not
+#     In any case pv_o is more correct than the combine and should
+#     always be preferred.
+#     """
+#     # aligning the 2 datasets
+#     (A, B) = align_indices(A, B)
+#     measure_df = func(A, B, check=True)
+#
+#     A_np = A.values
+#     B_np = B.values
+#     # measure_collection is a 3D matrix, the first dim are the repetitions
+#     # from shuffling, the next 2 dims are the same as for the real CS.
+#     measure_collection = np.zeros((N, *measure_df.shape))
+#     for i in range(N):
+#         measure_collection[i] = func(A_np, np.random.permutation(B_np),
+#                                 check=False)
+#
+#     if dist:
+#         return measure_df, measure_collection
+#
+#     pv_o_df = pd.DataFrame().reindex_like(measure_df)
+#     pv_l_df = pd.DataFrame().reindex_like(measure_df)
+#     pv_r_df = pd.DataFrame().reindex_like(measure_df)
+#     pv = np.mean(measure_collection >= measure_df.values, axis=0)
+#     pv_o_df[:] = pv
+#     pv = np.mean(measure_collection >= np.abs(measure_df.values), axis=0)
+#     pv_r_df[:] = pv
+#     pv = np.mean(measure_collection <= -np.abs(measure_df.values), axis=0)
+#     pv_l_df[:] = pv
+#
+#     # we put nan everywhere where there was nans in the corr matrix
+#     idx_nan = pd.isnull(measure_df)
+#     pv_o_df[idx_nan] = np.nan
+#     pv_l_df[idx_nan] = np.nan
+#     pv_r_df[idx_nan] = np.nan
+#
+#     return measure_df, pv_o_df, pv_l_df, pv_r_df
 
-    # we put nan everywhere where there was nans in the corr matrix
-    idx_nan = pd.isnull(CS_df)
-    pv_o_df[idx_nan] = np.nan
-    pv_l_df[idx_nan] = np.nan
-    pv_r_df[idx_nan] = np.nan
 
-    return CS_df, pv_o_df, pv_l_df, pv_r_df
-
-
-def get_signif_corr_2(A, B, N=10, dist=False):
-    return get_signif_general_2(A, B, get_corr, N=N, dist=dist)
+def get_signif_v1(A, B, N=10, dist=False, measure='corr'):
+    if measure == 'corr':
+        return get_signif_general_v1(A, B, get_corr, N, dist=dist)
+    elif measure == 'CS':
+        return get_signif_general_v1(A, B, get_CS, N, dist=dist)
+    else:
+        raise ValueError('no such measure', measure)
 
 
-def get_signif_corr_v1(A, B, N=10, dist=False):
-    return get_signif_general_v1(A, B, get_corr,
-                                 get_signif_corr_2, N, dist=dist)
+# not anymore maintained as not used
+# def get_signif_v2(A, B, N=10, dist=False, measure='corr'):
+#     # calls function that shuffles all of B simultaneously,
+#     # so might add some bias
+#     if measure == 'corr':
+#         return get_signif_general_v2(A, B, get_corr, N=N, dist=dist)
+#     elif measure == 'CS':
+#         return get_signif_general_v2(A, B, get_CS, N=N, dist=dist)
+#     else:
+#         raise ValueError('no such measure', measure)
 
 
-def get_signif_corr_v2(A, B, N=10, dist=False):
-    return get_signif_general_v2(A, B, get_corr, N=N, dist=dist)
-
-
-def get_signif_CS_2(A, B, N=10, dist=False):
-    return get_signif_general_2(A, B, get_cos_sim, N=N, dist=dist)
-
-
-def get_signif_CS_v1(A, B, N=10, dist=False):
-    return get_signif_general_v1(A, B, get_cos_sim,
-                                 get_signif_CS_2, N, dist=dist)
-
-
-def get_signif_CS_v2(A, B, N=10, dist=False):
-    return get_signif_general_v2(A, B, get_cos_sim, N=N, dist=dist)
-
-
-def combine_pval(corrs, pval_l, pval_r):
-    """
-    this function handle the 1-sided vs 2-sided issue of the significance
-    testing
-    here we need to take into account the correlation coefficient
-    (if it is positive or negative), and about the circ_alg we are using
-    if it is SVD, we need we will take the sum of left and right
-    if it is any other circ_alg, it is one-directional
-
-    We rely on the fact that some act processing come from SVD
-    """
-    if pval_l.shape != pval_r.shape:
-        raise ValueError('left and right PV do not have the same shape')
-    if pval_l.shape != corrs.shape:
-        raise ValueError('left sign and corr do not have the same shape')
-
-    # also important to check if the 3 dataframes have the same
-    # index and columns
-    cond1 = pval_l.index.equals(pval_r.index)
-    cond2 = pval_l.index.equals(corrs.index)
-    cond3 = pval_l.columns.equals(pval_r.columns)
-    cond4 = pval_l.columns.equals(corrs.columns)
-    if not (cond1 and cond2 and cond3 and cond4):
-        raise ValueError('pval and/or corr dont have the same index/col')
-
-    (n1, n2) = pval_l.shape
-
-    # final significance to be outputted
-    pval = pd.DataFrame().reindex_like(pval_l)
-
-# could be even faster by creating a function and using apply
-    for i in range(n1):
-        name = corrs.iloc[i].name
-        cond = ('SVD' in name)  # and name[5] != 1)
-        for j in range(n2):
-            corr = corrs.iat[i, j]
-            # in the case of SVD, and if it is not the 1st component
-            # which is expected to be positive
-            if cond:
-                pv = pval_r.iat[i, j] + pval_l.iat[i, j]
-            else:
-                # then we are considering cases where we are assuming
-                # a one sided hypothesis, meaning that if the correlation
-                # is negative, it will be a very high prob to get
-                # at least this corr
-                # this also takes into account the case of the
-                # 1st loading vector of SVD
-                if corr >= 0:
-                    pv = pval_r.iat[i, j]
-                elif corr < 0:
-                    # this part might not be 100% accurate because of the
-                    # of the >= in the signif test, so the values that
-                    # are equal might not be accounted correctly
-                    pv = 1 - pval_l.iat[i, j]
-            pval.iat[i, j] = pv
-    return pval
+# # not maintained anymore as replaced by below
+# def combine_pval(corrs, pval_l, pval_r):
+#     """
+#     this function handle the 1-sided vs 2-sided issue of the significance
+#     testing
+#     here we need to take into account the correlation coefficient
+#     (if it is positive or negative), and about the circ_alg we are using
+#     if it is SVD, we need we will take the sum of left and right
+#     if it is any other circ_alg, it is one-directional
+#
+#     We rely on the fact that some act processing come from SVD
+#     """
+#     if pval_l.shape != pval_r.shape:
+#         raise ValueError('left and right PV do not have the same shape')
+#     if pval_l.shape != corrs.shape:
+#         raise ValueError('left sign and corr do not have the same shape')
+#
+#     # also important to check if the 3 dataframes have the same
+#     # index and columns
+#     cond1 = pval_l.index.equals(pval_r.index)
+#     cond2 = pval_l.index.equals(corrs.index)
+#     cond3 = pval_l.columns.equals(pval_r.columns)
+#     cond4 = pval_l.columns.equals(corrs.columns)
+#     if not (cond1 and cond2 and cond3 and cond4):
+#         raise ValueError('pval and/or corr dont have the same index/col')
+#
+#     (n1, n2) = pval_l.shape
+#
+#     # final significance to be outputted
+#     pval = pd.DataFrame().reindex_like(pval_l)
+#
+# # could be even faster by creating a function and using apply
+#     for i in range(n1):
+#         name = corrs.iloc[i].name
+#         cond = ('SVD' in name)  # and name[5] != 1)
+#         for j in range(n2):
+#             corr = corrs.iat[i, j]
+#             # in the case of SVD, and if it is not the 1st component
+#             # which is expected to be positive
+#             if cond:
+#                 pv = pval_r.iat[i, j] + pval_l.iat[i, j]
+#             else:
+#                 # then we are considering cases where we are assuming
+#                 # a one sided hypothesis, meaning that if the correlation
+#                 # is negative, it will be a very high prob to get
+#                 # at least this corr
+#                 # this also takes into account the case of the
+#                 # 1st loading vector of SVD
+#                 if corr >= 0:
+#                     pv = pval_r.iat[i, j]
+#                 elif corr < 0:
+#                     # this part might not be 100% accurate because of the
+#                     # of the >= in the signif test, so the values that
+#                     # are equal might not be accounted correctly
+#                     pv = 1 - pval_l.iat[i, j]
+#             pval.iat[i, j] = pv
+#     return pval
 
 
 def combine_pval2(pval_o, pval_l, pval_r):
@@ -1325,79 +1323,79 @@ def get_mean_signif2(corr: pd.DataFrame, corr_col: pd.DataFrame):
 
     return corr_m, pval, pval2
 
-
-def characterize_raw_responses(act, con, N1, N2):
-    """
-    we expect that the act and con vectors are already centered and
-    normalized to make all the necessary calculations to get the corr
-    and signif
-
-    N1 corresponds to the number of iterations to calculate the significance
-    per odors and per cll
-
-    N2 corresponds to the number of iterations to create fake cdfs and thus
-    calculate the p-values for each cell.
-
-    what the function returns:
-    corr: matrix of correlation coefficients for each cell and simulus
-    corr_pval: matrix of pvalues
-    corr_m_per_cell: mean corr coef per cell
-    corr_m_per_cell_pval: pval based on the mean corr coef per cell
-    cdf_diff_max: maximum deviation in the cdf per cell
-    cdf_diff_max_pval: pvalue based on the max deviation in the cdf per cell
-    cdf_true: actual cdf per cell
-    cdfs_shfl: all the cdfs that were created on the way
-    """
-
-    cell_list = list(con.columns)
-
-    # getting the odors vs con correlations and pvals
-    corr, pval_o, _, _ = get_signif_corr_v2(act, con, N=N1)
-    corr = corr.T
-    # when we are combining the correlation coefficients in a way that
-    # only it is a low pvalue if the corr is very high, and it will be a large
-    # pvalue if the corr coef is small
-    corr_pval = pval_o.T  # combine_pval(corr, pval_l.T, pval_r.T)
-    # print(np.max(np.abs((corr_pval - pval_o.T).values)))
-    corr_pval = corr_pval.replace(0, 1./N1)
-
-    # corr is n_cells x n_odors
-    # corr_col is N1 x n_cells x n_odors
-    _, corr_col = get_signif_corr_v2(act, con, N=N2, dist=True)
-    corr_col = np.swapaxes(corr_col, 1, 2)
-    if np.isnan(corr_col).any():
-        print("WE HAVE SOME NANs IN corr_col which shouldn't be there")
-
-    # here we use the 1-tailed, since we are only interested in the case
-    # of the correlation coefficient being higher than the real one
-    corr_m_per_cell, corr_m_per_cell_pval, _ = get_mean_signif2(corr, corr_col)
-
-    # getting cdfs and pdfs
-    xmin = -1
-    xmax = 1
-    n_bins_cdf = 100
-    bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
-
-    cdf_true = get_pdf_2(corr.values, bins_cdf, cdf_bool=True)
-    cdf_true = pd.DataFrame(cdf_true, index=cell_list)
-
-    cdfs_shfl = get_pdf_3(corr_col, bins_cdf, cdf_bool=True, checknan=False)
-
-    cdf_shfl_m = pd.DataFrame(cdfs_shfl.mean(axis=0), index=cell_list)
-
-    cdf_shfl_diff_max = get_min_diff(cdfs_shfl, cdf_shfl_m.values)
-    # the max is over the cdfs, i.e., the last dimension
-
-    # first dim are the cells, second dim are the odors
-    cdf_diff_max = get_min_diff(cdf_true, cdf_shfl_m)
-    # cdf_diff_max_true contains the true max deviation for each cell
-    # cdf_diff_max_true is n_cells
-
-    pvals = np.mean(cdf_shfl_diff_max >= cdf_diff_max.values, axis=0)
-    cdf_diff_max_pval = pd.Series(pvals, index=cell_list)
-
-    return (corr, corr_pval, corr_m_per_cell, corr_m_per_cell_pval,
-            cdf_diff_max, cdf_diff_max_pval, cdf_true, cdfs_shfl)
+# not maintained anymore
+# def characterize_raw_responses(act, con, N1, N2):
+#     """
+#     we expect that the act and con vectors are already centered and
+#     normalized to make all the necessary calculations to get the corr
+#     and signif
+#
+#     N1 corresponds to the number of iterations to calculate the significance
+#     per odors and per cll
+#
+#     N2 corresponds to the number of iterations to create fake cdfs and thus
+#     calculate the p-values for each cell.
+#
+#     what the function returns:
+#     corr: matrix of correlation coefficients for each cell and simulus
+#     corr_pval: matrix of pvalues
+#     corr_m_per_cell: mean corr coef per cell
+#     corr_m_per_cell_pval: pval based on the mean corr coef per cell
+#     cdf_diff_max: maximum deviation in the cdf per cell
+#     cdf_diff_max_pval: pvalue based on the max deviation in the cdf per cell
+#     cdf_true: actual cdf per cell
+#     cdfs_shfl: all the cdfs that were created on the way
+#     """
+#
+#     cell_list = list(con.columns)
+#
+#     # getting the odors vs con correlations and pvals
+#     corr, pval_o, _, _ = get_signif_corr_v2(act, con, N=N1)
+#     corr = corr.T
+#     # when we are combining the correlation coefficients in a way that
+#     # only it is a low pvalue if the corr is very high, and it will be a large
+#     # pvalue if the corr coef is small
+#     corr_pval = pval_o.T  # combine_pval(corr, pval_l.T, pval_r.T)
+#     # print(np.max(np.abs((corr_pval - pval_o.T).values)))
+#     corr_pval = corr_pval.replace(0, 1./N1)
+#
+#     # corr is n_cells x n_odors
+#     # corr_col is N1 x n_cells x n_odors
+#     _, corr_col = get_signif_corr_v2(act, con, N=N2, dist=True)
+#     corr_col = np.swapaxes(corr_col, 1, 2)
+#     if np.isnan(corr_col).any():
+#         print("WE HAVE SOME NANs IN corr_col which shouldn't be there")
+#
+#     # here we use the 1-tailed, since we are only interested in the case
+#     # of the correlation coefficient being higher than the real one
+#     corr_m_per_cell, corr_m_per_cell_pval, _ = get_mean_signif2(corr, corr_col)
+#
+#     # getting cdfs and pdfs
+#     xmin = -1
+#     xmax = 1
+#     n_bins_cdf = 100
+#     bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
+#
+#     cdf_true = get_pdf_2(corr.values, bins_cdf, cdf_bool=True)
+#     cdf_true = pd.DataFrame(cdf_true, index=cell_list)
+#
+#     cdfs_shfl = get_pdf_3(corr_col, bins_cdf, cdf_bool=True, checknan=False)
+#
+#     cdf_shfl_m = pd.DataFrame(cdfs_shfl.mean(axis=0), index=cell_list)
+#
+#     cdf_shfl_diff_max = get_min_diff(cdfs_shfl, cdf_shfl_m.values)
+#     # the max is over the cdfs, i.e., the last dimension
+#
+#     # first dim are the cells, second dim are the odors
+#     cdf_diff_max = get_min_diff(cdf_true, cdf_shfl_m)
+#     # cdf_diff_max_true contains the true max deviation for each cell
+#     # cdf_diff_max_true is n_cells
+#
+#     pvals = np.mean(cdf_shfl_diff_max >= cdf_diff_max.values, axis=0)
+#     cdf_diff_max_pval = pd.Series(pvals, index=cell_list)
+#
+#     return (corr, corr_pval, corr_m_per_cell, corr_m_per_cell_pval,
+#             cdf_diff_max, cdf_diff_max_pval, cdf_true, cdfs_shfl)
 
 
 # #############################################################################
