@@ -331,7 +331,8 @@ def plot_XYtrans(data):
         if np.max(product2[i]) > np.max(product[i]):
             myset = myset + [i]
     U[:, myset] *= -1
-    toplot = U.T @ U_X
+    toplot = np.abs(U.T @ U_X)  # taking the absolute value since
+    # singular values are defined up to a sign
 
     pads = (0.35, 0.1, 0.3, 0.2)
     if cond:
@@ -339,9 +340,9 @@ def plot_XYtrans(data):
     fs, axs = FP.calc_fs_ax(pads, gw=SQ * 15, gh=SQ * 15)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(toplot, ax, vlim=[-1, 1], show_lab_y=False,
+    cp = FP.imshow_df2(toplot, ax, vlim=[0, 1], show_lab_y=False,
                        title=title, show_lab_x=False,
-                       cmap=corr_cmap)
+                       cmap=plt.cm.plasma)
     ax.set_xticks([0, 4, 9, 14, 20], [1, 5, 10, 15, 21])
     ax.set_yticks([0, 4, 9, 14, 20], [1, 5, 10, 15, 21])
     if title == 'LC-8' or title == "LC'-8":
@@ -362,7 +363,7 @@ def plot_XYtrans(data):
     if cond:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                             CB_W / fs[0], axs[3]])
-        clb = add_colorbar_crt(cp, ax_cb, '', [-1, 0, 1])
+        clb = add_colorbar_crt(cp, ax_cb, '', [0, 1])
 
     file = f'{PP_ROT}/ORN_act-{pps}_{name}_LSV'
     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
