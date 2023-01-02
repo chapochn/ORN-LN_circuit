@@ -191,7 +191,7 @@ def get_scale_data_factor(X: np.ndarray) -> float:
     Scaling for convergence reasons
 
     The scaling is such that the average norm is 1
-    Not sure at all why this is helpful for convergence.
+    Not sure why this is helpful for convergence.
 
     Parameters
     ----------

@@ -461,7 +461,7 @@ D = 10
 act_map = 'Oranges'
 v_max = 1.5
 divnorm = mpl.colors.Normalize(0, v_max)
-title = f'Sona activity patterns {Xtstex}'
+title = f'Soma activity patterns {Xtstex}'
 cb_title = ''
 cb_ticks = [0, 0.5, 1]
 ylabel = r'$x_i$'
@@ -600,9 +600,9 @@ for data_i in [1, 2]:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0],
                             axs[1], CB_W / fs[0], axs[3]])
         corr = pd.DataFrame(corr[new_order][:, new_order])
-        cp = FP.imshow_df2(corr, ax, cmap=corr_cmap, vlim=1,
-                           splits_x=[], splits_y=[], show_lab_x=True,
-                           rot=0)
+        cp = FP.imshow_df(corr, ax, cmap=corr_cmap, vlim=1,
+                          splits_x=[], splits_y=[], show_lab_x=True,
+                          rot=0)
         ax.set_xticklabels([wtexs[i] for i in range(1, K + 1)])
         ax.set_yticklabels([wtexs[i] for i in range(1, K + 1)])
 

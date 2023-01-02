@@ -29,5 +29,6 @@ importlib.reload(FO)
 
 act3 = FO.get_ORN_act_data_3(fast=False)
 # %%
-
-act3.to_hdf(FO.OLF_PATH / 'results/act3.hdf', 'act3')
+results_path = FO.OLF_PATH / 'results'
+results_path.mkdir(exist_ok=True)
+act3.to_hdf(results_path / 'act3.hdf', 'act3')

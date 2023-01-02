@@ -7,7 +7,7 @@ Created on Thu Jun 20 22:15:11 2019
 
 
 In this file are functions to simulate the original/default similarity
-matching circuit sa well as the olfactory circuit.
+matching circuit as well as the olfactory circuit.
 There are classes for the default similarity matching and the
 olfactory circuit that keep the values of W and M and have functions that
 update their values.
@@ -293,11 +293,10 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
 
         print('estimate for 1/eta, which is the step', est)
 
-        # TODO: seems like I have been using one or the other of the
-        # 2 options below:
+        # I have been using one or the other of the 2 options below:
         eta1 = 1. / est
-        # eta1 =  0.001  # this usually works, but depends on the dataset unfortunately
-        # if i make delta larger, y often goes in the wrong direction and
+        # eta1 =  0.001  # this usually works, but depends on the dataset
+        # if i make eta larger, y often goes in the wrong direction and
         # diverges
         # y = Wx.copy()
         y2 = np.zeros(len(x), dtype=M.dtype)
@@ -587,9 +586,6 @@ class Circuit(ABC):
     #     return components
 
     def update_W_M(self, x, y, step):
-        # before was written as (not sure if it makes it faster or something
-        # it is supposed to make it faster, but i don't really see a change
-        # in performance):
         # Plasticity, using gradient ascent/descent
         # TODO: the factor of 2 can go away probably...
         # W <- W + 2 eta(t) * (y*x' - W)

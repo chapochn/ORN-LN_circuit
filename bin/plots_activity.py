@@ -8,8 +8,8 @@ Created on Tue Mar 26 11:56:59 2019
 External files that are read and used for this plotting:
 in plots_paper_import:
 f'cons/cons_full_{k}.hdf'
-/act3.hdf' FROM act_preprocess.py
-'cons/cons_ORN_all.hdf' FROM con_preprocess.py
+/act3.hdf' FROM preprocess-activity.py
+'cons/cons_ORN_all.hdf' FROM preprocess-connectivity.py
 
 In this file (all inside RESULTS_PATH):
 'NNC-W_act-all.hdf' FROM olf_circ_offline_sims_ORN-data.py
@@ -179,8 +179,8 @@ _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 
-cp = FP.imshow_df2(df, ax, vlim=[-0.85, 0.85], rot=0, cmap=plt.cm.plasma,
-                   title='PCA')
+cp = FP.imshow_df(df, ax, vlim=[-0.85, 0.85], rot=0, cmap=plt.cm.plasma,
+                  title='PCA')
 
 cb_x = axs[0] + axs[2] + CB_DX/fs[0]
 ax_cb = f.add_axes([cb_x, axs[1], CB_W/fs[0], axs[3]])
@@ -266,8 +266,8 @@ for k in [4, 5]:
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
 
-    cp = FP.imshow_df2(df, ax, vlim=[0, None], rot=0, cmap=plt.cm.plasma,
-                       show_lab_y=False, title=f'NNC-{k}')
+    cp = FP.imshow_df(df, ax, vlim=[0, None], rot=0, cmap=plt.cm.plasma,
+                      show_lab_y=False, title=f'NNC-{k}')
 
     cb_x = axs[0] + axs[2] + CB_DX/fs[0]
     ax_cb = f.add_axes([cb_x, axs[1], CB_W/fs[0], axs[3]])
@@ -608,8 +608,8 @@ pads = (0.95, 0.41, 1.32, 0.2)
 fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.45, SQ*len(df))  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
-cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
-                   splits_y=sply, aspect='auto', splits_c='gray', lw=0.5)
+cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
+                  splits_y=sply, aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
        xlabel=f'ORN activation patterns {Xttex} to odors at different dilutions',
        ylabel=wLNtex)
@@ -668,8 +668,8 @@ pads = (0.55, 0.4, 0.2, 0.2)
 fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.5, SQ*len(df))  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
-cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
-                   aspect='auto', splits_c='gray', lw=0.5)
+cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
+                  aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=[])
 ax.set_xlabel(f'ORN activation patterns {Xttex} to odors at different dilutions')
 ax.set_ylabel(wLNtypetex)
@@ -808,8 +808,8 @@ pads = (0.25, 0.4, 0.2, 0.2)
 fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.5, SQ*len(df))  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
-cp = FP.imshow_df2(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
-                   aspect='auto', splits_c='gray', lw=0.5)
+cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
+                  aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=[],
        xlabel=f'ORN activation patterns {Xttex} to odors at different dilutions',
        ylabel='$\mathbf{w}_k$')
@@ -1172,8 +1172,8 @@ def plot_pv_measure(df1, df2, splx, cmap, vlim, i=None):
     else:
         kwargs = {'show_lab_x':False}
 
-    cp = FP.imshow_df2(df1, ax, vlim=vlim, cmap=cmap, splits_x=splx,
-                       lw=0.5, **kwargs)
+    cp = FP.imshow_df(df1, ax, vlim=vlim, cmap=cmap, splits_x=splx,
+                      lw=0.5, **kwargs)
 
     add_colorbar_crt(cp, ax_cb, r'$r$', [-1 , 0, 1])
     f1 = (f, ax, ax_cb, cp)
@@ -1184,8 +1184,8 @@ def plot_pv_measure(df1, df2, splx, cmap, vlim, i=None):
     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0],
                         axs[1], CB_W/fs[0], axs[3]])
     ax = f.add_axes(axs)  # left, bottom, widgth, height
-    cp = FP.imshow_df2(df2, ax, vlim=[-3, -1], lw=0.5,
-                       cmap=plt.cm.viridis_r, splits_x=splx)
+    cp = FP.imshow_df(df2, ax, vlim=[-3, -1], lw=0.5,
+                      cmap=plt.cm.viridis_r, splits_x=splx)
 
     clb = add_colorbar_crt(cp, ax_cb, 'pv', [-3, -2, -1], extend='both')
     cp.cmap.set_over('k')

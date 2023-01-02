@@ -188,9 +188,9 @@ def plot_XYtrans(data):
     fs, axs = FP.calc_fs_ax(pads, gw=SQ * 15, gh=SQ * 15)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(toplot, ax, vlim=[-1, 1], show_lab_y=False,
-                       title=title, show_lab_x=False,
-                       cmap=corr_cmap)
+    cp = FP.imshow_df(toplot, ax, vlim=[-1, 1], show_lab_y=False,
+                      title=title, show_lab_x=False,
+                      cmap=corr_cmap)
     ax.set_xticks([0, 4, 9, 14, 20], [1, 5, 10, 15, 21])
     ax.set_yticks([0, 4, 9, 14, 20], [1, 5, 10, 15, 21])
     if title == 'LC-8' or title == "LC'-8":
@@ -349,11 +349,11 @@ for data in datas:
     fs, axs = FP.calc_fs_ax(_pads, SQ * len(df.T) * 0.24, SQ * len(df) * 0.5)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    # cp = FP.imshow_df2(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
-    cp = FP.imshow_df2(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
-                       title=title, show_lab_x=show_x, cmap=act_map,
-                       splits_x=splx, splits_c='gray', lw=0.5,
-                       **{'norm': divnorm},)
+    # cp = FP.imshow_df(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
+    cp = FP.imshow_df(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
+                      title=title, show_lab_x=show_x, cmap=act_map,
+                      splits_x=splx, splits_c='gray', lw=0.5,
+                      **{'norm': divnorm}, )
     ax.set_xlabel('stimuli')#, labelpad=0)
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
@@ -416,11 +416,11 @@ for data in datas:
     fs, axs = FP.calc_fs_ax(_pads, SQ * len(df.T) * 0.24, SQ * len(df) * 1)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    # cp = FP.imshow_df2(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
-    cp = FP.imshow_df2(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
-                       title=title, show_lab_x=show_x, cmap=act_map,
-                       splits_x=splx, splits_c='gray', lw=0.5,
-                       **{'norm': divnorm})
+    # cp = FP.imshow_df(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
+    cp = FP.imshow_df(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
+                      title=title, show_lab_x=show_x, cmap=act_map,
+                      splits_x=splx, splits_c='gray', lw=0.5,
+                      **{'norm': divnorm})
     ax.set_xlabel('stimuli')
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
@@ -687,7 +687,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, palette=['gray'], size=2)
+sns.swarmplot(ax=ax, data=dss_df, palette=['dimgray'], size=2)
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
@@ -771,7 +771,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, palette=['gray'], size=1.5)
+sns.swarmplot(ax=ax, data=dss_df, palette=['dimgray'], size=1.5)
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
@@ -841,9 +841,9 @@ for i, data in enumerate([X, Y]):
     df[np.tril_indices_from(df)] = X_corr[np.tril_indices_from(X_corr)]
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=False,
-                       title=titles[i], show_lab_x=False,
-                       cmap=corr_cmap)
+    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
+                      title=titles[i], show_lab_x=False,
+                      cmap=corr_cmap)
     ax.set(xlabel='ORNs', ylabel='ORNs')
 
     if cond:
@@ -875,9 +875,9 @@ for i, data in enumerate([X, Y]):
     df[np.tril_indices_from(df)] = X_corr[np.tril_indices_from(X_corr)]
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=False,
-                       title=titles[i], show_lab_x=False,
-                       cmap=corr_cmap)
+    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
+                      title=titles[i], show_lab_x=False,
+                      cmap=corr_cmap)
     ax.set(xlabel='stimuli', ylabel='stimuli')
 
     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],

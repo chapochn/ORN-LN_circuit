@@ -10,8 +10,8 @@ These plots are for the supplements
 External files that are read and used for this plotting:
 in plots_paper_import:
 f'results/cons/cons_full_{k}.hdf'
-'results/act3.hdf' FROM act_preprocess.py
-'results/cons/cons_ORN_all.hdf' FROM con_preprocess.py
+'results/act3.hdf' FROM preprocess-activity.py
+'results/cons/cons_ORN_all.hdf' FROM preprocess-connectivity.py
 
 (f'{RESULTS_PATH}/{CELL_TYPE}_con{STRM}_vs_act-{act_pps1}'
               f'-{act_pps2}-{ACT_PPS}-conc-{CONC}_corr_cdf-')

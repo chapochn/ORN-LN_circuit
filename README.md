@@ -40,7 +40,8 @@ this step can be skipped.
 - act_odors_ORN_vs_con_NNC.py
 - act_ORN_vs_con_ORN-LN.py
 
-The following files with generate all the plots present in the paper:
+The following files with generate all the plots present in the paper, they are
+saved in plots/plots/folder_name/ (parameter in plots_import.py):
 - plots_activity.py
 - plots_activity-conn-cdf.py
 - plots_connectivity.py
@@ -48,7 +49,7 @@ The following files with generate all the plots present in the paper:
 - plots_models-theory-noM.py
 - plots_models-ORN-act.py (needs to be run twice, with SCAL_W=2 and with SCAL_W=10 inside the file)
 - plots_model-real-syn-counts.py
-Then run the file "ORN-LN_circuit/bin/plots_paper.py", which will generate the plots in the paper in the folder "plots/plots_paper".
+plots in the paper in the folder "plots/plots_paper".
 
 To obtain additional supplementary figures, rerun the file "ORN-LN_circuit/bin/plots_paper.py" with SCAL_W = 10 instead of SCAL_W = 2 (on line 3032 of "plots_paper.py"), which will in addition generate the folder whitening10 inside plots/plots_paper/[date_time].
 

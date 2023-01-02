@@ -10,8 +10,8 @@ This plots all the connectivity related plots in the paper
 External files that are read and used for this plotting:
 in plots_paper_import:
 f'results/cons/cons_full_{k}.hdf'
-'results/act3.hdf' FROM act_preprocess.py
-'results/cons/cons_ORN_all.hdf' FROM con_preprocess.py
+'results/act3.hdf' FROM preprocess-activity.py
+'results/cons/cons_ORN_all.hdf' FROM preprocess-connectivity.py
 
 'W_NNC-8.hdf'  FROM olf_circ_offline_sims_ORN-data.py
 
@@ -58,8 +58,8 @@ for s in ['L', 'R']:
     # print(SQ, SQ*np.array(df.shape), fs, axs)
     f = plt.figure(figsize=fs)
     ax1 = f.add_axes(axs1)
-    cp = FP.imshow_df2(df1, ax1, vlim=[0, 125],
-                       title=r'feedforward connections: ORNs$\rightarrow$'
+    cp = FP.imshow_df(df1, ax1, vlim=[0, 125],
+                      title=r'feedforward connections: ORNs$\rightarrow$'
                              r'other neurons')
     ax1.set(ylabel='ORNs', xlabel='')
     # arrows
@@ -82,8 +82,8 @@ for s in ['L', 'R']:
     # bottom plot
     # _, _, axs = FP.calc_fs_ax_df(df, pads2, sq=SQ)
     ax2 = f.add_axes(axs2)
-    cp = FP.imshow_df2(df2, ax2, vlim=[0, 21], show_lab_x=False,
-                       title=r'feedback connections: other neurons'
+    cp = FP.imshow_df(df2, ax2, vlim=[0, 21], show_lab_x=False,
+                      title=r'feedback connections: other neurons'
                              r'$\rightarrow$ORNs')
     ax2.set(ylabel='ORNs', xlabel='')
     # colorbar
@@ -131,8 +131,8 @@ ax1 = f.add_axes(axs)
 
 splx = [6, 6+4, 6+4+4]
 
-cp = FP.imshow_df2(df, ax1, vlim=[0, 55], splits_x=splx, lw=0.5,
-                   title=r'ORNs$\rightarrow$LNs' + f'\n syn. counts '
+cp = FP.imshow_df(df, ax1, vlim=[0, 55], splits_x=splx, lw=0.5,
+                  title=r'ORNs$\rightarrow$LNs' + f'\n syn. counts '
                          + r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
 ax1.set(ylabel='ORNs', xlabel='LNs')
 
@@ -157,8 +157,8 @@ ax1 = f.add_axes(axs)
 
 splx = [6, 6+4, 6+4+4]
 
-cp = FP.imshow_df2(df, ax1, vlim=[0, 21], splits_x=splx, lw=0.5,
-                   title=r'LNs$\rightarrow$ORNs'+ f'\n syn. counts '
+cp = FP.imshow_df(df, ax1, vlim=[0, 21], splits_x=splx, lw=0.5,
+                  title=r'LNs$\rightarrow$ORNs'+ f'\n syn. counts '
                          + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
 ax1.set(ylabel='ORNs', xlabel='LNs')
 
@@ -323,9 +323,9 @@ for strm in [0, 1]:
     _, fs, axs = FP.calc_fs_ax_df(grammian, pads, sq=SQ)
     f = plt.figure(figsize=fs)
     ax1 = f.add_axes(axs)
-    cp = FP.imshow_df2(grammian, ax1, cmap=corr_cmap, vlim=1,
-                       splits_x=[6, 10, 14], splits_y=[6, 10, 14], ha='right',
-                       show_lab_x=True, title=title, x_offset=0.5, rot=70)
+    cp = FP.imshow_df(grammian, ax1, cmap=corr_cmap, vlim=1,
+                      splits_x=[6, 10, 14], splits_y=[6, 10, 14], ha='right',
+                      show_lab_x=True, title=title, x_offset=0.5, rot=70)
     # ax1.set_xticks(np.arange(len(grammian.T)) + 0.5)  # the +0.5 is needed
     # because of the rotation
     # ax1.set_xticklabels(list(grammian.columns), rotation=70, )
@@ -373,11 +373,11 @@ for strm in [0, 1]:
     f = plt.figure(figsize=fs)
     ax1 = f.add_axes(axs)
 
-    FP.imshow_df2(gram_cat, ax1, cmap=corr_cmap, vlim=1,
-                  splits_x=[1, 2, 3], splits_y=[1, 2, 3], rot=50,
-                  title = r'mean corr. coef. $r$' + '\nwithin and '
+    FP.imshow_df(gram_cat, ax1, cmap=corr_cmap, vlim=1,
+                 splits_x=[1, 2, 3], splits_y=[1, 2, 3], rot=50,
+                 title = r'mean corr. coef. $r$' + '\nwithin and '
                                                     'across\n LN types'
-                  )
+                 )
     ax1.set(xlabel='', ylabel='')
 
     file = (f'{PP_CONN}/{CELL_TYPE}_con{strm}_cn_grammian_cat')
@@ -406,9 +406,9 @@ pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
 _, fs, axs = FP.calc_fs_ax_df(grammian, pads, sq=SQ)
 f = plt.figure(figsize=fs)
 ax1 = f.add_axes(axs)
-cp = FP.imshow_df2(grammian, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
-                   splits_x=[6, 10, 14], splits_y=[6, 10, 14],
-                   title=f'corr. between\n'+ r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$ and '
+cp = FP.imshow_df(grammian, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
+                  splits_x=[6, 10, 14], splits_y=[6, 10, 14],
+                  title=f'corr. between\n'+ r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$ and '
                          + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$', rot=70, ha='right')
 
 ax1.set_xlabel(r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
@@ -469,8 +469,8 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-cp = FP.imshow_df2(df1, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
-                   rot=70, ha='right')
+cp = FP.imshow_df(df1, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
+                  rot=70, ha='right')
 ax1.set_title('left side', pad=2)
 ax1.set_ylabel(ylabel)
 # ax1.set_ylabel(ylabel, rotation=0, fontsize=ft_s_tk, labelpad=3,
@@ -481,8 +481,8 @@ ax1.set_ylabel(ylabel)
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
 #              annotation_clip=False)
 
-cp = FP.imshow_df2(df2, ax2, cmap=corr_cmap, vlim=1, x_offset=0.5,
-                   show_lab_y=False, rot=70, ha='right')
+cp = FP.imshow_df(df2, ax2, cmap=corr_cmap, vlim=1, x_offset=0.5,
+                  show_lab_y=False, rot=70, ha='right')
 ax2.set_title('right side', pad=2)
 
 # ax2.set_xlabel(xlabel, rotation=0, fontsize=ft_s_tk, labelpad=2,
@@ -536,11 +536,11 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-cp = FP.imshow_df2(df1, ax1, vlim=[0, 110], show_lab_x=False)
+cp = FP.imshow_df(df1, ax1, vlim=[0, 110], show_lab_x=False)
 ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df2(df2, ax2, vlim=[0, 110], x_offset=0.5, rot=70, ha='right')
+cp = FP.imshow_df(df2, ax2, vlim=[0, 110], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
 
 # y label
@@ -593,11 +593,11 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-FP.imshow_df2(df1/1000, ax1, vlim=[0, 15], show_lab_x=False)
+FP.imshow_df(df1 / 1000, ax1, vlim=[0, 15], show_lab_x=False)
 ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df2(df2/1000, ax2, vlim=[0, 15], x_offset=0.5, rot=70, ha='right')
+cp = FP.imshow_df(df2 / 1000, ax2, vlim=[0, 15], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
 ax2.set_xlabel(xlabel)
 # ax2.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
@@ -666,11 +666,11 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-cp = FP.imshow_df2(df1, ax1, vlim=[0, 90], show_lab_x=False)
+cp = FP.imshow_df(df1, ax1, vlim=[0, 90], show_lab_x=False)
 ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df2(df2, ax2, vlim=[0, 90], x_offset=0.5, rot=70, ha='right')
+cp = FP.imshow_df(df2, ax2, vlim=[0, 90], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2) #  , fontsize=ft_s_lb)
 ax2.set_xlabel(xylabel)
 # ax2.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
@@ -801,8 +801,8 @@ for s in lab_y.keys():
 
 
     ax = f.add_axes(axs_coords[s])
-    cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=lab_y[s],
-                       show_lab_x=True, cmap=corr_cmap, rot=0)
+    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=lab_y[s],
+                      show_lab_x=True, cmap=corr_cmap, rot=0)
     ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2)
     ax.set_xticks(np.arange(8), np.arange(1, 9))
     # ax.set_xticklabels()

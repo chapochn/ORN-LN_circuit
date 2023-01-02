@@ -59,14 +59,6 @@ SCAL_W = 2  # in the paper for the main results
 # %%
 # #############################################################################
 # #############################################################################
-# creating and saving random orthogonal matrices
-# for k in range(2, 9):
-#     U_random = SS.ortho_group.rvs(k)
-#     file = f'results/orthogonal_matrix_{k}.npy'
-#     np.save(FO.OLF_PATH / file, U_random)
-# %%
-# #############################################################################
-# #############################################################################
 # #############################################################################
 file = RESULTS_PATH / 'NNC-Y_act-all.hdf'
 Ys_nnc = pd.DataFrame(pd.read_hdf(file)).T
@@ -196,7 +188,7 @@ Y_nnc_noM_cc_c = {}
 Y_nnc_noM_cc_p = {}
 Y_nnc_noM_cc_p_sel = {}
 
-U_random = {} ##############  check if you want real random below #########
+U_random = {1: [[1]]} # random orthogonal matrices in different number of dims
 
 
 if SCAL_W == 2:
@@ -216,6 +208,14 @@ elif SCAL_W == 10:
 
 print('done')
 #%%
+for k in range(2, 9):
+    file = RESULTS_PATH / f'orthogonal_matrix_{k}.npy'
+    try:
+        U_random[k] = np.load(file)
+    except:
+        U_random[k] = SS.ortho_group.rvs(k)
+        np.save(file, U_random[k])
+    # U_random[k] = np.eye(k)  # this removes the random
 
 for k in range(1, 9):
     print(k, 'LNs')
@@ -231,11 +231,7 @@ for k in range(1, 9):
     s_Y_lc[k][:k] = FOC.damp_sx(s_Y_lc[k][:k], N, SCAL_W)
     Y_lc[k] = X.copy()
     Y_lc[k][:] = U_X @ np.diag(s_Y_lc[k]) @ Vt_X
-    if k >= 2:
-        U_random[k] = np.load(RESULTS_PATH / f'orthogonal_matrix_{k}.npy')
-        # U_random[k] = np.eye(k)  # this removes the random
-    else:
-        U_random[k] = [[1]]  # can't rotate a scalar...
+
 
     Z_lc[k] = Z_nnc[k].copy()
     Z_lc2[k] = Z_nnc[k].copy()
@@ -274,7 +270,6 @@ for k in range(1, 9):
     #
     # for this eta1 needs to be 1/est instead of 0.001
     # not sure for what you are using 0.001
-    # TODO: will need to find and test
     res = FCS.olf_output_online_bulk(X.values,
                                      W_nnc_noM[k].values, W_nnc_noM[k].values,
                                      M_nnc_noM[k], SCAL_W, method='GD_NN')
@@ -340,9 +335,9 @@ def plot_XYtrans(data):
     fs, axs = FP.calc_fs_ax(pads, gw=SQ * 15, gh=SQ * 15)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(toplot, ax, vlim=[0, 1], show_lab_y=False,
-                       title=title, show_lab_x=False,
-                       cmap=plt.cm.plasma)
+    cp = FP.imshow_df(toplot, ax, vlim=[0, 1], show_lab_y=False,
+                      title=title, show_lab_x=False,
+                      cmap=plt.cm.plasma)
     ax.set_xticks([0, 4, 9, 14, 20], [1, 5, 10, 15, 21])
     ax.set_yticks([0, 4, 9, 14, 20], [1, 5, 10, 15, 21])
     if title == 'LC-8' or title == "LC'-8":
@@ -423,8 +418,8 @@ print('done')
 #     fs, axs = FP.calc_fs_ax(pads, gw=SQ * 15, gh=SQ * 15)
 #     f = plt.figure(figsize=fs)
 #     ax = f.add_axes(axs)
-#     cp = FP.imshow_df2(toplot, ax, vlim=1, show_lab_y=False,
-#     # cp = FP.imshow_df2(toplot, ax, vlim=[-50,50], show_lab_y=False,
+#     cp = FP.imshow_df(toplot, ax, vlim=1, show_lab_y=False,
+#     # cp = FP.imshow_df(toplot, ax, vlim=[-50,50], show_lab_y=False,
 #                        title=title, show_lab_x=False,
 #                        cmap=plt.cm.bwr)
 #     for spine in ax.spines.values():
@@ -620,11 +615,11 @@ for data in datas:
     fs, axs = FP.calc_fs_ax(_pads, SQ * len(df.T) * 0.24, SQ * len(df) * 0.5)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    # cp = FP.imshow_df2(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
-    cp = FP.imshow_df2(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
-                       title=title, show_lab_x=show_x, cmap=act_map,
-                       splits_x=splx, splits_c='gray', lw=0.5,
-                       **{'norm': divnorm},)
+    # cp = FP.imshow_df(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
+    cp = FP.imshow_df(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
+                      title=title, show_lab_x=show_x, cmap=act_map,
+                      splits_x=splx, splits_c='gray', lw=0.5,
+                      **{'norm': divnorm}, )
     ax.set_xlabel('stimuli')#, labelpad=0)
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
@@ -713,11 +708,11 @@ for data in datas:
     fs, axs = FP.calc_fs_ax(_pads, SQ * len(df.T) * 0.24, SQ * len(df) * 0.5)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    # cp = FP.imshow_df2(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
-    cp = FP.imshow_df2(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
-                       title=title, show_lab_x=show_x, cmap=act_map,
-                       splits_x=splx, splits_c='gray', lw=0.5,
-                       **{'norm': divnorm})
+    # cp = FP.imshow_df(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,
+    cp = FP.imshow_df(df, ax, vlim=None, show_lab_y=show_y, aspect='auto',
+                      title=title, show_lab_x=show_x, cmap=act_map,
+                      splits_x=splx, splits_c='gray', lw=0.5,
+                      **{'norm': divnorm})
     ax.set_xlabel('stimuli')
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
@@ -1136,7 +1131,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, palette=['gray'], size=2)
+sns.swarmplot(ax=ax, data=dss_df, palette=['dimgray'], size=2)
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
@@ -1246,7 +1241,7 @@ ax = f.add_axes(axs)
 lineprops = {'edgecolor': 'k'}
 lineprops2 = {'color': 'k'}
 # sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, size=1.5, palette=['gray'])
+sns.swarmplot(ax=ax, data=dss_df, size=1.5, palette=['dimgray'])
 bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
                     width=0.5, boxprops=lineprops,
                     medianprops=lineprops2, whiskerprops=lineprops2,
@@ -1320,9 +1315,9 @@ for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
     df[np.tril_indices_from(df)] = X_corr[np.tril_indices_from(X_corr)]
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=False,
-                       title=titles[i], show_lab_x=False,
-                       cmap=corr_cmap)
+    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
+                      title=titles[i], show_lab_x=False,
+                      cmap=corr_cmap)
     ax.set(xlabel='ORNs', ylabel='ORNs')
 
     if cond:
@@ -1354,9 +1349,9 @@ for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
     df[np.tril_indices_from(df)] = X_corr[np.tril_indices_from(X_corr)]
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
-    cp = FP.imshow_df2(df, ax, vlim=[-1, 1], show_lab_y=False,
-                       title=titles[i], show_lab_x=False,
-                       cmap=corr_cmap)
+    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
+                      title=titles[i], show_lab_x=False,
+                      cmap=corr_cmap)
     ax.set(xlabel='stimuli', ylabel='stimuli')
 
     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],

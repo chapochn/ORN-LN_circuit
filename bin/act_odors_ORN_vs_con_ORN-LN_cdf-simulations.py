@@ -31,7 +31,7 @@ con_pps_k = 'cn'  # options: 'cn', 'n'; c and o also possible, but not really
 # meaningful, as then one cannot really see the correlation with the activity
 # and even the 'n' not sure that is even interesting.
 
-save_plots = True
+save_plots = False
 plot_plots = False
 
 CONC = 'all'
@@ -62,7 +62,7 @@ ORNA = FO.NeurActConAnalysis(DATASET, cell_type, strms, con_pps_k,
                              odor_sel=odor_sel,
                              neur_order=None, odor_order=None,
                              path_plots=path_plots, reduce=True,
-                             subfolder='act_ORN_odors_vs_con_ORN-LN/')
+                             subfolder=None)
 
 
 # %%

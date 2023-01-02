@@ -661,27 +661,33 @@ def get_pdf_cdf_3(corr, bins_pdf, bins_cdf, add_point=True, cdf_bool=True,
     return pdfs, cdfs
 
 
-def get_max_diff(curves, curve1):
-    """
-    curves can be 1D, 2D, 3D.
-    the max is always done on the last dimension which is the dimension
-    of one individual curve
-    curve1 is (are) the mean curve(s)
-    """
-    diffs = curves - curve1
-    return np.max(diffs, axis=-1)
+# def get_max_diff(curves, curve1):
+#     """
+#     curves can be 1D, 2D, 3D.
+#     the max is always done on the last dimension which is the dimension
+#     of one individual curve
+#     curve1 is (are) the mean curve(s)
+#     """
+#     diffs = curves - curve1
+#     return np.max(diffs, axis=-1)
 
 
 def get_min_diff(curves, curve1):
     """
-    curves can be 1D, 2D, 3D.
+    curves can be 1D, 2D, 3D if nd.array
+    otherwise needs to be a DataFrame
     the max is always done on the last dimension which is the dimension
     of one individual curve
     curve1 is (are) the mean curve(s)
     returning the absolute deviation
     """
     diffs = curves - curve1
-    return -np.min(diffs, axis=-1)
+    if isinstance(diffs, np.ndarray):
+        return -np.min(diffs, axis=-1)
+    elif isinstance(diffs, pd.DataFrame):
+        return -diffs.min(axis=1)
+    else:
+        raise ValueError('instances should be numpy array or Dataframe')
 
 
 def get_andersondarling_dist(curves, curve1):
@@ -716,20 +722,20 @@ def get_entries(A: Union[pd.DataFrame, np.ndarray], diag: bool=False)\
         return A[idx]
 
 
-def is_permutation_matrix(x):
-    """[summary]
-    
-    Arguments:
-        x {[type]} -- [description]
-    
-    Returns:
-        [type] -- [description]
-    """
-    x = np.asanyarray(x)
-    return (x.ndim == 2 and x.shape[0] == x.shape[1] and
-            (x.sum(axis=0) == 1).all() and
-            (x.sum(axis=1) == 1).all() and
-            ((x == 1) | (x == 0)).all())
+# def is_permutation_matrix(x):
+#     """[summary]
+#
+#     Arguments:
+#         x {[type]} -- [description]
+#
+#     Returns:
+#         [type] -- [description]
+#     """
+#     x = np.asanyarray(x)
+#     return (x.ndim == 2 and x.shape[0] == x.shape[1] and
+#             (x.sum(axis=0) == 1).all() and
+#             (x.sum(axis=1) == 1).all() and
+#             ((x == 1) | (x == 0)).all())
 
 
 FLOAT_TYPE = np.float32
@@ -1111,78 +1117,8 @@ def get_signif_v1(A, B, N=10, dist=False, measure='corr'):
         raise ValueError('no such measure', measure)
 
 
-# not anymore maintained as not used
-# def get_signif_v2(A, B, N=10, dist=False, measure='corr'):
-#     # calls function that shuffles all of B simultaneously,
-#     # so might add some bias
-#     if measure == 'corr':
-#         return get_signif_general_v2(A, B, get_corr, N=N, dist=dist)
-#     elif measure == 'CS':
-#         return get_signif_general_v2(A, B, get_CS, N=N, dist=dist)
-#     else:
-#         raise ValueError('no such measure', measure)
 
-
-# # not maintained anymore as replaced by below
-# def combine_pval(corrs, pval_l, pval_r):
-#     """
-#     this function handle the 1-sided vs 2-sided issue of the significance
-#     testing
-#     here we need to take into account the correlation coefficient
-#     (if it is positive or negative), and about the circ_alg we are using
-#     if it is SVD, we need we will take the sum of left and right
-#     if it is any other circ_alg, it is one-directional
-#
-#     We rely on the fact that some act processing come from SVD
-#     """
-#     if pval_l.shape != pval_r.shape:
-#         raise ValueError('left and right PV do not have the same shape')
-#     if pval_l.shape != corrs.shape:
-#         raise ValueError('left sign and corr do not have the same shape')
-#
-#     # also important to check if the 3 dataframes have the same
-#     # index and columns
-#     cond1 = pval_l.index.equals(pval_r.index)
-#     cond2 = pval_l.index.equals(corrs.index)
-#     cond3 = pval_l.columns.equals(pval_r.columns)
-#     cond4 = pval_l.columns.equals(corrs.columns)
-#     if not (cond1 and cond2 and cond3 and cond4):
-#         raise ValueError('pval and/or corr dont have the same index/col')
-#
-#     (n1, n2) = pval_l.shape
-#
-#     # final significance to be outputted
-#     pval = pd.DataFrame().reindex_like(pval_l)
-#
-# # could be even faster by creating a function and using apply
-#     for i in range(n1):
-#         name = corrs.iloc[i].name
-#         cond = ('SVD' in name)  # and name[5] != 1)
-#         for j in range(n2):
-#             corr = corrs.iat[i, j]
-#             # in the case of SVD, and if it is not the 1st component
-#             # which is expected to be positive
-#             if cond:
-#                 pv = pval_r.iat[i, j] + pval_l.iat[i, j]
-#             else:
-#                 # then we are considering cases where we are assuming
-#                 # a one sided hypothesis, meaning that if the correlation
-#                 # is negative, it will be a very high prob to get
-#                 # at least this corr
-#                 # this also takes into account the case of the
-#                 # 1st loading vector of SVD
-#                 if corr >= 0:
-#                     pv = pval_r.iat[i, j]
-#                 elif corr < 0:
-#                     # this part might not be 100% accurate because of the
-#                     # of the >= in the signif test, so the values that
-#                     # are equal might not be accounted correctly
-#                     pv = 1 - pval_l.iat[i, j]
-#             pval.iat[i, j] = pv
-#     return pval
-
-
-def combine_pval2(pval_o, pval_l, pval_r):
+def combine_pval(pval_o, pval_l, pval_r):
     """
     this function handle the 1-sided vs 2-sided issue of the significance
     testing

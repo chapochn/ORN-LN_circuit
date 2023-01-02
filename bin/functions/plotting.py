@@ -94,87 +94,12 @@ def add_y_splits(ax, splits, n, **plot_args):
     for s in splits:
         ax.plot([-0.5, n-0.5], [s-0.5, s-0.5], **plot_args)
 
-# not used in paper
-# def imshow_df(df: pd.DataFrame, ax=None, cb=True, title='', vlim=None,
-#               cmap=plt.cm.viridis, figsize=None, tight=False,
-#               splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
-#               show_lab_x: bool = True, show_lab_y: bool = True,
-#               cb_frac: float = 0.043,
-#               cbtitle: str = '', show_values: bool = False):
-#     """
-#     very general wrapper around imshow to plot dataframes with labels
-#     splits_x and split_y adds lines to separate different categories in the
-#     data
-#     """
-#     if ax is None:
-#         f, ax = plt.subplots(1, 1, figsize=figsize)
-#
-#     (vmin, vmax) = unpack_vlim(vlim)
-#     print(f'vmin and vmax in imshow_df: {vmin}, {vmax}')
-#     cmap.set_bad('black')
-#     cp = ax.imshow(df, cmap=cmap, vmin=vmin, vmax=vmax, interpolation='none')
-#     ax.set_title(title)
-#
-#     plt.sca(ax)
-#     if show_lab_x is True:
-#         plt.xticks(np.arange(len(df.T)), list(df.columns), rotation=rot, ha=ha)
-#         ax.tick_params('x', bottom=False, pad=0)
-#
-#         label = ''
-#         # for a multiindex creates a label from the mi names
-#         if df.columns.names[0] is not None:
-#             for i in range(len(df.columns.names)):
-#                 label = label + ', ' + df.columns.names[i]
-#             label = label[2:]
-#         ax.set_xlabel(label)
-#     else:
-#         plt.xticks([], [])
-#
-#     if show_lab_y is True:
-#         plt.yticks(np.arange(len(df)), list(df.index))
-#         ax.tick_params('y', left=False, pad=0)
-#
-#         label = ''
-#         if df.index.names[0] is not None:
-#             for i in range(len(df.index.names)):
-#                 label = label + ', ' + df.index.names[i]
-#             label = label[2:]
-#         ax.set_ylabel(label)
-#     else:
-#         plt.yticks([], [])
-#
-#     add_x_splits(ax, splits_x, len(df.index), c='w', lw=lw)
-#     add_y_splits(ax, splits_y, len(df.columns), c='w', lw=lw)
-#
-#     if cb is True:
-#         clb = plt.colorbar(cp, ax=ax, fraction=cb_frac, pad=0.04)
-#         clb.outline.set_linewidth(0.00)
-#         clb.ax.tick_params(size=2, direction='in', pad=1.5)
-#         clb.ax.set_title(cbtitle)
-#     else:
-#         clb = None
-#
-#     if tight is True:
-#         plt.tight_layout()
-#
-#     # removing the borders
-#     for spine in ax.spines.values():
-#         spine.set_visible(False)
-#
-#     # printing the actual values inside the squares.
-#     if show_values:
-#         for (j, i), label in np.ndenumerate(df):
-#             ax.text(i, j, int(label), ha='center', va='center',
-#                     size=matplotlib.rcParams['font.size']*0.8**2)
-#
-#     return (plt.gcf(), ax, clb)
 
-
-def imshow_df2(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
-               splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
-               show_lab_x=True, show_lab_y=True, show_values=False,
-               aspect='equal', splits_c='w', title_font=None, x_offset=0,
-               **kwargs):
+def imshow_df(df, ax, title='', vlim=None, cmap=plt.cm.viridis,
+              splits_x=[], splits_y=[], rot=90, ha='center', lw=1,
+              show_lab_x=True, show_lab_y=True, show_values=False,
+              aspect='equal', splits_c='w', title_font=None, x_offset=0,
+              **kwargs):
     """
     very general wrapper around imshow to plot dataframes with labels
     splits_x and split_y adds lines to separate different categories in the
@@ -480,45 +405,6 @@ def plot_line_2yax(ax, data1, data2, lbl1, lbl2, cell_list, ct,
                          bbox_to_anchor=(0.5, 1.01))
     return ax, ax2, lns
 
-# this is not used as the function below is more flexible
-# def plot_double_series(data1, data2, col1, col2, ylab1, ylab2,
-#                        ylim1=None, ylim2=None, figsize=(9, 2.5)):
-#     """
-#     the weird order of ax and ax2 comes from the fact i want the corr points to
-#     be above the signif points
-#     used for plotting of p-values and mad diff of cdf
-#     """
-#
-#     f, ax = plt.subplots(1, 1, figsize=figsize)
-#     ax2 = ax.twinx()
-#     ax2.yaxis.set_label_position("left")
-#     ax2.yaxis.tick_left()
-#     ax2.plot([-1, len(data1)], [0, 0], c='gray', lw=0.5)
-#     ax2.plot(data1, ls='None', marker='.', markersize=5)
-#     # ax.set_zorder(2)
-#     ax2.set_ylabel(ylab1, color=col1)
-#     ax2.spines['left'].set_edgecolor(col1)
-#     ax2.tick_params('y', colors=col1)
-#     ax2.set_xlim(-0.7, len(data1) - 1 + 0.7)
-#     ax2.set_ylim(ylim1)
-#
-#     ax.plot(data2, ls='None', marker="+", c=col2, markersize=5)
-#     ax.yaxis.set_label_position("right")
-#     ax.yaxis.tick_right()
-#     ax.set_ylabel(ylab2, color=col2)
-#     ax.spines['right'].set_edgecolor(col2)
-#     ax.spines['right'].set_visible(True)
-#     ax.tick_params('y', colors=col2)
-#     sign = -np.log10(0.05)
-#     ax.plot([-0.5, len(data2)-0.5], [sign, sign], c=col2, lw=0.5)
-#     ax.xaxis.grid()
-#     ax.set_ylim(ylim2)
-#
-#     ax.set_xticklabels(data1.index, rotation=90)
-#
-#     plt.tight_layout()
-#     return f, (ax2, ax)
-
 
 def plot_double_series_unevenX(ax, x, data1, data2, col1, col2, ylab1, ylab2,
                                ylim1=None, ylim2=None):
@@ -613,188 +499,6 @@ def add_sign_stars(ax, pvals, alpha, x, y, sign, fontdict=None):
                 fontdict=fontdict)
 
 
-# #############################################################################
-# ##########################  PLOTTING ACTIVITY DATA  #########################
-# #############################################################################
-
-
-# not sure if this is used anywhere
-def plot_conVSact_scatter(d1, d2, lab1='activity principal vector, ctr, norm',
-                          lab2='connectivity, ctr, norm'):
-    """
-
-    Parameters
-    ----------
-    d1
-    d2
-    lab1
-    lab2
-
-    Returns
-    -------
-
-    """
-    # Making sure that the 2 datasets are alinged
-    cell_srt = d1.index
-    d2 = d2.loc[cell_srt]
-
-    f, ax = plt.subplots(1, 1)
-    d0 = pd.concat([d1, d1], axis=1)
-    corr = d1.values @ d2.values
-    corr_str = "{:.2f}".format(corr)
-
-    v_max = np.max(np.abs(d0.values))*1.1
-    ax.set_xlim(-v_max, v_max)
-    ax.set_ylim(-v_max, v_max)
-    ax.plot([-v_max, v_max], [0, 0], c='k')
-    ax.plot([0, 0], [-v_max, v_max], c='k')
-    ax.scatter(d1, d2)
-    for i, txt in enumerate(list(d1.index)):
-        ax.annotate(txt, (d1.iloc[i], d2.iloc[i]))
-    ax.set_xlabel(lab1)
-    ax.set_ylabel(lab2)
-    ax.set_aspect('equal')
-    ax.grid()
-
-    plt.text(0.05, 0.95, 'corr = ' + corr_str, horizontalalignment='left',
-             verticalalignment='top', transform=ax.transAxes,
-             color='r')
-    return None
-
-
-def _update_annotations(ax, corr_txt, annotations, curve):
-    (d1, d2) = curve.get_data()
-    corr = d1.dot(d2)
-    corr_str = "{:.2f}".format(corr)
-    corr_txt.set_text('corr = ' + corr_str)
-    for i, cell_label in enumerate(list(d1.index)):
-        if annotations[i] != 0:
-            annotations[i].remove()
-        annotations[i] = ax.annotate(cell_label, (d1.iloc[i], d2.iloc[i]))
-
-
-def plot_scatter_radio(df1, df2, title='', xlab='', ylab='', vlim=1):
-    """
-
-    Parameters
-    ----------
-    df1
-    df2
-    title
-    xlab
-    ylab
-    vlim
-
-    Returns
-    -------
-
-    """
-    # Making sure that the 2 datasets are alinged
-    vmin, vmax = unpack_vlim(vlim)
-    (df1, df2) = FG.align_indices(df1, df2)
-
-    df1_multi = isinstance(df1.columns, pd.core.index.MultiIndex)
-    df2_multi = isinstance(df2.columns, pd.core.index.MultiIndex)
-
-    def update_curve(label, df, df_multi, x):
-        if df_multi:
-            d_new = df[ast.literal_eval(label)]
-        else:
-            d_new = df[label]
-        if x:
-            curve.set_xdata(d_new)
-        else:
-            curve.set_ydata(d_new)
-        plt.draw()
-        _update_annotations(ax, corr_txt, annotations, curve)
-
-    names1 = list(df1.columns)
-    names2 = list(df2.columns)
-
-    f, ax = plt.subplots(1, 1, figsize=(16, 16))
-    plt.subplots_adjust(left=0.25, right=0.75)
-
-    axcol = 'lightgoldenrodyellow'
-    rax1 = plt.axes([-0.05, 0.05, 0.5, 0.9],
-                    facecolor=axcol, frameon=False)
-    radio1 = matplotlib.widgets.RadioButtons(rax1, names1)
-    for circle in radio1.circles:  # adjusting radius. The default is 0.05
-        circle.set_radius(0.01)
-
-    rax2 = plt.axes([0.75, 0.05, 0.5, 0.9],
-                    facecolor=axcol, frameon=False)
-    radio2 = matplotlib.widgets.RadioButtons(rax2, names2)
-    for circle in radio2.circles:  # adjusting radius. The default is 0.05
-        circle.set_radius(0.01)
-
-    d1 = df1[names1[0]]
-    d2 = df2[names2[0]]
-    if vmax is None:
-        vmax = max(np.max(np.abs(df1.values)), np.max(np.abs(df2.values)))
-        vmin = -vmax
-    # d0 = pd.concat([d1, d1], axis=1)
-    # v_max = np.max(np.abs(d0.values))*1.1
-    ax.set_xlim(vmin, vmax)
-    ax.set_ylim(vmin, vmax)
-    ax.plot([vmin, vmax], [0, 0], c='k')
-    ax.plot([0, 0], [vmin, vmax], c='k')
-    ax.set_aspect('equal')
-    ax.grid()
-    ax.set_xlabel(xlab)
-    ax.set_ylabel(ylab)
-    ax.set_title(title)
-
-    corr_txt = plt.text(0.05, 0.95, '', horizontalalignment='left',
-                        verticalalignment='top', transform=ax.transAxes,
-                        color='r')
-
-    curve, = ax.plot(d1, d2, '.', markersize=10)
-    curve.set_data(d1, d2)  # this formulation keeps the pandas information
-    annotations = [0]*len(d1.index)
-    _update_annotations(ax, corr_txt, annotations, curve)
-
-    radio1.on_clicked(lambda x: update_curve(x, df1, df1_multi, True))
-    radio2.on_clicked(lambda x: update_curve(x, df2, df2_multi, False))
-
-    return radio1, radio2
-
-# not used in paper
-# def plot_cov(data: pd.DataFrame, cell_sort=None, norm: bool = False,
-#              title: str = '') -> (plt.Figure, plt.Axes, plt.colorbar):
-#     """
-#     plots the covariance of the input data
-#
-#
-#     Parameters
-#     ----------
-#     data
-#         input data
-#     cell_sort
-#         most probably in list or np.array format
-#     norm
-#         whether or not to divide by the number of samples
-#     title
-#         plot title
-#
-#     Returns
-#     -------
-#     f
-#         reference to the figure
-#     ax
-#         reference to the axis
-#     clb
-#         reference to the colorbar
-#     """
-#
-#     cov = data.T.dot(data)
-#     if norm is True:
-#         cov /= len(data)
-#     if cell_sort is not None:
-#         cov = cov.loc[cell_sort, cell_sort]
-#     f, ax, clb = imshow_df(cov, vlim=np.max(cov.values),
-#                               cmap=plt.cm.bwr, title=title, tight=True)
-#     return f, ax, clb
-
 
 # #############################################################################
 # ####################  ACTIVITY PLOTS  #######################################
@@ -825,12 +529,12 @@ def plot_full_activity(df, act_map, divnorm, title='', cb_title='',
         splx = np.arange(5, len(df.T), 5)
     else:
         splx = []
-    cp = imshow_df2(df, ax, vlim=None, show_lab_y=True,
-                    title=title,
-                    cmap=act_map, splits_x=splx,
-                    show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
-                    title_font=title_font,
-                    **{'norm': divnorm})
+    cp = imshow_df(df, ax, vlim=None, show_lab_y=True,
+                   title=title,
+                   cmap=act_map, splits_x=splx,
+                   show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
+                   title_font=title_font,
+                   **{'norm': divnorm})
     ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                         CB_W / fs[0], axs[3]])
     clb = add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend=extend,
@@ -845,3 +549,47 @@ def plot_full_activity(df, act_map, divnorm, title='', cb_title='',
     #     clb.set_ticklabels(cb_ticks)
     # clb.set_ticks(cb_ticks)  # needs to be called again because of the linea command
     return f, ax, clb
+
+
+# #############################################################################
+# ####################  PLOT SIMULATION  ######################################
+# #############################################################################
+
+def plot_clustering_results(X, Z, W, x_max=1, Y=None):
+    import scipy.cluster.hierarchy as sch
+    f, axx = plt.subplots(2, 2)
+    ax = axx[0, 0]
+    im = ax.imshow(Z, aspect='auto', interpolation='nearest',
+               vmin=0)
+    ax.set_title('output activity Z')
+    f.colorbar(im, ax=ax)
+
+    ax = axx[1, 0]
+    im = ax.imshow(Z.T @ Z, interpolation='nearest')
+    f.colorbar(im, ax=ax)
+    ax.set_title('Z similarity matrix')
+
+    W = W/ LA.norm(W, axis=0, keepdims=True)
+    ax = axx[0, 1]
+    ax.scatter(*X[:2], s=1)
+    if Y is not None:
+        ax.scatter(*Y[:2], s=1)
+    ax.scatter(*x_max*W[:2])
+    # ax.set_xlim(0, None)
+    # ax.set_ylim(0, None)
+    ax.set_aspect(1)
+    ax.set_title('X, Y, W')
+
+
+    ax = axx[1, 1]
+    corr = np.corrcoef(W.T)
+    links = sch.linkage(corr, method='average', optimal_ordering=True)
+    new_order = sch.leaves_list(links)
+    im = plt.imshow(corr[new_order][:, new_order], cmap='bwr', vmax=1, vmin=-1)
+    f.colorbar(im, ax=ax)
+    ax.set_title('correlation among W')
+
+    entries = FG.get_entries(corr, diag=False)
+    max_rect_corr = FG.rectify(entries).mean()
+    print('mean rectified corr', max_rect_corr)
+    return f, max_rect_corr

@@ -204,18 +204,23 @@ def olf_gd_offline(X: np.ndarray, k: int, rtol: float = 1e-6,
 
     Parameters
     ----------
-    X:
-        input data matrix
-    k:
-        number of LNs
-    etamax:
-        the initial learning rate
-    rtol:
-        relative tolerance
-    init:
-        initialization for the Y and Z matrices
-    sigma:
-        acceptance parameter
+    X: input data matrix
+    k: number of LNs
+    rtol: relative tolerance
+    max_iter: maximum number of iterations
+    rectY, rectZ: whether to rectify Y and/or Z
+    init: initialization for the Y and Z matrices, options are: random,
+        full, full_rand, pca, pre_init (from the CD algorithm), given
+    Y0, Z0: used if init is given, the initial matrices used
+    verbose: deprecated
+    alpha: initial coefficient by which the gradients are multiplied
+    cycle: after how many iteration alpha is multiplied by beta
+    rho: parameter rho of the optimization problem
+    beta: multiplicative parameter that decreases alpha every cycle cycle
+    gamma: parameter of the optimization function
+    sigma:  acceptance parameter, related to by how much the cost should
+        decrease in comparison to the expected cost in order to accept the
+        gradient descent/ascent step.
 
     Returns
     ------

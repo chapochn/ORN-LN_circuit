@@ -20,24 +20,13 @@ Created on Tue Dec 19 14:55:23 2017
 # ################################# IMPORTS ###################################
 # #############################################################################
 
-# import openpyxl
 import numpy as np
-import matplotlib.pyplot as plt
-# from mpl_toolkits.mplot3d import Axes3D # for 3d plotting
 import pandas as pd
 import importlib
-# import datetime
-# import sys
-# import sklearn.cluster as skc
 
 import params.act3 as par_act3
 
-# import h5py
-# import scipy.io as sio  # to read the matlab .mat files
-# import sklearn.decomposition as skdd
-from functions import general as FG, olfactory as FO, plotting as FP
-
-
+from functions import general as FG, olfactory as FO
 
 
 # %%
@@ -65,11 +54,10 @@ con_pps_k = 'cn'  # options: 'cn', 'n'; c and o also possible, but not really
 # meaningful, as then one cannot really see the correlation with the activity
 # and even the 'n' not sure that is even interesting.
 
-save_plots = True
+save_plots = False
 plot_plots = False
 
 CONC = 'all'
-# CONC = '8'
 act_sel_ks = [CONC]
 # we are deciding upfront which concentration we want to look at
 # options are: 'ec50', 'all', '45', '678', '4', '5', '6', '7', '8'
@@ -96,7 +84,7 @@ ORNA = FO.NeurActConAnalysis(DATASET, cell_type, strms, con_pps_k,
                              odor_sel=odor_sel,
                              neur_order=None, odor_order=None,
                              path_plots=path_plots, reduce=True,
-                             subfolder='act_ORN_odors_vs_con_ORN-LN/')
+                             subfolder=None)
 
 
 # getting only the real cells, i think they are the same independent
@@ -123,7 +111,7 @@ CELLS_REAL =  ['Broad T1 L',
                  'Picky 0 [dend] R',
                  'Picky 0 [dend] M'
                  ]
-# decomment this line if you don't want the "fake" cells", which are
+# uncomment this line if you don't want the "fake" cells", which are
 # the average of categories
 # CELLS_REAL = [name for name in CELLS_REAL if ' M' not in name]
 
@@ -133,17 +121,16 @@ bins_pdf = np.linspace(xmin, xmax, 21)
 n_bins_cdf = 500
 bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
 
-with open(ORNA.path_plots / f'params.txt', 'w') as f:
-    f.write(f'\ndataset: {DATASET}')
-    f.write(f'\nact_pps1: {act_pps_k1}')
-    f.write(f'\nact_pps2: {act_pps_k2}')
-    f.write(f'\nodor_subset: {odor_sel}')
-    f.write(f'\nstrm: {STRM}')
-    f.write(f'\nACT_PPS: {ACT_PPS}')
-    f.write(f'\nCONC: {CONC}')
-    f.write(f'\nact_sel_ks: {act_sel_ks}')
+# with open(ORNA.path_plots / f'params.txt', 'w') as f:
+#     f.write(f'\ndataset: {DATASET}')
+#     f.write(f'\nact_pps1: {act_pps_k1}')
+#     f.write(f'\nact_pps2: {act_pps_k2}')
+#     f.write(f'\nodor_subset: {odor_sel}')
+#     f.write(f'\nstrm: {STRM}')
+#     f.write(f'\nACT_PPS: {ACT_PPS}')
+#     f.write(f'\nCONC: {CONC}')
+#     f.write(f'\nact_sel_ks: {act_sel_ks}')
 
-png_opts = {'dpi': 250, 'transparent': True}
 
 # %%
 # #############################################################################
@@ -169,7 +156,7 @@ pdf_true, cdf_true = FG.get_pdf_cdf_2(cor0.values, bins_pdf, bins_cdf,
                                       add_point=True)
 pdf_true = pd.DataFrame(pdf_true, index=cor0.index)
 cdf_true = pd.DataFrame(cdf_true, index=cor0.index)
-
+print('done')
 # %%
 # EXPORTING THE TRUE CDFS
 
@@ -179,7 +166,7 @@ cdf_true = pd.DataFrame(cdf_true, index=cor0.index)
 file_begin = (FO.OLF_PATH / f'results/{cell_type}_con{STRM}_vs_'
               f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_corr_')
 cdf_true.to_hdf(f'{file_begin}cdf-true.hdf', 'cdf_true')
-
+print('done')
 # %%
 # #############################################################################
 # ######################  SIGNIFICANCE WHEN GENERATING  #######################
@@ -188,30 +175,16 @@ cdf_true.to_hdf(f'{file_begin}cdf-true.hdf', 'cdf_true')
 # #############################################################################
 
 
-
-
-
-
 # #############################################################################
 # ###################  GETTING COLLECTION OF CORR COEF  #######################
 # #############################################################################
 
-# the 2 different versions of shuffling:
-# 1. each column is shuffled sevarately, so the correlation between connections
-# are kept
-# 2. all columns are permuted simultaneously/together, thus the
-# relations/correlations between the different dimensions are conserved.
-
-
-# in corr1: n_cells x n_odors
-# in cor_col1, N x n_cells x n_odors
-
 N = 50000
-    # the order in the function matters, because it is the matrix
-    # in the second position that will be shuffled, so it is better
-    # to put there the matrix with less columns, as it will thus take
-    # less time
-    # later i invert the axes so that the odors are in the last dimension
+# in corr0, corr0a: n_cells x n_odors
+# in cor_col1, N x n_cells x n_odors : collection of corr coefficients
+
+    # the order in the function matters, because it is the columns of the matrix
+    # in the second position that will be shuffled
 cor0a, cor_col1, pv_o, _, _ = FG.get_signif_v1(act_cn, con_sel_cn, N=N,
                                                dist=True, measure='corr')
 cor_col1 = np.swapaxes(cor_col1, 1, 2)
@@ -221,14 +194,14 @@ assert cor0a.equals(cor0.T)
 
 
 if np.isnan(cor_col1).any():
-    print("WE HAVE SOME NANs IN cor_col1 which shouldn't be there")
+    print("we have some NaN in cor_col1 which shouldn't be there")
 print('done')
 #%%
 # Saving the pvals, as we use them in figures
 file = (f'results/{cell_type}_con{STRM}_vs_'
               f'act-{act_pps_k1}-{act_pps_k2}-{ACT_PPS}-conc-{CONC}_pvals.h5')
 pv_o.to_hdf(FO.OLF_PATH / file, 'pvals')
-
+print('done')
 # %%
 # #############################################################################
 # ##############  PDF AND CDF OF REAL AND SHUFFLED CORR COEF  #################
@@ -261,15 +234,15 @@ cdf_shfl_std.to_hdf(FO.OLF_PATH / f'{file_begin}cdf-shfl-std.hdf',
                     'cdf_shfl_std')
 # =============================================================================
 
-
+print('done')
 # %%
 # ###################  MAXIMUM DEVIATION IN CDF AND PVAL  #####################
 # this is a kind of numerical implementation of the Kolmogorov-smirnov test
-
+importlib.reload(FG)
 cdf_shfl_diff_min = FG.get_min_diff(cdfs_shfl, cdf_shfl_m.values)
 # the max is over the odors, i.e., the last dimension
 
-# first dim are the cells, second dim are the odors
+# first dim (index) are the cells, second dim (columns) are the odors
 cdf_diff_min2 = FG.get_min_diff(cdf_true, cdf_shfl_m)
 
 # cdf_diff_min2 contains the true min deviation for each cell
@@ -280,7 +253,7 @@ pv_min = np.mean(cdf_shfl_diff_min >= cdf_diff_min2.values, axis=0)
 cdf_diff_min_pv2 = pd.Series(pv_min, index=CELL_LIST)
 cdf_diff_min_pv2 = cdf_diff_min_pv2.replace(0, 1./N_iter).T
 
-
+print('done')
 # %%
 
 # =============================================================================
@@ -291,7 +264,7 @@ cdf_diff_min2.to_hdf(FO.OLF_PATH / f'{file_begin}.hdf', 'cdf_diff_min')
 cdf_diff_min_pv2.to_hdf(FO.OLF_PATH / f'{file_begin}_pv.hdf', 'cdf_diff_min_pv')
 # 
 # =============================================================================
-
+print('final done')
 #%%
 # importlib.reload(FG)
 # # doing the same as above, but with Anderson-Darling test

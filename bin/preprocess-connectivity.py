@@ -5,9 +5,6 @@ Created on Thu Nov  8 18:12:28 2018
 
 @author: Nikolai M Chapochnikov
 
-better would be to create some functions here to make to code clearer
-but will leave for later if needed
-
 the point of this file is just to read the connectivity data and to export
 it into formats that are readable. So basically i would do it just once
 and then i would only use the exported datasets, which are already
@@ -29,8 +26,6 @@ in con_strms3, there has already been a selection and ordering,
 however i believe this should be done only later for more clarity
 
 in this version we don't cut on any targets, all targets are kept.
-I guess one should preferable use this version in the future
-
 """
 
 import pandas as pd
@@ -56,8 +51,10 @@ cons = FO.import_con_data(SIDES)  # get con. data
 # con = cons[key_con_1]  # M: mean, L:left, R:right
 # %%
 # exporting all the connection datasets to hdfs files
+results_path = FO.OLF_PATH / 'results/cons'
+results_path.mkdir(exist_ok=True)
 for k, v in cons.items():
-    v.to_hdf(FO.OLF_PATH / f'results/cons/cons_full_{k}.hdf', f'cons_{k}')
+    v.to_hdf(results_path / f'cons_full_{k}.hdf', f'cons_{k}')
 
 
 # %%
@@ -159,7 +156,7 @@ for k, df in con_strms2.items():
             names[i] = f'{names[i]} {seen[x]}'
 
     df.columns = names
-    df.to_hdf(FO.OLF_PATH / f'results/cons/cons_{cell}_{k}_all.hdf',
+    df.to_hdf(results_path / f'cons_{cell}_{k}_all.hdf',
               f'con_{cell}_{k}')
 
 # choosing which neurons we want to work with, from the already
@@ -201,6 +198,6 @@ dnew = dnew.rename(columns={'index': 'cells'})
 dnew = dnew.set_index(['strm', 'cells'])
 con_strms3 = dnew.copy().T
 
-con_strms3.to_hdf(FO.OLF_PATH / f'results/cons/cons_{cell}_all.hdf',
+con_strms3.to_hdf(results_path / f'cons_{cell}_all.hdf',
                   f'con_{cell}')
 

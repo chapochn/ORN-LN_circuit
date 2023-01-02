@@ -57,7 +57,7 @@ con_pps_k = 'cn'  # options: 'cn', 'n'; c and o also possible, but not really
 # meaningful, as then one cannot really see the correlation with the activity
 # and even the 'n' not sure that is even interesting.
 
-save_plots = True
+save_plots = False
 plot_plots = False
 
 CONC = 'all'
@@ -88,7 +88,7 @@ ORNA = FO.NeurActConAnalysis(DATASET, cell_type, strms, con_pps_k,
                              odor_sel=odor_sel,
                              neur_order=None, odor_order=None,
                              path_plots=path_plots, reduce=True,
-                             subfolder='act_ORN_odors_vs_con_ORN-LN/')
+                             subfolder=None)
 
 
 # getting only the real cells, i think they are the same independent
@@ -125,17 +125,16 @@ bins_pdf = np.linspace(xmin, xmax, 21)
 n_bins_cdf = 500
 bins_cdf = np.linspace(xmin, xmax, n_bins_cdf + 1)
 
-with open(ORNA.path_plots / f'params.txt', 'w') as f:
-    f.write(f'\ndataset: {DATASET}')
-    f.write(f'\nact_pps1: {act_pps_k1}')
-    f.write(f'\nact_pps2: {act_pps_k2}')
-    f.write(f'\nodor_subset: {odor_sel}')
-    f.write(f'\nstrm: {STRM}')
-    f.write(f'\nACT_PPS: {ACT_PPS}')
-    f.write(f'\nCONC: {CONC}')
-    f.write(f'\nact_sel_ks: {act_sel_ks}')
+# with open(ORNA.path_plots / f'params.txt', 'w') as f:
+#     f.write(f'\ndataset: {DATASET}')
+#     f.write(f'\nact_pps1: {act_pps_k1}')
+#     f.write(f'\nact_pps2: {act_pps_k2}')
+#     f.write(f'\nodor_subset: {odor_sel}')
+#     f.write(f'\nstrm: {STRM}')
+#     f.write(f'\nACT_PPS: {ACT_PPS}')
+#     f.write(f'\nCONC: {CONC}')
+#     f.write(f'\nact_sel_ks: {act_sel_ks}')
 
-png_opts = {'dpi': 250, 'transparent': True}
 print('done')
 
 
@@ -173,9 +172,8 @@ else:
         return linear_model.Ridge(alpha=alpha)
 
 act_n_np = act_o_np / LA.norm(act_o_np, axis=0)
-for LN_i in [6, 11, 16, 19]:
-    w = con_o.values[:, LN_i]
-    LN = con_o.columns[LN_i]
+for LN in ['Broad T M M','Broad D M M','Keystone M M', 'Picky 0 [dend] M']:
+    w = con_o[LN].values
     print(LN)
     w = w/LA.norm(w)
     w1 = w

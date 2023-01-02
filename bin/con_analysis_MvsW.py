@@ -1,8 +1,14 @@
 """
-Calculating the significance of the relationship between
-M and sqrt(W.T*W)
+created in 2019
 
 @author: Nikolai M Chapochnikov
+
+Calculating the significance of the relationship between
+M and sqrt(W.T*W)
+This files doesn't save any data, one should just use the significance values
+ that are printed in the prompt
+
+
 """
 #%%
 import matplotlib.pyplot as plt
