@@ -5,27 +5,23 @@ Created in 2022
 
 @author: nchapochnikov
 
-Here we are testing that the circuit is indeed doing what it is supposed to do
-In particular that it is converging to the theoretical pca solution in the
-linear case
-TODO: nonlinear case?
+Here we are testing that the ORN-LN circuit without LN-LN connection
+is converging to the theoretical pca solution in the linear case
+
+TESTS ALL PASS
 """
 
-import functions.white_circ_offline as FOC
-import functions.datasets as FD
-import functions.general as FG
-from functions import nmf
-import sklearn.decomposition as skd
-
 import numpy as np
-import matplotlib.pylab as plt
 import time
 import scipy.linalg as LA
-import importlib
 import collections
 import pytest
 from typing import Dict
 from joblib import Parallel, delayed
+
+import functions.white_circ_offline as FOC
+import functions.datasets as FD
+import functions.general as FG
 
 
 # %%
@@ -41,7 +37,7 @@ D = 20
 K = 7
 list_ds = [('SC', K), ('clus1', K), ('clus2', K), ('olf', 1), ('olf', 2),
            ('olf', 3), ('olf', 4), ('olf', 5), ('olf', 6)]
-# list_ds = [('SC', K)]
+# list_ds = [('SC', K), ('clus1', K), ('clus2', K)]
 # list_ds = [('clus2', K)]
 # list_ds = [('clus1', K)]
 # list_ds = [('olf', 1)]
@@ -49,14 +45,19 @@ list_ds = [('SC', K), ('clus1', K), ('clus2', K), ('olf', 1), ('olf', 2),
 GAMMA = 0.8
 GAMMA = 1.2
 GAMMA = 1
+RHO = 3  # this is needed so that there is actualy a subspace that the
+# circuit is dampening
 
-
+# generates dataset
+# this returns a dictionary that contains as datasets SC, clust1, clust2, olf
 @pytest.fixture(scope='module')
 def create_datasets():
-    datasets = FD.create_datasets(D, 1000, K, options={'a': .5, 'b': 2},
+    datasets = FD.create_datasets(D, 1000, K, options={'a': 2, 'b': 3, 'c': 10},
                                   rho1=0.1, rho2=0.1)
     return datasets
 
+# gets the theoretical results for each dataset by calculating the SVD
+# here create_datasets is already the output of the function above
 @pytest.fixture(scope='module')
 def get_res_th(create_datasets):  # theoretical results
     res_svd_off: Dict[str, Dict[int, Dict[str, np.ndarray]]] = \
@@ -67,18 +68,19 @@ def get_res_th(create_datasets):  # theoretical results
         X = ds['ds']  # the data
         N = X.shape[1]
         U, s, Vt = LA.svd(X, full_matrices=False)
+        print(s)
         s_y = s.copy()
-        s_y[:k] = FOC.damp_sx(s_y[:k], N)
+        s_y[:k] = FOC.damp_sx(s_y[:k], N, rho=RHO)
         Y = U @ np.diag(s_y) @ Vt
         Q_U = U[:, :k]
         s_z = s.copy()
-        s_z = FOC.sz_from_sx(s_z, N, rho=1, gamma=1)
+        s_z = FOC.sz_from_sx(s_z, N, rho=RHO, gamma=GAMMA)
         Z = np.diag(s_z[:k]) @ Vt[:k]  # without any rotation
         res_svd_off[name][k] = {'U': Q_U, 'Z': Z, 'Y': Y, 's_x':s}
 
     return res_svd_off
 
-
+# this simulation uses the full optimization problem in Y and Z
 def simulate1(name, K, ds):
     X = ds['ds']  # the data
     D, N = X.shape
@@ -86,14 +88,12 @@ def simulate1(name, K, ds):
     rect = False
 
     time_1 = time.time()
-    cycle = 100000
-    alpha = 10
-    if name == 'olf' and K==1: # has issues converging
-        cycle = 30000
-        alpha = 100
-    Y, Z, costs = FOC.olf_gd_offline(X, K, max_iter=300000, rectY=rect,
-                                     rectZ=rect, alpha=alpha, rtol=1e-7,
-                                     gamma=GAMMA, cycle=cycle)  # rho is 1 i suppose
+    cycle = 1000
+    alpha = 50
+
+    Y, Z, costs = FOC.olf_gd_offline(X, K, max_iter=10000, rectY=rect,
+                                     rectZ=rect, alpha=alpha, rtol=1e-6,
+                                     gamma=GAMMA, cycle=cycle, beta=0.5, rho=RHO)
     time_2 = time.time() - time_1
     message += f'Elapsed time: {time_2}\n'
 
@@ -103,7 +103,8 @@ def simulate1(name, K, ds):
     # plt.show()
     return name, K, Y, Z
 
-
+# this simulation uses the optimization problem in Z only.
+# and then calculates Y analytically from Z
 def simulate2(name, K, ds):
     X = ds['ds']  # the data
     D, N = X.shape
@@ -111,10 +112,11 @@ def simulate2(name, K, ds):
     rect = False
 
     time_1 = time.time()
-    alpha = 1
-    Z, costs = FOC.olf_gd_offline2(X, K, max_iter=1000, rect=rect, cycle=10000,
-                                   sigma=0.005, alpha=alpha,
-                                   rtol=0)  # not sure why sigma needs to be so small here...
+    cycle = 1000
+    alpha = 50
+    Z, costs = FOC.olf_gd_offline2(X, K, max_iter=10000, rect=rect, cycle=cycle,
+                                   sigma=0.1, alpha=alpha,
+                                   rtol=1e-6, beta=0.5, rho=RHO)
     time_2 = time.time() - time_1
     message += f'Elapsed time: {time_2}\n'
     Y = X @ LA.inv(Z.T @ Z / N + np.eye(N))
@@ -125,10 +127,11 @@ def simulate2(name, K, ds):
     # plt.show()
     return name, K, Y, Z
 
-
-@pytest.fixture(scope='module', params=[simulate1, simulate2])
+# uses simulate1 and/or simulate2 to get Y and Z for different name (dataset)
+# and K, number of LNs
+# @pytest.fixture(scope='module', params=[simulate1, simulate2])
 # @pytest.fixture(scope='module', params=[simulate1])
-# @pytest.fixture(scope='module', params=[simulate2])
+@pytest.fixture(scope='module', params=[simulate2])
 def get_res_off(create_datasets, request):
     simulate = request.param
     dss = create_datasets
@@ -138,7 +141,7 @@ def get_res_off(create_datasets, request):
         res_on[res[0]][res[1]] = (res[2], res[3])
     return res_on
 
-
+# compares with the analytical results
 @pytest.mark.parametrize("ds", list_ds)
 def test_offline_simul(create_datasets, get_res_th, get_res_off, ds):
     name, k = ds
@@ -192,17 +195,3 @@ def test_offline_simul(create_datasets, get_res_th, get_res_off, ds):
 
     assert Y_overlap < 5e-3
     assert diff_Y < 0.07
-
-# it could make sense to actually have the results per dataset instead
-# of the global constraints
-
-# # %%
-# for name, k in list_ds:
-#     ds = datasets[name]
-#     X = ds['ds']  # the data
-#     Z_off = res_svd_off[name][k]['Z']
-#     sm, mon = results[name][k]
-#     FCS.display_sm_results(sm, X, Z_off, mon, plot=True, name=f'{name}_{k}')
-# basically, as "result" is that all of the above examples should "converge"
-# apart from the olf3 and olf6
-

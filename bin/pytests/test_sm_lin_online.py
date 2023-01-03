@@ -5,28 +5,24 @@ Created on Thu Jun 20 22:39:20 2019
 
 @author: nchapochnikov
 
-Here we are testing that the circuit is indeed doing what it is supposed to do
-In particular that it is converging to the theoretical pca solution in the
-linear case and to the SNMF solution in the non-negative case
+Here we are testing the original similarity matching optimization
+problem in the online setting, meaning we are both finding the y and
+the updates on the W, and checking that it converges
+to the theoretical pca solution in the linear case
 
-# there 1 or 2 tests often don't pass exactly...
+ALL TEST PASS, if not, increase the number of epochs
 """
 
-import functions.circuit_simulation as FCS
-import functions.datasets as FD
-import functions.general as FG
-from functions import nmf
-import sklearn.decomposition as skd
-
 import numpy as np
-import matplotlib.pylab as plt
 import time
 import scipy.linalg as LA
-import importlib
 import collections
 import pytest
 from typing import Dict
 from joblib import Parallel, delayed
+
+import functions.circuit_simulation as FCS
+import functions.datasets as FD
 
 
 # %%
@@ -43,12 +39,14 @@ K = 7
 list_ds = [('SC', K), ('clus1', K), ('clus2', K), ('olf', 1), ('olf', 2),
            ('olf', 3), ('olf', 4), ('olf', 5), ('olf', 6)]
 
+# generates the datasets
 @pytest.fixture(scope='module', autouse=True)
 def create_datasets():
     datasets = FD.create_datasets(D, 1000, K, options={'a': .5, 'b': 1},
                                   rho1=0.1, rho2=0.1)
     return datasets
 
+# calculates the correct results offline, with the analytical formula
 @pytest.fixture(scope='module', autouse=True)
 def get_res_off(create_datasets):
     res_svd_off: Dict[str, Dict[int, Dict[str, np.ndarray]]] = \
@@ -64,15 +62,15 @@ def get_res_off(create_datasets):
 
     return res_svd_off
 
-
+# simulates the results
 def simulate(name, K, ds):
     X = ds['ds']  # the data
     D, N = X.shape
     message = f'Working on dataset {name}; {D}, {N}; {K}.\n'
 
-    mon_funcs = {}
+    mon_funcs = {}  # not monitoring anything
     W0, M0 = FCS.get_initial_W_M(X, K, scale=1000, type='random')
-    n_epoch = int(20000 / N)
+    n_epoch = int(40000 / N)
     # n_epoch = 1
     message += f'number of epochs: {n_epoch}.\n'
 
@@ -117,8 +115,6 @@ def test_online_simul(create_datasets, get_res_off, get_res_on, ds):
     assert perp < 0.002
     assert OL < 0.005
 
-# it could make sense to actually have the results per dataset instead of
-# of the global constrains
 
 # # %%
 # for name, k in list_ds:
@@ -127,6 +123,4 @@ def test_online_simul(create_datasets, get_res_off, get_res_on, ds):
 #     Z_off = res_svd_off[name][k]['Z']
 #     sm, mon = results[name][k]
 #     FCS.display_sm_results(sm, X, Z_off, mon, plot=True, name=f'{name}_{k}')
-# basically, as "result" is that all of the above examples should "converge"
-# apart from the olf3 and olf6
 

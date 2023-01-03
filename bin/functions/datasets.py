@@ -71,12 +71,14 @@ def generate_samples(D: int = 50, N: int = 100, K: int = 10,
     # datasets
     # here making sure that we use the right n when including n_test frames
     rnd = np.random.RandomState(seed)
+    if not options:  # checks if the dictionary is empty
+        options = {
+            'a': 0.5,
+            'b': 1,  # parameters to create a linspace of eigenvalues
+            'c': 2
+        }
     if method == 'spiked_covariance':
-        if not options:  # checks if the dictionary is empty
-            options = {
-                'a': 0.5,
-                'b': 1  # parameters to create a linspace of eigenvalues
-            }
+
         # normalized mean that the highest eigenvalue is 1 + rho
         a = options['a']
         b = options['b']
@@ -104,7 +106,7 @@ def generate_samples(D: int = 50, N: int = 100, K: int = 10,
     elif method == 'clusters':
         # first generate K clusters centers in D dimensional space
         # however they are not perpendicular
-        U = 2 * rnd.rand(D, K) - 1
+        U = options['c'] * rnd.rand(D, K) - 1
         # now generated N points in D dimensions;
         X = rnd.normal(0, rho, (D, N))
         for i in range(N):

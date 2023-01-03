@@ -99,3 +99,16 @@ for side in ['L', 'R']:
     Z.to_hdf(file, 'Z')
 
 print('final done')
+
+
+#%%
+# comparing with previous simulation
+# import pathlib
+# res_path_bu = '/Users/chapon01/ORN-LN_circuit/results_bu/sims_real-synaptic-counts'
+# for side in ['L', 'R']:
+#     Y_bu = pd.read_hdf(pathlib.Path(res_path_bu) / f'Y_{side}.h5')
+#     Y = pd.read_hdf(pathlib.Path(res_path) / f'Y_{side}.h5')
+#     print(np.max(np.abs(Y - Y_bu).values))
+#     Z_bu = pd.read_hdf(pathlib.Path(res_path_bu) / f'Z_{side}.h5')
+#     Z = pd.read_hdf(pathlib.Path(res_path) / f'Z_{side}.h5')
+#     print(np.max(np.abs(Z - Z_bu).values))

@@ -51,8 +51,6 @@ saved in plots/plots/folder_name/ (parameter in plots_import.py):
 - plots_model-real-syn-counts.py
 plots in the paper in the folder "plots/plots_paper".
 
-To obtain additional supplementary figures, rerun the file "ORN-LN_circuit/bin/plots_paper.py" with SCAL_W = 10 instead of SCAL_W = 2 (on line 3032 of "plots_paper.py"), which will in addition generate the folder whitening10 inside plots/plots_paper/[date_time].
-
 
 NOTE: because some simulations are non-deterministic, the generated plots might
 slightly differ from the plots in the paper.

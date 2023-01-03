@@ -267,9 +267,7 @@ for k in range(1, 9):
     W_nnc_noM[k] = W_nnc[k].copy()
     Y_nnc_noM[k] = Y_nnc[k].copy()
     Z_nnc_noM[k] = Z_nnc[k].copy()
-    #
-    # for this eta1 needs to be 1/est instead of 0.001
-    # not sure for what you are using 0.001
+
     res = FCS.olf_output_online_bulk(X.values,
                                      W_nnc_noM[k].values, W_nnc_noM[k].values,
                                      M_nnc_noM[k], SCAL_W, method='GD_NN')

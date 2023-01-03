@@ -65,7 +65,7 @@ def sm_output_online(x: np.ndarray, W: np.ndarray, M: np.ndarray,
                      method: str = 'inv', NN: bool = False,
                      atol: float = 1e-9, rtol: float = 0,
                      n_iter_max: int = int(1e6), verbose: bool = False,
-                     check_M: bool = False) -> np.ndarray:
+                     check_M: bool = False, eta=0.01) -> np.ndarray:
     """
     calculating the output y using matrix inversion, based on the input and on
     different the synaptic weights
@@ -117,33 +117,36 @@ def sm_output_online(x: np.ndarray, W: np.ndarray, M: np.ndarray,
 
     elif method == 'GD':
         Wx = W.T.dot(x)
-        eta = 0.01
         # if i make delta larger, y often goes in the wrong direction and
         # diverges
         # y = Wx.copy()
         y2 = np.zeros(len(M), dtype=M.dtype)
         for i in range(n_iter_max):
-            # print(y2)
+            # eta1 = 1000 * eta / (i + 1000)
+            eta1 = eta
+            print(y2)
             y = y2.copy()
-            y2 += eta * (Wx - M.dot(y2))
+            y2 += eta1 * (Wx - M.dot(y2))
             # print(- 4 * (W.T @ y) @ x + 2 * M @ y @ y)
             # -> for checking the convergence, it would make sense that the
             # error is multiplied by the eta
             if test_rtol(y, y2, rtol):
+                # print('iteration ended at', i)
             # if tol_test(y, y2, atol=atol, rtol=rtol):
                 break
 
     elif method == 'GD_NN':
         Wx = W.T @ x
-        eta = 0.01
-        # if i make delta larger, y often goes in the wrong direction and
+         # if i make delta larger, y often goes in the wrong direction and
         # diverges
         # y = Wx.copy()
         y2 = np.zeros(len(M), dtype=M.dtype)
         for i in range(n_iter_max):
+            # eta1 = 1000 * eta / (i + 1000)
+            eta1=eta
             # print(y2)
             y = y2.copy()
-            y2 = FG.rectify(y2 + eta * (Wx - M.dot(y2)))
+            y2 = FG.rectify(y2 + eta1 * (Wx - M.dot(y2)))
             # print(- 4 * (W.T @ y) @ x + 2 * M @ y @ y)
             # -> for checking the convergence, it would make sense that the
             # error is multiplied by the eta
@@ -238,7 +241,7 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
                       method: str = 'inv', NN: bool = False,
                       atol: float = 1e-10, rtol: float = 1e-10,
                       n_iter_max: int = int(1e6), verbose: bool = False,
-                      check_M: bool = False)\
+                      check_M: bool = False, y_factor =1)\
         -> Tuple[np.ndarray, np.ndarray]:
     """
     calculating the output y and z using matrix inversion,
@@ -271,6 +274,9 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
     check_M:
         checks if M is positive definite
 
+    y_factor:
+        faster gradient for y, makes things converge faster
+
     Returns
     -------
     y:
@@ -282,22 +288,44 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
         raise ValueError('Matrix M is not positive definite, thus the circuit '
                          'dynamics will not converge to a stable fix point')
 
-    if method in ['GD', 'GD_NN', 'Jacobi']:
-        # probably a quite conservative estimate for eta
-        est = (np.max([1, np.max(np.abs(Wff))]) *
-               np.max([1, np.max(np.abs(M))]) *
-               np.max([1, np.max(np.abs(x))]))
-        if est < 1.01:
-            est = np.max([np.max(np.abs(Wff.T @ x)),
-                          np.max(np.abs(M @ Wff.T @ x))])
+    if method in ['GD', 'GD_NN']:
+        #  conservative estimate for eta, not used
+        # est = (np.max([1, np.max(np.abs(Wff))]) *
+        #        np.max([1, np.max(np.abs(M))]) *
+        #        np.max([1, np.max(np.abs(x))]))
 
-        print('estimate for 1/eta, which is the step', est)
 
-        # I have been using one or the other of the 2 options below:
-        eta1 = 1. / est
+        x_n = LA.norm(x)
+        W_ff_n = np.max(LA.norm(Wff, axis=1))
+        W_fb_n = np.max(LA.norm(Wfb, axis=1))
+        M_n = np.max(LA.norm(M, axis=1))
+
+        # less conservative estimates, seem to work well
+        z_val1 = rho**2 * W_ff_n * x_n
+        z_val2 = M_n * x_n
+        y_val =  W_fb_n * x_n
+        # print(x_n, z_val1, z_val2, y_val)
+        est_z = np.max([z_val1, z_val2])
+        est_y = np.max([x_n, y_val])
+        # print(est_z, est_y)
+
+        # if est < 10:
+        #     est = np.max([np.max(np.abs(Wff.T @ x)),
+        #                   np.max(np.abs(M @ Wff.T @ x))])
+        #     # est = 10
+
+        if est_y < 10:
+            est_y = 10
+        if est_z < 10:
+            est_z = 10
+
+        # print('estimate for 1/eta, 1/eta_y, 1/eta_z', est, est_y, est_z)
+        print('estimate for  1/eta_y, 1/eta_z', est_y, est_z)
+
+        eta_y = 1/est_y
+        eta_z = 1/est_z
+        # other possibility, set a fix eta
         # eta1 =  0.001  # this usually works, but depends on the dataset
-        # if i make eta larger, y often goes in the wrong direction and
-        # diverges
         # y = Wx.copy()
         y2 = np.zeros(len(x), dtype=M.dtype)
         # y2 = x
@@ -315,62 +343,58 @@ def olf_output_online(x: np.ndarray, Wff: np.ndarray, Wfb: np.ndarray,
 
     elif method == 'GD':
         for i in range(n_iter_max):
-            eta = 1000*eta1 / (i+1000)
-            # if i % 1000 == 0:
-            #     print(y2)
-            #     print(z2)
-            y = y2.copy()
-            z = z2.copy()
-            y2 += eta * (x - y - Wfb.dot(z))
-            z2 += eta * (rho ** 2 * Wff.T.dot(y) - M.dot(z))
-            # TODO: for checking the convergence, it would make sense that the
-            # tol is multiplited by eta
-            if (test_rtol(y, y2, rtol) and (test_rtol(z, z2, rtol))):
-            # if (tol_test(y, y2, atol=atol, rtol=rtol) and
-            #         tol_test(z, z2, atol=atol, rtol=rtol)):
-                # print('converged at ', i)
-                break
-        print('converged at ', i, 'of max', n_iter_max)
-
-    elif method == 'Jacobi':  # does not seem to converge as GD
-        for i in range(n_iter_max):
+            # eta = eta1
             # eta = 1000*eta1 / (i+1000)
-            eta = eta1
-            # if i % 1000 == 0:
-            #     print(y2)
-            #     print(z2)
+
             y = y2.copy()
             z = z2.copy()
-            y2 = (1-eta)*y2 + eta * (x - y - Wfb.dot(z))
-            z2 = (1-eta)*z2 + eta * (rho ** 2 * Wff.T.dot(y) - M.dot(z))
-            # -> for checking the convergence, it would make sense that the
-            # tol is multiplited by eta
+            y2 += y_factor * eta_y * (x - y - Wfb.dot(z))
+            z2 += eta_z * (rho ** 2 * Wff.T.dot(y) - M.dot(z))
+
             if (test_rtol(y, y2, rtol) and (test_rtol(z, z2, rtol))):
             # if (tol_test(y, y2, atol=atol, rtol=rtol) and
             #         tol_test(z, z2, atol=atol, rtol=rtol)):
-                # print('converged at ', i)
                 break
-        print('converged at ', i, 'of max', n_iter_max)
+        print('converged at ', i, 'of max', n_iter_max, 'error y:', np.amax(np.abs(y-y2)),
+              'error z:', np.amax(np.abs(z-z2)))
+
+    # elif method == 'Jacobi':  # does not seem to converge as GD
+    #     for i in range(n_iter_max):
+    #         # eta = 1000*eta1 / (i+1000)
+    #         eta = eta1
+    #
+    #         y = y2.copy()
+    #         z = z2.copy()
+    #         y2 = (1-eta)*y2 + eta * (x - y - Wfb.dot(z))
+    #         z2 = (1-eta)*z2 + eta * (rho ** 2 * Wff.T.dot(y) - M.dot(z))
+    #         # -> for checking the convergence, it would make sense that the
+    #         # tol is multiplited by eta
+    #         if (test_rtol(y, y2, rtol) and (test_rtol(z, z2, rtol))):
+    #         # if (tol_test(y, y2, atol=atol, rtol=rtol) and
+    #         #         tol_test(z, z2, atol=atol, rtol=rtol)):
+    #             # print('converged at ', i)
+    #             break
+    #     print('converged at ', i, 'of max', n_iter_max)
 
     elif method == 'GD_NN':
         for i in range(n_iter_max):
-            eta = 1000*eta1 / (i+1000)
-            # if i % 1000 == 0:
-            #     print(y2)
-            #     print(z2)
+            # eta = 1000*eta1 / (i+1000)
+            # eta = eta1
+            # eta = eta_y
             y = y2.copy()
             z = z2.copy()
-            y2 = FG.rectify(y + eta * (x - y - Wfb.dot(z)))
-            z2 = FG.rectify(z + eta * (rho**2 * Wff.T.dot(y) - M.dot(z)))
+            y2 = FG.rectify(y + y_factor * eta_y * (x - y - Wfb.dot(z)))
+            z2 = FG.rectify(z + eta_z * (rho**2 * Wff.T.dot(y) - M.dot(z)))
             if (test_rtol(y, y2, rtol) and (test_rtol(z, z2, rtol))):
             # if (tol_test(y, y2, atol=atol, rtol=rtol) and
             #         tol_test(z, z2, atol=atol, rtol=rtol)):
                 break
-        print('converged at ', i, 'of max', n_iter_max)
+        print('converged at ', i, 'of max', n_iter_max, 'error y:', np.amax(np.abs(y-y2)),
+              'error z:', np.amax(np.abs(z-z2)))
 
     else:
         raise ValueError(f'circ_alg {method} is not implemented. Use inv, GD'
-                         f'or GD_NN')
+                         f' or GD_NN')
 
     # only relevant for iterative methods, where one can compare y and y2
     # meaning the last 2 steps of the iteration

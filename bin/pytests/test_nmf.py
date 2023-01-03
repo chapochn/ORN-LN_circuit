@@ -5,55 +5,36 @@ Created on July 16, 2019
 
 @author: nchapochnikov
 
-
 testing the offline NMF
+
+ALL TESTS PASS
 """
 import pytest
-import functions.nmf as nmf
-import functions.general as FG
 import numpy as np
 import pandas as pd
 import scipy.linalg as LA
 import itertools as it
-# import importlib
 
-#
-# # %%
-# A = FG.rectify(np.random.rand(25, 200) + 1)
-# n = 3
-# # %%
-# importlib.reload(FG)
-#
-#
-#
-# W, H, err, n_iter = functions.nmf.get_nmf_np(A, n=n)
-# assert err == LA.norm(W @ H - A), 'error'
-# print(err, err/LA.norm(A), n_iter)
-#
-# # %%
-# importlib.reload(FG)
-#
-# W1, H1, err1, init_s = functions.nmf.get_nmf_best_np(A, n=n)
-# print(init_s, err1)
-# assert err1 == LA.norm(W1 @ H1 - A), 'error'
-# assert err1 <= err, f'error {err1} should be smaller than {err}'
-#
-#
-# if __name__ == '__main__':
-#     unittest.main()
-#
+import functions.nmf as nmf
+import functions.general as FG
+
+# We generate matrices A, B and C = A @ B
+# and check that nmf finds A and B from C
 
 
-Ns1 = [1, 2, 4]
-Ns2 = [1, 2, 3, 4, 5]  # when using the random abc
+# number of inner dimensions of matrices A and B
+Ns1 = [1, 2, 4]  # deterministic initialization with np.arange
+Ns2 = [1, 2, 3, 4, 5]  # when using the random abc, random initialization
+# number of outer dimensions of matrices A and B
 n1 = 6
 n2 = 20
 
 
 # #############################################################################
-# ##################  with NP  ################################################
+# ##################  with numpy  #############################################
 # #############################################################################
 
+# generating the matrices
 def get_abc(n):
     print(f'get_abc called with n={n}')
     A = np.arange(0, n1 * n).reshape(n1, n) / n
@@ -68,6 +49,7 @@ def get_abc_rand(n):
     return A, B, A @ B
 
 
+# checking that the shapes match
 @pytest.mark.parametrize("n", Ns1)
 def test_abc(n):
     A, B, C = get_abc(n)
@@ -92,13 +74,13 @@ def get_nmf_in_out(request):
     A1, B1, err, p = get_nmf(C, k=n)
     return C, A1, B1, err, p
 
-
+# checks that error calculation is correct inside get_nmf
 def test_nmf1(get_nmf_in_out):
     C, A_hat, B_hat, err, p = get_nmf_in_out
     print(err, p)
     assert err == LA.norm(A_hat @ B_hat - C)
 
-
+# checks that error is small
 def test_nmf2(get_nmf_in_out):
     C, A_hat, B_hat, err, p = get_nmf_in_out
     assert np.max(np.abs(A_hat @ B_hat - C)) < 1e-3
@@ -114,7 +96,7 @@ def test_nmf_best_3(n):
 
 
 # #############################################################################
-# ##################  with DF  ################################################
+# ##################  same with pd.dataframe  #################################
 # #############################################################################
 
 

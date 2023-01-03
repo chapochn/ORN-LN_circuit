@@ -1,8 +1,17 @@
+"""
+@author: Nikolai M Chapochnikov
+Created in 2021
+Testing the subspc_overlap functions
+
+ALL TESTS PASS
+"""
+
+
 import functions.general as FG
 import numpy as np
 import scipy.linalg as LA
 import pytest
-# import timeit
+
 
 
 NS = [(200, 20, 10), (200, 1, 1), (124, 1, 10), (70, 7, 7)]

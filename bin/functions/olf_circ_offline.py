@@ -410,7 +410,7 @@ def olf_gd_offline2(X: np.ndarray, k: int, rtol: float = 1e-6,
                     max_iter: int = 100000,
                     init: str = 'random', verbose: bool = False,
                     rect: bool=False, alpha: float = 1, cycle: int = 500,
-                    rho: float = 1) -> Tuple[np.ndarray, np.ndarray]:
+                    rho: float = 1, beta=0.1) -> Tuple[np.ndarray, np.ndarray]:
     """
     Gradient descent to calculate the solution of the olfactory
     cost function when it only depends on Z, and where the dependence on
@@ -451,7 +451,6 @@ def olf_gd_offline2(X: np.ndarray, k: int, rtol: float = 1e-6,
     cost1 = cost0
     # print(f'initial reconstruction error {LA.norm(A - Y.T @ Y)}')
     sigma = 0.1
-    beta = 0.1
 
     costs = np.zeros(max_iter)
     for i in range(max_iter):

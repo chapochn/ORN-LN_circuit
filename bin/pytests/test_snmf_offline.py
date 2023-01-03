@@ -1,10 +1,16 @@
 """
+@author: Nikolai M Chapochnikov
+Created in 2022
+
 Testing that the SNMF functions is doing what we want it to do on different
 datasets
 
+ALL TESTS PASS
+if not, need to decrease relative error tolerance
+
 """
 
-
+import pandas as pd
 import numpy as np
 import pytest
 from scipy import linalg as LA
@@ -12,9 +18,8 @@ from scipy import linalg as LA
 import functions.datasets as FD
 from functions import nmf
 from functions.general import rectify
-import pandas as pd
-import functions.olfactory as FO
-import functions.circuit_simulation as FCS
+
+
 
 Ns = [1, 2, 4]
 Ns2 = [1, 4]
@@ -51,7 +56,7 @@ def get_snmf_in_out(request):
     n = request.param
     print('creating snmf_np data')
     input = get_ab_rand(n)
-    output = nmf.get_snmf_best_np(input[0], k=n, max_iter=100000, rtol=1e-7)
+    output = nmf.get_snmf_best_np(input[0], k=n, max_iter=100000, rtol=1e-8)
     return input, output
 
 
@@ -94,6 +99,7 @@ def test_snmf_df1(get_snmf_in_out_df):
 def test_snmf_df2(get_snmf_in_out_df):
     (_, B), (A_hat, err, m) = get_snmf_in_out_df
     print(np.max(np.abs(A_hat.T @ A_hat - B).values))
+    # assert np.max(np.abs(A_hat.T @ A_hat - B).values / (np.abs(B.values)+1e-4)) < 1e-4
     assert np.max(np.abs(A_hat.T @ A_hat - B).values) < 1e-4
 
 # %%

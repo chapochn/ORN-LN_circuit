@@ -5,17 +5,13 @@ Created on Thu Jun 20 22:39:20 2019
 
 @author: nchapochnikov
 
-Here we are testing that the circuit is indeed doing what it is supposed to do
-In particular that it is converging to the theoretical pca solution in the
-linear case
-TODO: nonlinear case?
-"""
+Here we are testing that the linear ORN-LN model circuit is converging to
+the theoretical pca solution in the linear case
 
-import functions.olf_circ_offline as FOC
-import functions.datasets as FD
-import functions.general as FG
-from functions import nmf
-import sklearn.decomposition as skd
+
+
+ALL TESTS PASS
+"""
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -26,6 +22,10 @@ import collections
 import pytest
 from typing import Dict
 from joblib import Parallel, delayed
+
+import functions.olf_circ_offline as FOC
+import functions.datasets as FD
+import functions.general as FG
 
 
 # %%
@@ -39,7 +39,7 @@ K = 7
 list_ds = [('SC', K), ('clus1', K), ('clus2', K), ('olf', 1), ('olf', 2),
            ('olf', 3), ('olf', 4), ('olf', 5), ('olf', 6)]
 # list_ds = [('SC', K)]
-list_ds = [('olf', 1)]
+# list_ds = [('olf', 1)]
 
 GAMMA = 0.8
 GAMMA = 1.2
@@ -47,12 +47,14 @@ GAMMA = 1.
 
 # list_ds = [('SC', K)]
 
+# generates dataset
 @pytest.fixture(scope='module')
 def create_datasets():
     datasets = FD.create_datasets(D, 1000, K, options={'a': .5, 'b': 2},
                                   rho1=0.1, rho2=0.1)
     return datasets
 
+# gets the theoretical results for each dataset by calculating the SVD
 @pytest.fixture(scope='module')
 def get_res_th(create_datasets):  # theoretical results
     res_svd_off: Dict[str, Dict[int, Dict[str, np.ndarray]]] = \
@@ -72,7 +74,7 @@ def get_res_th(create_datasets):  # theoretical results
 
     return res_svd_off
 
-
+# this simulation uses the full optimization problem in Y and Z
 def simulate1(name, K, ds):
     X = ds['ds']  # the data
     D, N = X.shape
@@ -81,8 +83,8 @@ def simulate1(name, K, ds):
 
     time_1 = time.time()
     Y, Z, costs = FOC.olf_gd_offline(X, K, max_iter=10000, rectY=rect,
-                                     rectZ=rect, alpha=100, rtol=1e-7,
-                                     gamma=GAMMA)  # rho is 1 i suppose
+                                     rectZ=rect, alpha=50, rtol=1e-7,
+                                     gamma=GAMMA, beta=0.5, cycle=1000)  # rho is 1 i suppose
     time_2 = time.time() - time_1
     message += f'Elapsed time: {time_2}\n'
 
@@ -92,7 +94,8 @@ def simulate1(name, K, ds):
     # plt.show()
     return name, K, Y, Z
 
-
+# this simulation uses the optimization problem in Z only.
+# and then calculates Y analytically from Z
 def simulate2(name, K, ds):
     X = ds['ds']  # the data
     D, N = X.shape
@@ -100,10 +103,9 @@ def simulate2(name, K, ds):
     rect = False
 
     time_1 = time.time()
-    alpha=1
 
-    Z, costs = FOC.olf_gd_offline2(X, K, max_iter=1000, rect=rect,
-                                   alpha=alpha)
+    Z, costs = FOC.olf_gd_offline2(X, K, max_iter=10000, rect=rect,
+                                   alpha=10, beta=0.5, cycle=1000)
     time_2 = time.time() - time_1
     message += f'Elapsed time: {time_2}\n'
     Y = X @ LA.inv(Z.T @ Z / N + np.eye(N))
@@ -115,8 +117,10 @@ def simulate2(name, K, ds):
     return name, K, Y, Z
 
 
-# @pytest.fixture(scope='module', params=[simulate1, simulate2])
-@pytest.fixture(scope='module', params=[simulate1])
+# uses simulate1 and/or simulate2 to get Y and Z for different name (dataset)
+# and K, number of LNs
+@pytest.fixture(scope='module', params=[simulate1, simulate2])
+# @pytest.fixture(scope='module', params=[simulate1])
 def get_res_off(create_datasets, request):
     simulate = request.param
     dss = create_datasets
@@ -126,7 +130,7 @@ def get_res_off(create_datasets, request):
         res_on[res[0]][res[1]] = (res[2], res[3])
     return res_on
 
-
+# compares with the analytical results
 @pytest.mark.parametrize("ds", list_ds)
 def test_offline_simul(create_datasets, get_res_th, get_res_off, ds):
     name, k = ds
@@ -180,16 +184,13 @@ def test_offline_simul(create_datasets, get_res_th, get_res_off, ds):
     assert Y_overlap < 5e-3
     assert diff < 0.07
 
-# it could make sense to actually have the results per dataset instead of
-# of the global constrains
-
 # # %%
+# code related to seeing the evolution of the results
 # for name, k in list_ds:
 #     ds = datasets[name]
 #     X = ds['ds']  # the data
 #     Z_off = res_svd_off[name][k]['Z']
 #     sm, mon = results[name][k]
 #     FCS.display_sm_results(sm, X, Z_off, mon, plot=True, name=f'{name}_{k}')
-# basically, as "result" is that all of the above examples should "converge"
-# apart from the olf3 and olf6
+
 
