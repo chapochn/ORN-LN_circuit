@@ -247,5 +247,6 @@ def create_clusters_data(D=21, n=100, K=2, dx=0.5, scale=0.1, x_max=1):
         cls[i] = np.random.normal(size=[D, ns[i]], scale=scale) \
                  + ctr[:, np.newaxis]
 
-    X = np.abs(np.concatenate(list(cls.values()), axis=1))
+    X = np.concatenate(list(cls.values()), axis=1)
+    X = np.abs(X)
     return X

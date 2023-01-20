@@ -339,7 +339,7 @@ act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
 ax, ax2, lns = FP.plot_line_2yax(ax, con_w.values, act_vect.values,
                                  None, None, ORN_list, 'ORNs',
                                  c1=c1, c2=c2, m1=',', m2=',',
-                                 label1='\# of syn. ORNs$\rightarrow$BT',
+                                 label1=r'\# of syn. ORNs$\rightarrow$BT',
                                  label2='ORN $\Delta F/F_0$')
 # ax.set_xticks(np.arange(len(ORN_list)))
 # ax.set_xticklabels(ORN_list, rotation=70, ha='right')
