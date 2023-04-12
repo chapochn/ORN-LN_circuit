@@ -69,8 +69,8 @@ for rho in rhos_sel:
     ax.plot(x, FOC.damp_sx(x, 1, rho=rho), c=rhos[rho])
     ax.text(6.2, FOC.damp_sx(6, 1, rho=rho), rho)
 ax.text(6.2, 6.8, r'$\rho:$')
-ax.set(ylabel=r'axon, PCA s.d. ($\sigma_Y$)',
-       xlabel=r'soma, PCA s.d. ($\sigma_X$)',
+ax.set(ylabel=r'axon, PCA SD ($\sigma_Y$)',
+       xlabel=r'soma, PCA SD ($\sigma_X$)',
        xticks=[0, 3, 6], yticks=[0, 3, 6])
 
 file = f'{PP_THEORY_NOM}/sy_sx.'
@@ -101,8 +101,8 @@ x = np.logspace(-0.8, 0.9, 100)
 ax.loglog(x, 10*x, ls='--', lw=1, c='k')
 ax.text(1, 12, r'$\sigma_Y\propto \sigma_X$', ha='right', va='bottom')
 
-ax.set(ylabel=r'axon, PCA s.d. ($\sigma_Y$)',
-       xlabel=r'soma, PCA s.d. ($\sigma_X$)',
+ax.set(ylabel=r'axon, PCA SD ($\sigma_Y$)',
+       xlabel=r'soma, PCA SD ($\sigma_X$)',
        xticks=[0.1, 1, 10, 100], yticks=[0.1, 1, 10, 100],
        xticklabels=[0.1, 1, 10, 100],
        yticklabels=[0.1, 1, 10, 100])
@@ -188,10 +188,11 @@ for data, label in [(X, 'X'), (Z_NNC, 'NNC'), (Z_LC, 'LC')]:
         title = f'     {labels[label]}, LN activity {Ztex}'
 
     if label == 'NNC':
-        xlabel = f'samples (T={N})'
+        xlabel = f'sample (T={N})'
         pad_down = 0.2
     else:
         xlabel = ''
+        pad_down = 0.1
         pad_down = 0.1
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
                                      cb_ticks, pads=[pad_l, pad_r, pad_down, pad_up],

@@ -82,7 +82,7 @@ f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks
                                  squeeze=0.5)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
-       ylabel='ORNs', xlabel='odors at different dilutions')
+       ylabel='ORN', xlabel='stimulus (odor, dilution)')
 
 file = f'{PP_ACT}/ORN_act.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -92,7 +92,7 @@ f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
                                  cb_ticks, cb_title_font=cb_title_font,
                                  squeeze=0.5)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
-ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
+ax.set(xticks=[], ylabel='ORN', xlabel='stimulus (odor, dilution)')
 
 file = f'{PP_ACT}/ORN_act_nolabels.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -125,7 +125,7 @@ cb_ticks = [0, 0.5, 1]
 f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
                                  extend='neither', cb_title_font=cb_title_font,
                                  squeeze=0.5)
-ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
+ax.set(xticks=[], ylabel='ORN', xlabel='stimulus (odor, dilution)')
 
 file = f'{PP_ACT}/ORN_act_scaled_max.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -173,7 +173,7 @@ df = SVD['U'].loc[ORN_order, 1:5]
 ORN_list = [name[4:] for name in df.index]
 df.index = ORN_list
 # act_sel.columns.name = 'odors'
-df.index.name = 'ORNs'
+df.index.name = 'ORN'
 df.columns.name = 'loading vector'
 _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
 f = plt.figure(figsize=fs)
@@ -260,7 +260,7 @@ for k in [4, 5]:
     ORN_list = [name[4:] for name in df.index]
     df.index = ORN_list
     # act_sel.columns.name = 'odors'
-    df.index.name = 'ORNs'
+    df.index.name = 'ORN'
     df.columns.name = r'$\mathbf{w}_k$'
     _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
     f = plt.figure(figsize=fs)
@@ -337,9 +337,9 @@ ax = f.add_axes(axs)
 odor = odors[i]
 act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
 ax, ax2, lns = FP.plot_line_2yax(ax, con_w.values, act_vect.values,
-                                 None, None, ORN_list, 'ORNs',
+                                 None, None, ORN_list, 'ORN',
                                  c1=c1, c2=c2, m1=',', m2=',',
-                                 label1=r'\# of syn. ORNs$\rightarrow$BT',
+                                 label1=r'\# of syn. ORN$\rightarrow$BT',
                                  label2='ORN $\Delta F/F_0$')
 # ax.set_xticks(np.arange(len(ORN_list)))
 # ax.set_xticklabels(ORN_list, rotation=70, ha='right')
@@ -462,7 +462,7 @@ def plot_2lines(LN, LN_label, vect, vect_label, ylims,
     c2 = 'g'
 
     ax, ax2, lns = FP.plot_line_2yax(ax, con_w.values, vect.values,
-                                     None, None, ORN_list, 'ORNs',
+                                     None, None, ORN_list, 'ORN',
                                      c1=c1, c2=c2, m1=',', m2=',')
     ax2.set_ylim(ylim2)
     ax2.set_xlim((-1, 21))
@@ -611,7 +611,7 @@ ax = f.add_axes(axs)
 cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
                   splits_y=sply, aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
-       xlabel=f'ORN activation patterns {Xttex} to odors at different dilutions',
+       xlabel=f'ORN activation pattern {Xttex} in response to a stimulus (odor, dilution)',
        ylabel=wLNtex)
 for (y, x) in np.argwhere(pvals.values < 0.05):
     highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
@@ -625,9 +625,9 @@ for (y, x) in np.argwhere(pvals_fdr.values < 0.05):
 # X, Y = np.meshgrid(x_lin, y_lin)
 # ax.contour(X, Y, pvals, [0.05])
 
-plt.title(f'Correlation between ORN activity patterns {Xttex} '
-          r'and ORNs$\rightarrow$LN connection weight vectors '
-          r'$\mathbf{w}_{\mathrm{LN}}$')
+plt.title(f'Correlation between ORN activity patterns {Xdatatex} '
+          r'and ORNs$\rightarrow$LN synaptic count vectors '
+          r'$\{\mathbf{w}_{\mathrm{LN}}\}$')
 
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
@@ -671,7 +671,7 @@ ax = f.add_axes(axs)
 cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
                   aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=[])
-ax.set_xlabel(f'ORN activation patterns {Xttex} to odors at different dilutions')
+ax.set_xlabel(f'ORN activation pattern {Xttex} in response to a stimulus (odor, dilution)')
 ax.set_ylabel(wLNtypetex)
 # ax.set_ylabel('from\nORNs\nto', rotation=0, fontsize=ft_s_tk, labelpad=3,
 #               va='center', ha='right')
@@ -686,8 +686,8 @@ for (y, x) in np.argwhere(pvals.loc[LNs_MM].values < 0.05):
 for (y, x) in np.argwhere(pvals_fdr.loc[LNs_MM].values < 0.05):
     highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
 
-plt.title(f'Correlation between ORN activity patterns {Xttex}'
-          r' and ORNs$\rightarrow$LN conn. weight vectors '+ f'{wLNtypetex}')
+plt.title(f'Correlation between ORN activity patterns {Xdatatex}'
+          r' and ORNs$\rightarrow$LN synaptic count vectors \{'+ f'{wLNtypetex}' + '\}')
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
 
@@ -736,7 +736,7 @@ ax.set_xlim(-5, 170)
 ax.set_yticks([-0.5, 0, 0.5])
 ax.set_xticks([0, 50, 100, 150])
 ax.set_ylabel(r'corr. coef. $r$')
-ax.set_xlabel('ordered stimuli')
+ax.set_xlabel('ordered stimulus')
 
 
 file = f'{PP_ODOR_CON}/LN_tuning_curves.'
@@ -811,7 +811,7 @@ ax = f.add_axes(axs)
 cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
                   aspect='auto', splits_c='gray', lw=0.5)
 ax.set(xticks=[],
-       xlabel=f'ORN activation patterns {Xttex} to odors at different dilutions',
+       xlabel=f'ORN activation pattern {Xttex} in response to a stimulus (odor, dilution)',
        ylabel='$\mathbf{w}_k$')
 for (y, x) in np.argwhere(pvals.values < 0.05):
     highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
@@ -825,9 +825,9 @@ for (y, x) in np.argwhere(pvals_fdr.values < 0.05):
 # X, Y = np.meshgrid(x_lin, y_lin)
 # ax.contour(X, Y, pvals, [0.05])
 
-plt.title(f'Correlation between ORN activity patterns {Xttex} '
-          r'and ORNs$\rightarrow$LN connection weight vectors '
-          r'$\mathbf{w}_k$ from NNC-4')
+plt.title(f'Correlation between ORN activity patterns {Xdatatex} '
+          r'and ORNs$\rightarrow$LN connection weight vectors \{'
+          r'$\mathbf{w}_k$\} from NNC-4')
 
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
@@ -1127,7 +1127,7 @@ idy[1] = [(pps, f'NNC_{NNC_n}', i) for i in order_LN[NNC_n]]
 NNC_n = 5
 idy[2] = [(pps, f'NNC_{NNC_n}', i) for i in order_LN[NNC_n]]
 
-ylabel = [f'PCA directions\nof {Xdatatex}',
+ylabel = [f'PCA direction\nof {Xdatatex}',
           'NNC-4, $\mathbf{w}_k$',
           'NNC-5, $\mathbf{w}_k$']
 

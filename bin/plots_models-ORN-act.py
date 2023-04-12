@@ -35,8 +35,8 @@ importlib.reload(FCS)
 importlib.reload(par_act)
 #%%
 # ###################### IMPORTANT VARIABLE #################################
-# SCAL_W = 10  # in the paper for supplementary materials
-SCAL_W = 2  # in the paper for the main results
+SCAL_W = 10  # in the paper for supplementary materials
+# SCAL_W = 2  # in the paper for the main results
 # SCAL_W = 0.35
 
 # %%
@@ -69,6 +69,28 @@ odor_order = par_act.odor_order
 ORN_order = par_act.ORN_order
 DATASET = 3
 
+
+# also importing results from simulation with synaptic weights
+# proportional to the synaptic count of the coonectime
+Y_real = {}
+Z_real = {}
+for side in ['L', 'R']:
+    file = RESULTS_PATH / 'sims_real-synaptic-counts'/ f'Y_{side}.h5'
+    Y_real[side] = pd.DataFrame(pd.read_hdf(file))
+    file = RESULTS_PATH / 'sims_real-synaptic-counts'/ f'Z_{side}.h5'
+    Z_real[side] = pd.DataFrame(pd.read_hdf(file))
+Y_real = (Y_real['L'] + Y_real['R'])/2
+# Z = Z1['L'].copy()
+LN_names = ['BT 1', 'BT 2', 'BT 3', 'BD 1', 'BD 2', 'KS L', 'KS R', 'P0']
+print(np.array([Z_real['L'].index.values, Z_real['R'].index.values, LN_names]).T)
+# LN_names = [n[:-2] for n in Z_real['L'].index]
+# LN_names[-1] = 'Picky 0'
+# Z[:] = (Z1['L'].values + Z1['R'].values)/2
+Z_real['L'].index = LN_names
+Z_real['R'].index = LN_names
+
+
+
 # sf = 'CS'
 # def sim_func(X):
 #     if isinstance(X, pd.DataFrame):
@@ -97,12 +119,9 @@ def order_act_df(X):
     return X.loc[:, idx]
 
 def get_important_data(Y, Z):
-    # problem seems to be here already
     Y = order_act_df(Y.loc[ORN_order])
-    # Y_sel = Y.xs(conc_sel, axis=1, level='conc').copy()
     Y_sel = Y.loc[:, (slice(None), conc_sel)].copy()
     Z = order_act_df(Z)
-    # Z_sel = Z.xs(conc_sel, axis=1, level='conc').copy()
     Z_sel = Z.loc[:, (slice(None), conc_sel)].copy()
     W = Y @ Z.T / N
     M = Z @ Z.T / N
@@ -278,6 +297,11 @@ for k in range(1, 9):
     res = get_cc_data(Y_nnc_noM[k], Y_nnc_noM_sel[k])
     Y_nnc_noM_cc_c[k], Y_nnc_noM_cc_p[k], Y_nnc_noM_cc_p_sel[k], _ = res
 
+# for the "real" circuit
+Y_real, Y_real_sel, Z_real['L'], _, _, _ = get_important_data(Y_real, Z_real['L'])
+Y_real, Y_real_sel, Z_real['R'], _, _, _ = get_important_data(Y_real, Z_real['R'])
+
+Y_r_cc_c, Y_r_cc_p, Y_r_cc_p_sel, _ = get_cc_data(Y_real, Y_real_sel)
 
 # c_nn1 = 'darkred'
 # c_nn1 = 'saddlebrown'
@@ -286,6 +310,8 @@ c_nn2 = 'tomato'
 # c_nn2 = 'coral'
 c_l1 = 'blueviolet'
 c_l2 = 'dodgerblue'
+
+c_real = 'green'
 
 # ideally the results of noM should be saved, so that they are not
 # calculated each time, which makes you have to redo all the plots again
@@ -327,9 +353,9 @@ def plot_XYtrans(data):
     toplot = np.abs(U.T @ U_X)  # taking the absolute value since
     # singular values are defined up to a sign
 
-    pads = (0.35, 0.1, 0.3, 0.2)
+    pads = (0.3, 0.05, 0.25, 0.2)
     if cond:
-        pads = (0.35, 0.4, 0.3, 0.2)
+        pads = (0.3, 0.3, 0.25, 0.2)
     fs, axs = FP.calc_fs_ax(pads, gw=SQ * 15, gh=SQ * 15)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
@@ -371,8 +397,9 @@ datas = [[X, Y_lc[k1], f'LC-{k1}' + title, f'X-YLC{k1}', False],
          [X, Y_lc[k2], f'LC-{k2}' + title, f'X-YLC{k2}', False],
          [X, Y_lc_noM[k2], f"LC'-{k2}" + title, f'X-YLCnoM{k2}', False],
          [X, Y_nnc[k1], f"NNC-{k1}" + title, f'X-YNNC{k1}', False],
-         [X, Y_nnc[k2], f"NNC-{k2}" + title, f'X-YNNC{k2}', True],
-         [X, Y_nnc_noM[k2], f"NNC'-{k2}" + title, f'X-YNNCnoM{k2}', True]]
+         [X, Y_nnc[k2], f"NNC-{k2}" + title, f'X-YNNC{k2}', False],
+         [X, Y_nnc_noM[k2], f"NNC'-{k2}" + title, f'X-YNNCnoM{k2}', True],
+         [X, Y_real, 'NNC-conn' + title, 'X-Yreal', True]]
 
 if SCAL_W == 2:
     for data in datas:
@@ -484,7 +511,7 @@ def plot_XYcrosscorr_diag(data):
     colors = data[2]
     ls = data[3]
     labels = data[4]
-    title = data[5]
+    # title = data[5]
     name = data[6]
 
     pads = (0.4, 0.1, 0.2, 0.2)
@@ -494,7 +521,7 @@ def plot_XYcrosscorr_diag(data):
     ax = f.add_axes(axs)
     for i in range(len(data[1])):
         ax.plot(data[1][i], c=colors[i], ls=ls[i], label=labels[i])
-    ax.set_xlabel('ORNs')
+    ax.set_xlabel('ORN')
     ax.set_ylabel(r'corr. coef. $r$')
     ax.set_yticks([0.8, 0.9, 1])
     ax.set_xticks(np.arange(data[0].shape[1]), [])
@@ -519,20 +546,18 @@ title = r', corr($\mathbf{X}$, $\mathbf{Y}$)'
 #           ['-', '-', '--'], [f'NNC-{k1}', f'NNC-{k2}', f"NNC'-{k2}"],
 #           title + f", NNC-{k1}", f'X-YNNC']]
 datas = [[X, [Y_lc[k2], Y_lc_noM[k2]], [c_l2, c_l2],
-          ['-', '--'], [f'LC-{k2}', f"LC'-{k2}"],
-          f'LC-{k1}' + title, f'X-YLC'],
+          ['-', '--'], [f'LC-{k2}', f"LC'-{k2}"], '', f'X-YLC'],
          [X, [Y_nnc[k2], Y_nnc_noM[k2]], [c_nn2, c_nn2],
-          ['-', '--'], [f'NNC-{k2}', f"NNC'-{k2}"],
-          f", NNC-{k1}" + title, f'X-YNNC']]
+          ['-', '--'], [f'NNC-{k2}', f"NNC'-{k2}"], '', f'X-YNNC'],
+         [X, [Y_real], [c_real], ['-'], ['real'], '', f'X-Yreal']]
 
 if SCAL_W == 2:
     for data in datas:
         plot_XYcrosscorr_diag(data)
 
-
 print('done')
 # %%
-# ################## activity plots for different dampening  ##################
+# ############# ORN soma/axon activity plots in different models  #############
 
 
 # datas = [['X', X_sel.copy(), False, False, True,
@@ -552,13 +577,22 @@ print('done')
 
 
 datas = [['X', X.copy(), False, False, True,
-          7, f'ORN soma activity {Xdatatex}',
+          7, f'ORN soma activity patterns {Xdatatex}',
           [-2, 0, 2, 4, 6]],
-         ['LC8', Y_lc[8].copy(), False, False, True, 4,
-          f'LC-8, ORN axon activity {Ytex}',
+         ['LC1', Y_lc[1].copy(), False, False, True, 5,
+          f'LC-1, ORN axon activity patterns {Ytex}',
           [-2, 0, 2, 4]],
-         ['NNC8', Y_nnc[8].copy(), False, False, True, 4,
-          f'NNC-8, ORN axon activity {Ytex}',
+         ['LC8', Y_lc[8].copy(), False, False, True, 5,
+          f'LC-8, ORN axon activity patterns {Ytex}',
+          [-2, 0, 2, 4]],
+         ['NNC1', Y_nnc[1].copy(), False, False, True, 5,
+          f'NNC-1, ORN axon activity patterns {Ytex}',
+          [-2, 0, 2, 4]],
+         ['NNC8', Y_nnc[8].copy(), False, False, True, 5,
+          f'NNC-8, ORN axon activity patterns {Ytex}',
+          [-2, 0, 2, 4]],
+         ['real', Y_real.copy(), False, False, True, 5,
+          f'NNC-8-connectome, ORN axon activity patterns {Ytex}',
           [-2, 0, 2, 4]]
          #         ['LC-noM8', Y_lc_noM_sel[8].copy(), False, False, True, 4,
          #          f"LC'-8, output activity {Ytex}"],
@@ -590,7 +624,7 @@ for data in datas:
     cb_ticks = data[7]
 
     act_map, divnorm = FP.get_div_color_map(cb_ticks[0], cb_ticks[0], v_max)
-
+    print('plotting', name)
     # preparing the data:
     act_sel = act_sel.loc[ORN_order, odor_order]
     print('min', np.min(act_sel.values))
@@ -618,10 +652,10 @@ for data in datas:
                       title=title, show_lab_x=show_x, cmap=act_map,
                       splits_x=splx, splits_c='gray', lw=0.5,
                       **{'norm': divnorm}, )
-    ax.set_xlabel('stimuli')#, labelpad=0)
+    ax.set_xlabel('stimulus')#, labelpad=0)
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
-    ax.set_ylabel('ORNs')#, labelpad=0)
+    ax.set_ylabel('ORN')#, labelpad=0)
     print('figure size:', fs)
 
     if cb:
@@ -656,20 +690,28 @@ print('done')
 
 
 if SCAL_W == 2:
-    datas = [['NNC8LN', Z_nnc[8].copy().loc[LN_order[8]], False, False, True, 8,
-              f'NNC-8, LN activity {Ztex}', [0, 4, 8]],
+    datas = [['LC8LN', Z_lc2[8].copy(), False, False, True, 4,
+              f'LC-8, LN activity patterns {Ztex}', [-4, 0, 4]],
+             ['NNC8LN', Z_nnc[8].copy().loc[LN_order[8]], False, False, True, 8,
+              f'NNC-8, LN activity patterns {Ztex}', [0, 4, 8]],
              ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 8,
-              f'NNC-4, LN activity {Ztex}', [0, 8]],
+              f'NNC-4, LN activity patterns {Ztex}', [0, 8]],
+             ['NNC1LN', Z_nnc[1].copy(), False, False, True, 8,
+              r'NNC-1, LN activity $\{z^{(t)}\}$', [0, 8]],
              ['NNC8LN_noM', Z_nnc_noM[8].copy().loc[LN_order[8]], False, False, True, 8,
-              f"NNC'-8, LN activity {Ztex}", [0, 4, 8]],
+              f"NNC'-8, LN activity patterns {Ztex}", [0, 4, 8]],
              ['NNC4LN_noM', Z_nnc_noM[4].copy().loc[LN_order[4]], False, False, True, 8,
-              f"NNC'-4, LN activity {Ztex}", [0, 8]]
+              f"NNC'-4, LN activity patterns {Ztex}", [0, 8]],
+             ['realLN-L', Z_real['L'].copy(), False, True, True, 8,
+              f'NNC-8-connectome (left), LN activity patterns {Ztex}', [0, 4, 8]],
+             ['realLN-R', Z_real['R'].copy(), False, True, True, 8,
+              f'NNC-8-connectome (right), LN activity patterns {Ztex}', [0, 4, 8]]
              ]
 elif SCAL_W ==10:
     datas = [['NNC8LN', Z_nnc[8].copy().loc[LN_order[8]], False, False, True, 16,
-              f'NNC-8, LN activity {Ztex}', [0, 8, 16]],
+              f'NNC-8, LN activity patterns {Ztex}', [0, 8, 16]],
              ['NNC4LN', Z_nnc[4].copy().loc[LN_order[4]], False, False, True, 16,
-              f'NNC-4, LN activity {Ztex}', [0, 16]]
+              f'NNC-4, LN activity patterns {Ztex}', [0, 16]]
              ]
 pads = [0.2, 0.4, 0.15, 0.2]
 for data in datas:
@@ -685,7 +727,15 @@ for data in datas:
     divnorm = mpl.colors.Normalize(0, v_max)
     # divnorm = None
     act_map = 'Oranges'
+    extend = 'max'
+    if 'LC' in name:
+        vmin_col = -v_max
+        vmin_to_show = -v_max
+        act_map, divnorm = FP.get_div_color_map(vmin_col, vmin_to_show, v_max)
+        extend = 'neither'
+        act_sel.iloc[0, :] = -act_sel.iloc[0, :].values
 
+    print('plotting', name)
     print('min', np.min(act_sel.values))
     print('max', np.max(act_sel.values))
     # removing 'ORN' from the cell names
@@ -711,17 +761,22 @@ for data in datas:
                       title=title, show_lab_x=show_x, cmap=act_map,
                       splits_x=splx, splits_c='gray', lw=0.5,
                       **{'norm': divnorm})
-    ax.set_xlabel('stimuli')
+
+    if 'real' in name:
+        ax.set_yticks([1, 3.5, 5.5, 7.5], ['BT', 'BD', 'KS', 'P0'])
+        FP.add_y_splits(ax, [3, 5, 7], df.shape[1], c='black', lw=0.25)
+
+    ax.set_xlabel('stimulus')
     # if ds == 'X':
     #     ax.set_ylabel('ORNs')
-    ax.set_ylabel('LNs')
+    ax.set_ylabel('LN')
     print('figure size:', fs)
 
     if cb:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
                             CB_W / fs[0], axs[3]])
         clb = add_colorbar_crt(cp, ax_cb, 'a.u.', cb_ticks,
-                               extend='max')
+                               extend=extend)
         # clb = add_colorbar_crt(cp, ax_cb, r'$\Delta F/F$', [-2, 0, 2, 4, 6])
         # clb.ax.set_yticklabels(['0', '2', '4', '6'])
 
@@ -763,11 +818,10 @@ for K in [1, 2, 3, 4, 8]:
     # divnorm = None
     act_map = 'Oranges'
 
-    title = f'NNC-{K}, LNs activity {Ztex}'
-    ylabel = 'LNs'
+    title = f'NNC-{K}, LN activity patterns {Ztex}'
+    ylabel = 'LN'
     if K ==1:
         title = f'NNC-{K}, ' + r'LN activity $\{z^{(t)}\}$'
-        ylabel = 'LN'
     cb_ticks = [0, vmax]
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
                                      extend='neither', cb_title_font=cb_title_font,
@@ -796,12 +850,12 @@ for K in [1, 8]:
     # divnorm = None
     # act_map = 'Oranges'
 
-    title = f'LC-{K}, LNs activity {Ztex}'
+    title = f'LC-{K}, LN activity patterns {Ztex}'
     cb_ticks = [-vmax, 0, vmax]
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, 'a.u.', cb_ticks,
                                      extend='neither', cb_title_font=cb_title_font,
                                      squeeze=0.5)
-    ax.set(xticks=[], yticks=[], ylabel='LNs', xlabel='')
+    ax.set(xticks=[], yticks=[], ylabel='LN', xlabel='')
 
     file_name = f'{PP_Z}/ORN_act-{pps}_conc-all_{name}'
     FP.save_plot(f, f'{file_name}.png', SAVE_PLOTS, **png_opts)
@@ -824,6 +878,7 @@ Nl2M = f"NNC'-{k2}" + Y_str
 Ll1 = f'LC-{k1}' + Y_str
 Ll2 = f'LC-{k2}' + Y_str
 Ll2M = f"LC'-{k2}" + Y_str
+Nreal = f'NNC-conn' + Y_str
 
 # now plotting the variances of the uncentered PCA instead of singular values
 def plot_sv1(datas, order=None):
@@ -890,6 +945,44 @@ f = plot_sv1(datas, [0, 3, 4, 1, 2])
 file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-{k1}-{k2}_S_orderedbyX'
 FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_lc[k1], '+-', 1, 5, c_l1, Ll1, 0.5],
+         [Y_lc[k2], '+--', 1, 5, c_l2, Ll2, 0.5]]
+
+f = plot_sv1(datas, [0, 1, 2])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-{k1}-{k2}_S_orderedbyX'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_nnc[k1], 's-', 1, 2, c_nn1, Nl1, 0],
+         [Y_nnc[k2], 's--', 1, 2, c_nn2, Nl2, 0]]
+
+f = plot_sv1(datas, [0, 1, 2])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_NNC-{k1}-{k2}_S_orderedbyX'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_real, 's-', 1, 2, c_real, Nreal, 0]]
+f = plot_sv1(datas, [0, 1])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_real_S_orderedbyX'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_lc[k2], '+-', 1, 5, c_l2, Ll2, 0.5],
+         [Y_nnc[k2], 's--', 1, 2, c_nn2, Nl2, 0],
+         [Y_real, 'o:', 1, 2, c_real, Nreal, 0]]
+
+f = plot_sv1(datas, [0, 1, 2, 3])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-{k2}-real_S_orderedbyX'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+
 # ax.set_ylim(0, None)
 datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
          # [Y_nnc_noM[k1], 's-', 1, 2, c_nn1, Nl1, 0],
@@ -917,6 +1010,7 @@ Nl2M = f"NNC'-{k2}" + Y_str
 Ll1 = f'LC-{k1}' + Y_str
 Ll2 = f'LC-{k2}' + Y_str
 Ll2M = f"LC'-{k2}" + Y_str
+Nreal = f'NNC-conn' + Y_str
 
 
 def plot_cov_ev2(datas, order=None):
@@ -968,18 +1062,51 @@ datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
          [Y_nnc[k2], 's--', 1, 2, c_nn2, Nl2, 0],
          [Y_lc[k1], '+-', 1, 5, c_l1, Ll1, 0.5],
          [Y_lc[k2], '+--', 1, 5, c_l2, Ll2, 0.5]]
-
 f = plot_cov_ev2(datas, [0, 3, 4, 1, 2])
 file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-{k1}-{k2}_cov-ev_div-mean'
 FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_lc[k1], '+-', 1, 5, c_l1, Ll1, 0.5],
+         [Y_lc[k2], '+--', 1, 5, c_l2, Ll2, 0.5]]
+f = plot_cov_ev2(datas, [0, 1, 2])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-{k1}-{k2}_cov-ev_div-mean'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_nnc[k1], 's-', 1, 2, c_nn1, Nl1, 0],
+         [Y_nnc[k2], 's--', 1, 2, c_nn2, Nl2, 0]]
+f = plot_cov_ev2(datas, [0, 1, 2])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_NNC-{k1}-{k2}_cov-ev_div-mean'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_real, 's-', 1, 2, c_real, Nreal, 0]]
+f = plot_cov_ev2(datas, [0, 1])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_real_cov-ev_div-mean'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
+         [Y_lc[k2], '+-', 1, 5, c_l2, Ll2, 0.5],
+         [Y_nnc[k2], 's--', 1, 2, c_nn2, Nl2, 0],
+         [Y_real, 'o:', 1, 2, c_real, Nreal, 0]]
+f = plot_cov_ev2(datas, [0, 1, 2, 3])
+file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-{k2}-real_cov-ev_div-mean'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+
 # ax.set_ylim(0, None)
 datas = [[X.values, '.-', 1.5, 3, 'k', Xtstex, None],
          # [Y_nnc_noM[k1], 's-', 1, 2, c_nn1, Nl1, 0],
          [Y_nnc_noM[k2], 's--', 1, 2, c_nn2, Nl2M, 0],
          # [Y_lc_noM[k1], '+-', 1, 5, c_l1, Ll1, 0.5],
          [Y_lc_noM[k2], '+--', 1, 5, c_l2, Ll2M, 0.5]]
-
 f = plot_cov_ev2(datas, [0, 2, 1])
 file = f'{PP_WHITE}/ORN_act-{pps}_X_LC-NNC-noM-{k1}-{k2}_cov-ev_div-mean'
 FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
@@ -1047,10 +1174,12 @@ def scatter_norm_plot(datas, axis, xmax, ticks, xlab, ylab, do_fit=False,
 
 s1 = 5
 s2 = 2
+s3 = 8
 lw1 = 0.5
 lw2 = 0
 m1 = '+'
 m2 = 's'
+m3 = '.'
 
 Nl1 = f'NNC-{k1}'
 Nl2 = f'NNC-{k2}'
@@ -1058,6 +1187,8 @@ Ll1 = f'LC-{k1}'
 Ll2 = f'LC-{k2}'
 Nl2M = f"NNC'-{k2}"
 Ll2M = f"LC'-{k2}"
+Nreal = 'NNC-conn'
+
 print('done')
 # %%
 # #############################################################################
@@ -1078,14 +1209,44 @@ a1 = 0.8
 a2 = 0.5
 a3 = 1
 
+factor = 2
 
-datas = [[X, Y_lc[k1], Ll1, s1, m1, c_l1, lw1, a1, a2, a3],
-         [X, Y_lc[k2], Ll2, s1, m1, c_l2, lw1, a1, a2, a3],
-         [X, Y_nnc[k1], Nl1, s2, m2, c_nn1, lw2, a1, a2, a3],
-         [X, Y_nnc[k2], Nl2, s2, m2, c_nn2, lw2, a1, a2, a3]]
-
+datas = [[X, Y_lc[k1], Ll1, s1*factor, m1, c_l1, lw1, a1, a2, a3],
+         [X, Y_lc[k2], Ll2, s1*factor, m1, c_l2, lw1, a1, a2, a3],
+         [X, Y_nnc[k1], Nl1, s2*factor, m2, c_nn1, lw2, a1, a2, a3],
+         [X, Y_nnc[k2], Nl2, s2*factor, m2, c_nn2, lw2, a1, a2, a3]]
 f = scatter_norm_plot(datas, 1, xmax, ticks, xlab, ylab, VAR=True)
 file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k1}-{k2}-Y_variance_ch'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+datas = [[X, Y_lc[k1], Ll1, s1*factor, m1, c_l1, lw1, a1, a2, a3],
+         [X, Y_lc[k2], Ll2, s1*factor, m1, c_l2, lw1, a1, a2, a3]]
+f = scatter_norm_plot(datas, 1, xmax, ticks, xlab, ylab, VAR=True)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-{k1}-{k2}-Y_variance_ch'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X, Y_nnc[k1], Nl1, s2*factor, m2, c_nn1, lw2, a1, a2, a3],
+         [X, Y_nnc[k2], Nl2, s2*factor, m2, c_nn2, lw2, a1, a2, a3]]
+f = scatter_norm_plot(datas, 1, xmax, ticks, xlab, ylab, VAR=True)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-NNC-{k1}-{k2}-Y_variance_ch'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X, Y_real, Nreal, s3*factor, m3, c_real, lw2, a1, a2, a3]]
+f = scatter_norm_plot(datas, 1, xmax, ticks, xlab, ylab, VAR=True)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-real-Y_variance_ch'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+datas = [[X, Y_lc[k2], Ll2, s1*factor, m1, c_l2, lw1, a1, a2, a3],
+         [X, Y_nnc[k2], Nl2, s2*factor, m2, c_nn2, lw2, a1, a2, a3],
+         [X, Y_real, Nreal, s3*factor, m3, c_real, lw2, a1, a2, a3]]
+f = scatter_norm_plot(datas, 1, xmax, ticks, xlab, ylab, VAR=True)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k2}-real-Y_variance_ch'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
@@ -1104,62 +1265,114 @@ FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
 # %%
 # ##########################  BOX PLOTS  ######################################
+
+def get_scaled_ds(dss):
+    axis = 1
+    for i, ds in dss.items():
+        # dss[i] = LA.norm(dss[i], axis=1, ord=l_norm)
+        dss[i] = np.sum(dss[i] ** 2, axis=axis) / (dss[i].shape[axis] - 1)
+        dss[i] /= dss[i].mean()
+        # dss[i] /= ds.mean()
+        print(np.std(dss[i]) / np.mean(dss[i]))
+    return pd.DataFrame(dss)
+
+def plot_box(ds, colors, y_lim, y_label, size=2):
+    n_ds = ds.shape[1]
+    pads = (0.45, 0.1, 0.35, 0.2)
+    fs, axs = FP.calc_fs_ax(pads, 18 * SQ, 14 * SQ)
+    f = plt.figure(figsize=fs)
+    ax = f.add_axes(axs)
+
+    lineprops = {'edgecolor': 'k'}
+    lineprops2 = {'color': 'k'}
+    # sns.boxplot(data=dss_df, color=colors)
+    sns.swarmplot(ax=ax, data=ds, palette=['dimgray'], size=size)
+    bplot = sns.boxplot(ax=ax, data=ds, showfliers=False, linewidth=1,
+                        width=0.5, boxprops=lineprops,
+                        medianprops=lineprops2, whiskerprops=lineprops2,
+                        capprops=lineprops2)
+    for i in range(n_ds):
+        # mybox = bplot.artists[i]
+        mybox = bplot.patches[i]
+        mybox.set_facecolor('None')
+        mybox.set_edgecolor(colors[i])
+        for j in range(i * 5, i * 5 + 5):
+            line = ax.lines[j]
+            line.set_color(colors[i])
+            # line.set_mfc('k')
+            # line.set_mec('k')
+
+    bplot.set_xticklabels(bplot.get_xticklabels(), rotation=23, ha='right')
+    ax.tick_params(axis='x', which='both', pad=-1)
+    ax.set_ylim(0, y_lim)
+    ax.set_yticks([0, 1, 2])
+    ax.set_ylabel(y_label)
+    ax.text(0, 0.95 * y_lim, 'CV:', color='k', ha='center')
+    for i in range(n_ds):
+        ax.text(i, 0.85 * y_lim, f"{np.std(dss_df.iloc[:, i].values):0.2}",
+                color='k', ha='center', va='bottom')
+    return f
+
 dss = {Xtstex: X.copy(),
        f'LC-1, {Ytex}': Y_lc[k1].copy(),
        f'LC-8, {Ytex}': Y_lc[k2].copy(),
        f'NNC-1, {Ytex}': Y_nnc[k1].copy(),
        f'NNC-8, {Ytex}': Y_nnc[k2].copy()}
-
-axis = 1
-for i, ds in dss.items():
-    # dss[i] = LA.norm(dss[i], axis=1, ord=l_norm)
-    dss[i] = np.sum(dss[i]**2, axis=axis)/(dss[i].shape[axis]-1)
-    dss[i] /= dss[i].mean()
-    # dss[i] /= ds.mean()
-    print(np.std(dss[i])/np.mean(dss[i]))
-dss_df = pd.DataFrame(dss)
+dss_df = get_scaled_ds(dss)
 colors = ['k', c_l1, c_l2, c_nn1, c_nn2]
-
-
-pads = (0.45, 0.1, 0.35, 0.2)
-fs, axs = FP.calc_fs_ax(pads, 18*SQ, 14*SQ)
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
-
-lineprops = {'edgecolor': 'k'}
-lineprops2 = {'color': 'k'}
-# sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, palette=['dimgray'], size=2)
-bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
-                    width=0.5, boxprops=lineprops,
-                    medianprops=lineprops2, whiskerprops=lineprops2,
-                    capprops=lineprops2)
-for i in range(0, 5):
-    # mybox = bplot.artists[i]
-    mybox = bplot.patches[i]
-    mybox.set_facecolor('None')
-    mybox.set_edgecolor(colors[i])
-    for j in range(i*5, i*5+5):
-        line = ax.lines[j]
-        line.set_color(colors[i])
-        # line.set_mfc('k')
-        # line.set_mec('k')
-
-bplot.set_xticklabels(bplot.get_xticklabels(),rotation=25, ha='right')
-ax.tick_params(axis='x', which='both', pad=-1)
-ax.set_ylabel('scaled\nORN variance')
-# ax.set_title('scaled channel norm')
-ax.set_ylim(0, 2.7)
-ax.set_yticks([0, 1, 2])
-ax.text(-0.3, 2.6, 'CV:', color='k', ha='left')
-for i in range(5):
-    ax.text(i, 2.3, f"{np.std(dss_df.iloc[:, i].values):0.2}",
-            color='k', ha='center', va='bottom')
-
+f = plot_box(dss_df, colors, y_lim=2.7, y_label='scaled\nORN variance')
 file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k1}-{k2}-Y_variance_ch_box'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
+
+
+dss = {Xtstex: X.copy(),
+       f'LC-1, {Ytex}': Y_lc[k1].copy(),
+       f'LC-8, {Ytex}': Y_lc[k2].copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_l1, c_l2]
+f = plot_box(dss_df, colors, y_lim=2.7, y_label='scaled\nORN variance')
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-{k1}-{k2}-Y_variance_ch_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+print('done')
+
+dss = {Xtstex: X.copy(),
+       f'NNC-1, {Ytex}': Y_nnc[k1].copy(),
+       f'NNC-8, {Ytex}': Y_nnc[k2].copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_nn1, c_nn2]
+f = plot_box(dss_df, colors, y_lim=2.7, y_label='scaled\nORN variance')
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-NNC-{k1}-{k2}-Y_variance_ch_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+print('done')
+
+
+dss = {Xtstex: X.copy(),
+       f'NNC-conn, {Ytex}': Y_real.copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_real]
+f = plot_box(dss_df, colors, y_lim=2.7, y_label='scaled\nORN variance')
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-real-Y_variance_ch_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+print('done')
+
+
+dss = {Xtstex: X.copy(),
+       f'LC-8, {Ytex}': Y_lc[k2].copy(),
+       f'NNC-8, {Ytex}': Y_nnc[k2].copy(),
+       f'NNC-conn, {Ytex}': Y_real.copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_l2, c_nn2, c_real]
+f = plot_box(dss_df, colors, y_lim=2.7, y_label='scaled\nORN variance')
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k2}-real-Y_variance_ch_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+print('done')
+
 #
 #
 #%%
@@ -1186,12 +1399,40 @@ datas = [[X, Y_lc[k1], Ll1, s1, m1, c_l1, lw1, a1, a2, a3],
          [X, Y_lc[k2], Ll2, s1, m1, c_l2, lw1, a1, a2, a3],
          [X, Y_nnc[k1], Nl1, s2, m2, c_nn1, lw2, a1, a2, a3],
          [X, Y_nnc[k2], Nl2, s2, m2, c_nn2, lw2, a1, a2, a3]]
-
 f = scatter_norm_plot(datas, 0, xmax, ticks, xlab, ylab, VAR=False)
 file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k1}-{k2}-Y_norm'
 FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
+
+datas = [[X, Y_lc[k1], Ll1, s1, m1, c_l1, lw1, a1, a2, a3],
+         [X, Y_lc[k2], Ll2, s1, m1, c_l2, lw1, a1, a2, a3]]
+f = scatter_norm_plot(datas, 0, xmax, ticks, xlab, ylab, VAR=False)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-{k1}-{k2}-Y_norm'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+datas = [[X, Y_nnc[k1], Nl1, s2, m2, c_nn1, lw2, a1, a2, a3],
+         [X, Y_nnc[k2], Nl2, s2, m2, c_nn2, lw2, a1, a2, a3]]
+f = scatter_norm_plot(datas, 0, xmax, ticks, xlab, ylab, VAR=False)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-NNC-{k1}-{k2}-Y_norm'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X, Y_real, Nreal, s3, m3, c_real, lw2, a1, a2, a3]]
+f = scatter_norm_plot(datas, 0, xmax, ticks, xlab, ylab, VAR=False)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-real-Y_norm'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X, Y_lc[k2], Ll2, s1, m1, c_l2, lw1, a1, a2, a3],
+         [X, Y_nnc[k2], Nl2, s2, m2, c_nn2, lw2, a1, a2, a3],
+         [X, Y_real, Nreal, s3, m3, c_real, lw2, a1, a2, a3]]
+f = scatter_norm_plot(datas, 0, xmax, ticks, xlab, ylab, VAR=False)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k2}-real-Y_norm'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 # these are not used in the publication
 # datas = [  # [X, Y_lc_noM[k1], Ll1, s1, m1, c_l1, lw1, a1, a2, a3],
@@ -1207,11 +1448,77 @@ print('done')
 
 # %%
 # ##########################  BOX PLOTS  ######################################
+
+def get_scaled_ds(dss):
+    for i, ds in dss.items():
+        dss[i] = LA.norm(dss[i], axis=0, ord=l_norm)
+        dss[i] /= dss[i].mean()
+        print(np.std(dss[i]) / np.mean(dss[i]))
+        print(np.std(dss[i]), 'should be same')
+    return pd.DataFrame(dss)
+
+
 dss = {Xtstex: X_sel.copy(),
        f'LC-1, {Ytex}': Y_lc_sel[k1].copy(),
        f'LC-8, {Ytex}': Y_lc_sel[k2].copy(),
        f'NNC-1, {Ytex}': Y_nnc_sel[k1].copy(),
        f'NNC-8, {Ytex}': Y_nnc_sel[k2].copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_l1, c_l2, c_nn1, c_nn2]
+f = plot_box(dss_df, colors, y_lim=2.5,
+             y_label='scaled\npattern magnitude', size=1.5)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k1}-{k2}-Y_norm_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+dss = {Xtstex: X_sel.copy(),
+       f'LC-1, {Ytex}': Y_lc_sel[k1].copy(),
+       f'LC-8, {Ytex}': Y_lc_sel[k2].copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_l1, c_l2]
+f = plot_box(dss_df, colors, y_lim=2.5,
+             y_label='scaled\npattern magnitude', size=1.5)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-{k1}-{k2}-Y_norm_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+dss = {Xtstex: X_sel.copy(),
+       f'NNC-1, {Ytex}': Y_nnc_sel[k1].copy(),
+       f'NNC-8, {Ytex}': Y_nnc_sel[k2].copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_nn1, c_nn2]
+f = plot_box(dss_df, colors, y_lim=2.5,
+             y_label='scaled\npattern magnitude', size=1.5)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-NNC-{k1}-{k2}-Y_norm_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+dss = {Xtstex: X_sel.copy(),
+       f'NNC-conn, {Ytex}': Y_real_sel.copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_real]
+f = plot_box(dss_df, colors, y_lim=2.5,
+             y_label='scaled\npattern magnitude', size=1.5)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-real-Y_norm_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+dss = {Xtstex: X_sel.copy(),
+       f'LC-8, {Ytex}': Y_lc_sel[k2].copy(),
+       f'NNC-8, {Ytex}': Y_nnc_sel[k2].copy(),
+       f'NNC-conn, {Ytex}': Y_real_sel.copy()}
+dss_df = get_scaled_ds(dss)
+colors = ['k', c_l2, c_nn2, c_real]
+f = plot_box(dss_df, colors, y_lim=2.5,
+             y_label='scaled\npattern magnitude', size=1.5)
+file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k2}-real-Y_norm_box'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
 # dss = {Xtstex: X.copy(),
 #        f'LC-1, {Ytex}': Y_lc[k1].copy(),
 #        f'LC-8, {Ytex}': Y_lc[k2].copy(),
@@ -1222,56 +1529,6 @@ dss = {Xtstex: X_sel.copy(),
 #        'LC-8': Y_lc_sel_norm[k2].copy(),
 #        'NNC-1': Y_nnc_sel_norm[k1].copy(),
 #        'NNC-8': Y_nnc_sel_norm[k2].copy()}
-for i, ds in dss.items():
-    dss[i] = LA.norm(dss[i], axis=0, ord=l_norm)
-    dss[i] /= dss[i].mean()
-    print(np.std(dss[i])/np.mean(dss[i]))
-    print(np.std(dss[i]), 'should be same')
-dss_df = pd.DataFrame(dss)
-colors = ['k', c_l1, c_l2, c_nn1, c_nn2]
-
-
-pads = (0.45, 0.1, 0.35, 0.2)
-fs, axs = FP.calc_fs_ax(pads, 18*SQ, 14*SQ)
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
-
-lineprops = {'edgecolor': 'k'}
-lineprops2 = {'color': 'k'}
-# sns.boxplot(data=dss_df, color=colors)
-sns.swarmplot(ax=ax, data=dss_df, size=1.5, palette=['dimgray'])
-bplot = sns.boxplot(ax=ax, data=dss_df, showfliers=False, linewidth=1,
-                    width=0.5, boxprops=lineprops,
-                    medianprops=lineprops2, whiskerprops=lineprops2,
-                    capprops=lineprops2)
-
-# changing the look of the box plot
-for i in range(0, 5):
-    # mybox = bplot.artists[i]  # old matplotlib
-    mybox = bplot.patches[i]
-    mybox.set_facecolor('None')
-    mybox.set_edgecolor(colors[i])
-    for j in range(i * 5, i * 5 + 5):
-        line = ax.lines[j]
-        line.set_color(colors[i])
-        # line.set_mfc('k')
-        # line.set_mec('k')
-
-bplot.set_xticklabels(bplot.get_xticklabels(), rotation=25, ha='right')
-ax.tick_params(axis='x', which='both', pad=-1)
-ax.set_ylabel('scaled\npattern magnitude')
-# ax.set_title('scaled channel norm')
-ax.set_ylim(0, 2.5)
-ax.set_yticks([0, 1, 2])
-ax.text(-0.3, 2.45, 'CV:', color='k', ha='left')
-for i in range(5):
-    ax.text(i, 2.2, f"{np.std(dss_df.iloc[:, i].values):0.2}",
-            color='k', ha='center', va='bottom')
-
-file = f'{PP_WHITE}/ORN_act-{pps}-X-vs-LC-NNC-{k1}-{k2}-Y_norm_box'
-FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-
 print('done')
 
 # %%
@@ -1289,20 +1546,20 @@ k2 = 8
 pads = (0.2, 0.4, 0.35, 0.2)
 
 subtitles = [Xtstex, f'NNC-{k1}, {Ytex}', f'NNC-{k2}, {Ytex}',
-             f'LC-{k1}, {Ytex}', f'LC-{k2}, {Ytex}',
+             f'LC-{k1}, {Ytex}', f'LC-{k2}, {Ytex}', f'NNC-conn, {Ytex}',
              f"NNC'-{k2}, {Ytex}", f"LC'-{k2}, {Ytex}"]
 # titles = [name + ', channel corr.' for name in subtitles]
 titles = [f'{Xtstex}; {name}' for name in subtitles]
 # titles[2] = titles[2] + '  '
-names = ['X', f'Y-NNC{k1}', f'Y-NNC{k2}', f'Y-LC{k1}', f'Y-LC{k2}',
+names = ['X', f'Y-NNC{k1}', f'Y-NNC{k2}', f'Y-LC{k1}', f'Y-LC{k2}', 'Y-real',
          f'Y-NNC{k2}noM', f'Y-LC{k2}noM']
 
 
 # for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2],
 #                           Y_nnc_noM[k2], Y_lc_noM[k2]]):
 X_corr = sim_func(X)
-for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
-    cond = (i in [2, 4] and SCAL_W in [1, 2]) or (i == 2 and SCAL_W == 10)
+for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2], Y_real]):
+    cond = (i in [2, 4] and SCAL_W in [1, 2]) or (i == 2 and SCAL_W == 10) or (i==5)
     if cond:
         pads = (0.2, 0.4, 0.35, 0.2)
     else:
@@ -1316,7 +1573,7 @@ for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
     cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
                       title=titles[i], show_lab_x=False,
                       cmap=corr_cmap)
-    ax.set(xlabel='ORNs', ylabel='ORNs')
+    ax.set(xlabel='ORN', ylabel='ORN')
 
     if cond:
         ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
@@ -1336,9 +1593,9 @@ titles = [f'{Xtstex}; {name}' for name in subtitles]
 #                           Y_nnc_noM[k2], Y_lc_noM[k2]]):
 X_corr = sim_func(X.T)
 # X_corr = sim_func(X_sel.T)  # in case one only wants to look at the higher concentration
-for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
+for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2], Y_real]):
     # for i, data in enumerate([X_sel, Y_nnc_sel[k1], Y_nnc_sel[k2], Y_nnc_sel[k1], Y_nnc_sel[k2]]):
-    if (i in [4] and SCAL_W in [1, 2]) or (i == 2 and SCAL_W == 10):
+    if (i in [2, 4] and SCAL_W in [1, 2]) or (i == 2 and SCAL_W == 10):
         pads = (0.2, 0.4, 0.35, 0.2)
     else:
         pads = (0.2, 0.1, 0.35, 0.2)
@@ -1350,7 +1607,7 @@ for i, data in enumerate([X, Y_nnc[k1], Y_nnc[k2], Y_lc[k1], Y_lc[k2]]):
     cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
                       title=titles[i], show_lab_x=False,
                       cmap=corr_cmap)
-    ax.set(xlabel='stimuli', ylabel='stimuli')
+    ax.set(xlabel='stimulus', ylabel='stimulus')
 
     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
     #                     CB_W / fs[0], axs[3]])
@@ -1374,7 +1631,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 # LC
 # channel correlation
-def plot_dists(datas, xlabel, ylabel, title, yticks, file, bw=1,
+def plot_dists(datas, xlabel, ylabel, title, yticks, bw=1,
                xlim=(-0.5, 1.01), ylim=(0, None), legend=True, fs=[21, 15],
                zoom=False, square=None):
     hist_bl = False
@@ -1390,7 +1647,7 @@ def plot_dists(datas, xlabel, ylabel, title, yticks, file, bw=1,
     ax.set(xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=ylim,
            yticks=yticks, title=title)
     if legend:
-        plt.legend(bbox_to_anchor=(1.08, 1.04),loc='lower right', ncol=3)
+        plt.legend(bbox_to_anchor=(1.08, 1.04), loc='lower right', ncol=3)
     else:
         ax.get_legend().remove()
 
@@ -1406,10 +1663,7 @@ def plot_dists(datas, xlabel, ylabel, title, yticks, file, bw=1,
         # axin.get_legend().remove()
         ax.indicate_inset_zoom(axin, edgecolor='grey', alpha=0.7, lw=1)
         # mark_inset(ax, axin, loc1=2, loc2=3, fc="none", ec="0.5")
-
-
-    FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
-    FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+    return f
 
 
 x0 = 0.25
@@ -1417,15 +1671,18 @@ Ll1 = f'LC-{k1}, {Ytex}'
 Ll2 = f'LC-{k2}, {Ytex}'
 Nl1 = f'NNC-{k1}, {Ytex}'
 Nl2 = f'NNC-{k2}, {Ytex}'
+Nreal = f'NNC-conn, {Ytex}'
 
 # LC
 datas = [[X_cc_c, 'k', Xtstex],
          [Y_lc_cc_c[k1], c_l1, Ll1],
          [Y_lc_cc_c[k2], c_l2, Ll2]]
 # plot_dists(datas, xlabel, ylabel, 'channel correlation', [0, 2, 4],
-plot_dists(datas, xlabel, ylabel, '', [0, 2.5, 5],
-           f'{PP_WHITE}/ORN_act-{pps}_LC-{k1}-{k2}_{sf}-chan_dist',
+f = plot_dists(datas, xlabel, ylabel, '', [0, 2.5, 5],
            ylim=(0, 5.2), zoom=True, square=[[x0, 1], [0., 0.8]])
+file = f'{PP_WHITE}/ORN_act-{pps}_LC-{k1}-{k2}_{sf}-chan_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 # plot_dists(datas, xlabel, '', '', [0, 0.5, 1.],
 #            f'{PATH_PLOTS}ORN_act-{pps}_LC-{k1}-{k2}_{sf}-chan_dist_zoom',
 #            xlim=(0.2, 1), ylim=(0.0, 1.1), legend=False, fs=[18/1.5*0.8, 15])
@@ -1440,9 +1697,11 @@ datas = [[X_cc_p_sel, 'k', Xtstex],
          [Y_lc_cc_p_sel[k1], c_l1, Ll1],
          [Y_lc_cc_p_sel[k2], c_l2, Ll2]]
 # plot_dists(datas, xlabel, ylabel, 'pattern correlation', [0, 1, 2],
-plot_dists(datas, xlabel, ylabel, '', [0, 1, 2],
-           f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_LC-{k1}-{k2}_{sf}'
-           f'-patt_dist', ylim=(0, 2.5), zoom=True, square=[[x0, 1], [0, 0.7]])
+f = plot_dists(datas, xlabel, ylabel, '', [0, 1, 2],
+        ylim=(0, 2.5), zoom=True, square=[[x0, 1], [0, 0.7]])
+file = f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_LC-{k1}-{k2}_{sf}-patt_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 
 
@@ -1451,18 +1710,22 @@ datas = [[X_cc_c, 'k', Xtstex],
          [Y_nnc_cc_c[k1], c_nn1, Nl1],
          [Y_nnc_cc_c[k2], c_nn2, Nl2]]
 # plot_dists(datas, xlabel, ylabel, 'channel correlation', [0, 2.5, 5],
-plot_dists(datas, xlabel, ylabel, '', [0, 3, 6],
-           f'{PP_WHITE}/ORN_act-{pps}_NNC-{k1}-{k2}_{sf}-chan_dist',
+f = plot_dists(datas, xlabel, ylabel, '', [0, 3, 6],
            ylim=(0, 5.7), zoom=True, square=[[x0, 1], [0, 0.8]])
+file = f'{PP_WHITE}/ORN_act-{pps}_NNC-{k1}-{k2}_{sf}-chan_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 yticks = {1: [0, 1, 2], 2: [0, 2, 4], 10: [0, 2.5, 5]}
 datas = [[X_cc_p_sel, 'k', Xtstex],
          [Y_nnc_cc_p_sel[k1], c_nn1, Nl1],
          [Y_nnc_cc_p_sel[k2], c_nn2, Nl2]]
 # plot_dists(datas, xlabel, ylabel, 'pattern correlation', yticks[SCAL_W],
-plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
-           f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_NNC-{k1}-{k2}_{sf}-'
-           f'patt_dist', ylim=(0, 3.), zoom=True, square=[[x0, 1], [0, 0.7]])
+f = plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
+           ylim=(0, 3.), zoom=True, square=[[x0, 1], [0, 0.7]])
+file = f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_NNC-{k1}-{k2}_{sf}-patt_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 # LC and NNC together, this is used for rho=10
 yticks={1: [0, 2.5, 5], 2:[0, 3, 6], 10: [0, 3, 6]}
@@ -1471,10 +1734,11 @@ datas = [[X_cc_c, 'k', Xtstex],
          [Y_lc_cc_c[k2], c_l2, Ll2],
          [Y_nnc_cc_c[k2], c_nn2, Nl2]]
 # plot_dists(datas, xlabel, ylabel, 'channel correlation', yticks[SCAL_W],
-plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
-           f'{PP_WHITE}/ORN_act-{pps}_LC-NNC-{k2}_{sf}-chan_dist',
+f = plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
            ylim=(0, ylim[SCAL_W]), zoom=True, square=[[x0, 1], [0, 0.8]])
-
+file = f'{PP_WHITE}/ORN_act-{pps}_LC-NNC-{k2}_{sf}-chan_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 yticks = {1: [0, 1, 2], 2: [0, 2, 4], 10: [0, 2, 4]}
 ylim = {2: 4, 10: 4}
@@ -1482,10 +1746,11 @@ datas = [[X_cc_p_sel, 'k', Xtstex],
          [Y_lc_cc_p_sel[k2], c_l2, Ll2],
          [Y_nnc_cc_p_sel[k2], c_nn2, Nl2]]
 # plot_dists(datas, xlabel, ylabel, 'pattern correlation', yticks[SCAL_W],
-plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
-           f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_LC-NNC-{k2}_{sf}-'
-           f'patt_dist',
+f = plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
            ylim=(0, ylim[SCAL_W]), zoom=True, square=[[x0, 1], [0, 0.7]])
+file = f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_LC-NNC-{k2}_{sf}-patt_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 # this is not used in the paper
 # datas = [[X_cc_c, 'k', 'X'],
@@ -1501,5 +1766,45 @@ plot_dists(datas, xlabel, ylabel, '', yticks[SCAL_W],
 # plot_dists(datas, xlabel, ylabel, 'pattern correlation', [0, 2, 4],
 #            f'{PATH_PLOTS}ORN_act-{pps}-conc{conc_sel}_LC-NNC-noM-{k2}_{sf}'
 #            f'-patt_dist', ylim=(0, 4), zoom=True, square=[[x0, 1], [0, 0.7]])
+
+# "real"
+datas = [[X_cc_c, 'k', Xtstex],
+         [Y_r_cc_c, c_real, Nreal]]
+f = plot_dists(datas, xlabel, ylabel, '', [0, 3, 6],
+           ylim=(0, 6), zoom=True, square=[[x0, 1], [0., 0.8]])
+file = f'{PP_WHITE}/ORN_act_real_{sf}-chan_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X_cc_p_sel, 'k', Xtstex],
+         [Y_r_cc_p_sel, c_real, Nreal]]
+f = plot_dists(datas, xlabel, ylabel, '', [0, 1, 2, 3],
+           ylim=(0, 3.5), zoom=True, square=[[x0, 1], [0, 0.7]])
+file = f'{PP_WHITE}/ORN_act-conc{conc_sel}_real_{sf}-patt_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+# LC, NNC, real
+datas = [[X_cc_c, 'k', Xtstex],
+         [Y_lc_cc_c[k2], c_l2, Ll2],
+         [Y_nnc_cc_c[k2], c_nn2, Nl2],
+         [Y_r_cc_c, c_real, Nreal]]
+f = plot_dists(datas, xlabel, ylabel, '', [0, 3, 6],
+           ylim=(0, 6), zoom=True, square=[[x0, 1], [0, 0.8]])
+plt.legend(bbox_to_anchor=(1.08, 0.94), loc='lower right', ncol=2)
+file = f'{PP_WHITE}/ORN_act-{pps}_LC-NNC-{k2}-real_{sf}-chan_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
+
+datas = [[X_cc_p_sel, 'k', Xtstex],
+         [Y_lc_cc_p_sel[k2], c_l2, Ll2],
+         [Y_nnc_cc_p_sel[k2], c_nn2, Nl2],
+         [Y_r_cc_p_sel, c_real, Nreal]]
+f = plot_dists(datas, xlabel, ylabel, '', [0, 2, 4],
+           ylim=(0, 4), zoom=True, square=[[x0, 1], [0, 0.7]])
+plt.legend(bbox_to_anchor=(1.08, 0.94), loc='lower right', ncol=2)
+file = f'{PP_WHITE}/ORN_act-{pps}-conc{conc_sel}_LC-NNC-{k2}-real_{sf}-patt_dist'
+FP.save_plot(f, f'{file}.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, f'{file}.pdf', SAVE_PLOTS, **pdf_opts)
 
 print('Final done')

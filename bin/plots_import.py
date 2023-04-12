@@ -52,7 +52,7 @@ SAVE_PLOTS = True
 PLOT_PLOTS = False
 
 PATH_PLOTS = ''
-PATH_PLOTS = OLF_PATH/ 'plots/plots_paper/new/'
+# PATH_PLOTS = OLF_PATH/ 'plots/plots_paper/new/'
 
 if SAVE_PLOTS and PATH_PLOTS == '':
     PATH_PLOTS = FG.create_path(OLF_PATH / 'plots/plots_paper/')

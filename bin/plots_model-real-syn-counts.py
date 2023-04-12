@@ -50,9 +50,9 @@ importlib.reload(par_act)
 Y = {}
 Z = {}
 for side in ['L', 'R']:
-    file = RESULTS_PATH / 'sims_real-synaptic-counts'/ f'Y_{side}.h5'
+    file = RESULTS_PATH / 'sims_real-synaptic-counts'/ f'Y_{side}2.h5'
     Y[side] = pd.DataFrame(pd.read_hdf(file))
-    file = RESULTS_PATH / 'sims_real-synaptic-counts'/ f'Z_{side}.h5'
+    file = RESULTS_PATH / 'sims_real-synaptic-counts'/ f'Z_{side}2.h5'
     Z[side] = pd.DataFrame(pd.read_hdf(file))
 Y = (Y['L'] + Y['R'])/2
 # Z = Z1['L'].copy()
@@ -66,13 +66,6 @@ odor_order = par_act.odor_order
 # ORN_order = par_act.ORN  # this is just the alphabetical order
 ORN_order = par_act.ORN_order
 DATASET = 3
-
-# sf = 'CS'
-# def sim_func(X):
-#     if isinstance(X, pd.DataFrame):
-#         X = X.values
-#     X = FG.get_norm_np(X.T)
-#     return X.T @ X
 
 sf = 'corr'  # sf as similarity function (measure)
 def sim_func(X: Union[pd.DataFrame, np.ndarray]):
@@ -95,12 +88,9 @@ def order_act_df(X):
     return X.loc[:, idx]
 
 def get_important_data(Y, Z):
-    # problem seems to be here already
     Y = order_act_df(Y.loc[ORN_order])
-    # Y_sel = Y.xs(conc_sel, axis=1, level='conc').copy()
     Y_sel = Y.loc[:, (slice(None), conc_sel)].copy()
     Z = order_act_df(Z)
-    # Z_sel = Z.xs(conc_sel, axis=1, level='conc').copy()
     Z_sel = Z.loc[:, (slice(None), conc_sel)].copy()
     W = Y @ Z.T / N
     M = Z @ Z.T / N
@@ -295,10 +285,10 @@ print('done')
 
 
 datas = [['X', X.copy(), False, False, True,
-          7, f'ORN soma activity {Xdatatex}',
+          7, f'ORN soma activity patterns {Xdatatex}',
           [-2, 0, 2, 4, 6]],
          ['real', Y.copy(), False, False, True, 7,
-          f'ORN axon activity {Ytex}',
+          f'ORN axon activity patterns {Ytex}',
           [-2, 0, 2, 4, 6]]
          ]
 
@@ -376,9 +366,9 @@ print('done')
 
 
 datas = [['realLN-L', Z['L'].copy(), False, True, True, 8,
-          f'LN activity {Ztex}, left', [0, 4, 8]],
+          f'LN activity patterns {Ztex}, left', [0, 4, 8]],
          ['realLN-R', Z['R'].copy(), False, True, True, 8,
-          f'LN activity {Ztex}, right', [0, 4, 8]]
+          f'LN activity patterns {Ztex}, right', [0, 4, 8]]
          ]
 
 pads = [0.6, 0.4, 0.15, 0.2]
@@ -413,7 +403,7 @@ for data in datas:
     # _, fs, axs = FP.calc_fs_ax_df(df, _pads, sq=SQ*0.7)
     # splx = np.arange(2, len(df.T), 2)
     splx = np.arange(5, len(df.T), 5)
-    fs, axs = FP.calc_fs_ax(_pads, SQ * len(df.T) * 0.24, SQ * len(df) * 1)
+    fs, axs = FP.calc_fs_ax(_pads, SQ * len(df.T) * 0.2, SQ * len(df) * 1)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
     # cp = FP.imshow_df(df, ax, vlim=[vmin_to_show, v_max], show_lab_y=show_y,

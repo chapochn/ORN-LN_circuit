@@ -77,15 +77,24 @@ for side in ['L', 'R']:
 # the activity is the same as when we do the simulations with the LC or NNC
 # the only thing we need to do is scale the W_f
 
+factor_ff = 80
+factor_fb = 30
+factor_LN = 60
+
+# factor_ff = 80
+# factor_fb = 30
+# factor_LN = 120
+
+
 res_path = RESULTS_PATH / 'sims_real-synaptic-counts'
 res_path.mkdir(exist_ok=True)
 
 for side in ['L', 'R']:
 
     # normalization based on the above
-    W_f_crt = W_f[side].values/80
-    W_b_crt = W_b[side].values/30
-    M_crt = (M[side].values + 1*np.diag(M[side].max(axis=0)))/60  # fixes the values on the diagonal
+    W_f_crt = W_f[side].values/factor_ff
+    W_b_crt = W_b[side].values/factor_fb
+    M_crt = (M[side].values + 1*np.diag(M[side].max(axis=0)))/factor_LN  # fixes the values on the diagonal
 
     Y = X.copy()
     Y[:], Z = FCS.olf_output_online_bulk(X.values, W_f_crt, W_b_crt, M_crt, rho=1,

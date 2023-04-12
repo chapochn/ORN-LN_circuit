@@ -74,8 +74,8 @@ for rho in rhos_sel:
     ax.plot(x, FOC.damp_sx(x, 1, rho=rho), c=rhos[rho])
     ax.text(6.2, FOC.damp_sx(6, 1, rho=rho), rho)
 ax.text(6.2, 6.8, r'$\rho:$')
-ax.set(ylabel=r'axon, PCA s.d. ($\sigma_Y$)',
-       xlabel=r'soma, PCA s.d. ($\sigma_X$)',
+ax.set(ylabel=r'axon, PCA SD ($\sigma_Y$)',
+       xlabel=r'soma, PCA SD ($\sigma_X$)',
        xticks=[0, 3, 6], yticks=[0, 3, 6])
 
 file = f'{PP_THEORY}/sy_sx.'
@@ -111,8 +111,8 @@ ax.loglog(x, 0.02*x**(1/3), ls='--', lw=1, c='k')
 ax.text(9, 0.06, r'$\sigma_Y\propto \sigma_X^{1/3}$',
         ha='left', va='top')
 
-ax.set(ylabel=r'axon, PCA s.d. ($\sigma_Y$)',
-       xlabel=r'soma, PCA s.d. ($\sigma_X$)',
+ax.set(ylabel=r'axon, PCA SD ($\sigma_Y$)',
+       xlabel=r'soma, PCA SD ($\sigma_X$)',
        xticks=[0.1, 1, 10, 100], yticks=[0.1, 1, 10, 100],
        xticklabels=[0.1, 1, 10, 100],
        yticklabels=[0.1, 1, 10, 100])
@@ -192,7 +192,7 @@ for data, label in [(X, 'X'), (Z_NNC, 'NNC'), (Z_LC, 'LC')]:
         title = f'     {label}, LN activity {Ztex}'
 
     if label == 'NNC':
-        xlabel = f'samples (T={N})'
+        xlabel = f'sample (T={N})'
         pad_down = 0.2
     else:
         xlabel = ''
@@ -482,7 +482,7 @@ for data_i in [1, 2]:
     f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
                                      cb_ticks, pads=[0.2, 0.4, 0.3, pad_up], extend='neither',
                                      squeeze=0.1, do_vert_spl=False, SQ=SQ*0.9)
-    ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=f'samples (T={N})')
+    ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=f'sample (T={N})')
 
     file = f'{PP_WrhoK}/dataset{data_i}.'
     FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -559,7 +559,7 @@ for data_i in [1, 2]:
                                          cb_ticks, pads=[0.2, 0.4, 0.3, pad_up],
                                          extend='neither', squeeze=0.1,
                                          do_vert_spl=False, SQ=SQ*9/10)
-        ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='samples')
+        ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='sample')
 
         file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_Z.'
         FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)

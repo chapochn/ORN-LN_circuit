@@ -61,7 +61,7 @@ for s in ['L', 'R']:
     cp = FP.imshow_df(df1, ax1, vlim=[0, 125],
                       title=r'feedforward connections: ORNs$\rightarrow$'
                              r'other neurons')
-    ax1.set(ylabel='ORNs', xlabel='')
+    ax1.set(ylabel='ORN', xlabel='')
     # arrows
     # plt.arrow(0.5, 35, 19.5, 0, lw=2, clip_on=False,
     # length_includes_head=True)
@@ -69,11 +69,11 @@ for s in ['L', 'R']:
     ax1.annotate('', xy=(21.1, arr_y), xytext=(39.9, arr_y), **kwargs)
     ax1.annotate('', xy=(39.1, arr_y), xytext=(52.9, arr_y), **kwargs)
     ax1.annotate('', xy=(52.1, arr_y), xytext=(74.9, arr_y), **kwargs)
-    ax1.text(21/2, txt_y, 'uniglomerular\nprojection neurons (uPN)', **kwargs2)
-    ax1.text((21 + 40)/2, txt_y, 'multiglomerular\nprojection neurons (mPN)',
+    ax1.text(21/2, txt_y, 'uniglomerular\nprojection neurons (uPNs)', **kwargs2)
+    ax1.text((21 + 40)/2, txt_y, 'multiglomerular\nprojection neurons (mPNs)',
              **kwargs2)
     ax1.text((39 + 53)/2, txt_y, 'other neurons', **kwargs2)
-    ax1.text((52 + 75)/2, txt_y, 'Inhibitory\nlocal neurons (LN)', **kwargs2)
+    ax1.text((52 + 75)/2, txt_y, 'Inhibitory\nlocal neurons (LNs)', **kwargs2)
     # colorbar
     cb_x = axs1[0] + axs1[2] + CB_DX/fs[0]
     ax_cb = f.add_axes([cb_x, axs1[1], CB_W/fs[0], axs1[3]])
@@ -85,7 +85,7 @@ for s in ['L', 'R']:
     cp = FP.imshow_df(df2, ax2, vlim=[0, 21], show_lab_x=False,
                       title=r'feedback connections: other neurons'
                              r'$\rightarrow$ORNs')
-    ax2.set(ylabel='ORNs', xlabel='')
+    ax2.set(ylabel='ORN', xlabel='')
     # colorbar
     ax_cb = f.add_axes([cb_x, axs2[1], CB_W/fs[0], axs2[3]])
     add_colorbar_crt(cp, ax_cb, '\# of synapses', [0, 10, 20])
@@ -132,9 +132,9 @@ ax1 = f.add_axes(axs)
 splx = [6, 6+4, 6+4+4]
 
 cp = FP.imshow_df(df, ax1, vlim=[0, 55], splits_x=splx, lw=0.5,
-                  title=r'ORNs$\rightarrow$LNs' + f'\n syn. counts '
-                         + r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
-ax1.set(ylabel='ORNs', xlabel='LNs')
+                  title=r'ORNs$\rightarrow$LNs' + f'\n syn. counts')
+                      #   + r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
+ax1.set(ylabel='ORN', xlabel='LN')
 
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, '\# of syn.', [0, 20, 40])
@@ -158,9 +158,9 @@ ax1 = f.add_axes(axs)
 splx = [6, 6+4, 6+4+4]
 
 cp = FP.imshow_df(df, ax1, vlim=[0, 21], splits_x=splx, lw=0.5,
-                  title=r'LNs$\rightarrow$ORNs'+ f'\n syn. counts '
-                         + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
-ax1.set(ylabel='ORNs', xlabel='LNs')
+                  title=r'LNs$\rightarrow$ORNs'+ f'\n syn. counts')
+                 #        + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
+ax1.set(ylabel='ORN', xlabel='LN')
 
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, '\# of syn.', [0, 10, 20])
@@ -257,7 +257,7 @@ for LN, LN_list in LNs_cat.items():
     ax.set_yticks(np.arange(len(cell_list)), cell_list)
     if LN == 'BT':
         ax.tick_params(axis='y', left=False, direction='in')
-        ax.set_ylabel('ORNs')
+        ax.set_ylabel('ORN')
     else:
         ax.tick_params(axis='y', left=False, labelleft=False)
 
@@ -289,8 +289,8 @@ for strm in [0, 1]:
     cat['P0'] = ['P0 L', 'P0 R']
     if strm == 0:
         LNs_sel_LR = LNs_sel_LR_d
-        title = (r'corr. among ORNs$\rightarrow$LN'
-                 + f'\nconn. weight vectors {wLNtex}')
+        title = (r'corr. among ORNs$\rightarrow$LN'+ f'\n'
+                 + 'syn. count vectors \{'+ f'{wLNtex}' + '\}')
         xylabel = 'ORNs\n' + r'$\rightarrow$'
         ylabel = r'$\mathbf{w}_\mathrm{LN}$'
         xlabel = r'$\mathbf{w}_\mathrm{LN}$'
@@ -299,7 +299,7 @@ for strm in [0, 1]:
     else:
         LNs_sel_LR = LNs_sel_LR_a
         title = (r'corr. among LN$\rightarrow$ORNs' + f'\n'
-                 + r'conn. weight vectors $\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
+                 + r'syn. count vectors \{$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$\}')
         # xylabel = r'...$\rightarrow$ ORNs'
         xylabel = 'ORNs\n' + r'$\leftarrow$'
         ylabel = r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$'
@@ -408,8 +408,8 @@ f = plt.figure(figsize=fs)
 ax1 = f.add_axes(axs)
 cp = FP.imshow_df(grammian, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
                   splits_x=[6, 10, 14], splits_y=[6, 10, 14],
-                  title=f'corr. between\n'+ r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$ and '
-                         + r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$', rot=70, ha='right')
+                  title=f'corr. between\n'+ r'$\{\mathbf{w}_\mathrm{LN}^\mathrm{ff}\}$ and '
+                         + r'$\{\mathbf{w}_\mathrm{LN}^\mathrm{fb}\}$', rot=70, ha='right')
 
 ax1.set_xlabel(r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$')
 ax1.set_ylabel(r'$\mathbf{w}_\mathrm{LN}^\mathrm{ff}$')
@@ -437,7 +437,7 @@ print('done')
 d_h = 0.15
 strm = 0
 # xlabel = 'from ORNs to'
-xlabel = r'ORNs$\rightarrow$LN conn. weight vector $\mathbf{w}_\mathrm{LN}$'
+xlabel = r'ORNs$\rightarrow$LN synaptic count vector $\mathbf{w}_\mathrm{LN}$'
 # ylabel = 'from\nORNs\nto'
 ylabel = r'$\mathbf{w}_\mathrm{LN}$'
 pads = [0.40, 0.45, 0.37, 0.35]  # l, r, b, t
@@ -496,7 +496,7 @@ f.text(0.5, 0., xlabel, rotation=0, fontsize=ft_s_lb, va='bottom',
 # ax1.yaxis.set_label_coords(-1.2, 0.5)
 
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
-plt.suptitle(r'connectome, corr. among $\mathbf{w}_\mathrm{LN}$')
+plt.suptitle(r'connectome, corr. among $\{\mathbf{w}_\mathrm{LN}\}$')
 file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
@@ -524,7 +524,7 @@ df2.index = LNs_sel_short
 # df2.index.name = 'Presynaptic'
 # df2.columns = LNs_sel_ad2
 df2.columns = LNs_sel_short
-df2.columns.name = 'Postsynaptic LNs'
+df2.columns.name = 'Postsynaptic LN'
 
 
 pads = [0.4, 0.4, 0.41, 0.45]
@@ -544,7 +544,7 @@ cp = FP.imshow_df(df2, ax2, vlim=[0, 110], x_offset=0.5, rot=70, ha='right')
 ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
 
 # y label
-f.text(0.01, 0.55, 'Presynaptic LNs', rotation=90,
+f.text(0.01, 0.55, 'Presynaptic LN', rotation=90,
        fontsize=ft_s_lb, va='center', ha='left')
 
 clb = add_colorbar_crt(cp, ax_cb, '\# syn.', [0, 50, 100])
@@ -561,7 +561,7 @@ print('done')
 # axon merged into 1 cell and changed padding at the bottom and at the top
 
 xlabel = r'$\mathbf{w}_\mathrm{LN}$'
-ylabel = r'ORNs$\rightarrow$LN conn. weight vector $\mathbf{w}_\mathrm{LN}$'
+ylabel = r'ORNs$\rightarrow$LN synaptic count vector $\mathbf{w}_\mathrm{LN}$'
 
 s = 'L'
 con_ff_sel = con_S[s].loc[ORNs_side[s], LNs_sel_d_side[s]]
@@ -734,9 +734,9 @@ ax = f.add_axes(ax1)
 ax.scatter(M_entries[:n_pts], W_entries[:n_pts], c='indigo', s=5,
            label='left', alpha=0.7, lw=0)
 FP.plot_scatter(ax, M_entries[n_pts:], W_entries[n_pts:],
-                r'$\mathbf{M}$ entries',
+                r'$\mathbf{M}$ entry (\# syn.)',
                 r'$(\mathbf{W}^\mathrm{\top}'
-                r' \mathbf{W})^{1/2}$ entries',
+                r' \mathbf{W})^{1/2}$ entry (\# syn.)',
                 pca_line_scale1=0.18,
                 pca_line_scale2=0.68, show_cc=False, s=5, c='teal',
                 label='right', alpha=0.7, lw=0)
@@ -817,7 +817,7 @@ for s in lab_y.keys():
     # clb = add_colorbar_crt(cp, ax_cb, '', [-1, 0, 1])
     print(W_nncT.sum(axis=1))
     # print(W_nncT[idx].sum(axis=1))
-plt.suptitle(r'NNC-8 model, corr. among $\mathbf{w}_k$')
+plt.suptitle(r'NNC-8 model, corr. among $\{\mathbf{w}_k\}$')
 # f.text(0.54, 0.1, r'$\mathbf{w}_k$', rotation=0, fontsize=ft_s_lb, va='bottom',
 #        ha='center')
 f.text(0.54, 0.1, r'ORNs$\rightarrow$LN conn. weight vector $\mathbf{w}_k$',
