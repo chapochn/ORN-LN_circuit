@@ -194,11 +194,10 @@ for data, label in [(X, 'X'), (Z_NNC, 'NNC'), (Z_LC, 'LC')]:
         xlabel = ''
         pad_down = 0.1
         pad_down = 0.1
-    f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
+    f, ax, _ = plot_full_activity_crt(df, act_map, divnorm, title, cb_title,
                                      cb_ticks, pads=[pad_l, pad_r, pad_down, pad_up],
                                      extend='neither',
-                                     squeeze=squeeze, do_vert_spl=False, SQ=SQ, CB_DX=0.06,
-                                     cb_title_font=cb_title_font)
+                                     squeeze_x=squeeze, do_vert_spl=False)
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=xlabel)
 
     file = f'{PP_THEORY_NOM}/dataset{data_i}_{label}.'

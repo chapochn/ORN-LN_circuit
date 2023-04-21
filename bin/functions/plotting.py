@@ -367,6 +367,8 @@ def plot_line_2yax(ax, data1, data2, lbl1, lbl2, cell_list, ct,
     # ideally one should scale the 2 datasets a bit better so that
     # mean1 = np.mean(data1)
     # mean2 = np.mean(data2)
+    # the first ax is for the connectivity data
+    # the second ax2 is for activity data
     ln1 = ax.plot(data1, c=c1, label=lbl1, ls=LS, marker=m1)
 
     ax.set_title(title)
@@ -403,6 +405,67 @@ def plot_line_2yax(ax, data1, data2, lbl1, lbl2, cell_list, ct,
         labs = [l.get_label() for l in lns]
         ax2.legend(lns, labs, ncol=3, loc='lower center',
                          bbox_to_anchor=(0.5, 1.01))
+    return ax, ax2, lns
+
+
+def plot_line_2xax(ax, data1, data2, lbl1, lbl2, cell_list, ct,
+                   c1='k', c2='k', m1=',', m2=',', label1 = '', label2='',
+                   LS='-', title='', rot_y=0):
+    """
+    plot activity components and a connectivity with a line plot,
+    where the 2 sides have a different scaling
+    m1 and m2 are markers
+    Now the function is tuned to for connectivity and activity, but if it will
+    be used wider, it can definitely be generalized
+    LS is an option related to the linetype, if we want lines or not between
+    points
+    Parameters
+    ----------
+    ct: y label
+
+    """
+    # ideally one should scale the 2 datasets a bit better so that
+    # mean1 = np.mean(data1)
+    # mean2 = np.mean(data2)
+    # the first ax is for the connectivity data
+    # the second ax2 is for activity data
+    ln1 = ax.plot(data1, np.arange(len(data1)), c=c1, label=lbl1, ls=LS, marker=m1)
+
+    ax.set_title(title)
+
+    # ax.set_xlim(0, None)  # in the case of PCA it can be below 0
+    ax.set_ylabel(ct)
+    ax.set_xlabel(label1, color=c1)
+
+    ax.tick_params('x', colors=c1, rotation=0)
+    # ax.set_xticks([0.0, 0.5, 1.0])
+    ax.set_yticks(np.arange(len(cell_list)), cell_list)
+    ax.tick_params(axis='y', left=False, direction='in', labelrotation=0)
+    ax.invert_yaxis()
+    ax2 = ax.twiny()
+    ln2 = ax2.plot(data2, np.arange(len(data1)), c=c2, label=lbl2, ls=LS, marker=m2)
+    ax2.set_xlim(0, None)
+    ax2.set_xlabel(label2, color=c2)
+    ax2.set_yticklabels([])
+    ax2.tick_params('x', colors=c2, rotation=0)
+
+    # adjusting the borders
+    ax2.spines['top'].set(visible=True, color=c2)
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set(visible=True, color=c1)
+
+    ax.yaxis.grid()
+
+    # legend, if one puts ax instead of ax, then the legend will not be on the
+    # top layer
+    lns = ln1 + ln2
+
+    # ax2.legend(lns, labs, loc=4, prop={'size': ft_s_tk})
+    # adding a legend if lbl1 and lbl2 are not None
+    if (lbl1 is not None) and (lbl2 is not None):
+        labs = [l.get_label() for l in lns]
+        ax.legend(lns, labs, ncol=3, loc='lower center',
+                  bbox_to_anchor=(0.5, -0.3))
     return ax, ax2, lns
 
 
@@ -517,11 +580,11 @@ def get_div_color_map(vmin_col, vmin_to_show, vmax):
 
 def plot_full_activity(df, act_map, divnorm, title='', cb_title='',
                        cb_ticks=None, pads=[0.55, 0.4, 0.2, 0.2], extend='max',
-                       squeeze=0.45, do_vert_spl=True,
-                       SQ=0.07, CB_W=0.1, CB_DX=0.11, title_font=None,
+                       squeeze_x=0.45, do_vert_spl=True,
+                       sq=0.07, cb_w=0.1, cb_dx=0.11, title_font=None,
                        cb_title_font=None):
     # _, fs, axs = FP.calc_fs_ax_df(df, pads, sq=SQ)
-    fs, axs = calc_fs_ax(pads, SQ * len(df.T) * squeeze, SQ * len(df))  # pads, gw, gh
+    fs, axs = calc_fs_ax(pads, sq * len(df.T) * squeeze_x, sq * len(df))  # pads, gw, gh
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
 
@@ -535,8 +598,8 @@ def plot_full_activity(df, act_map, divnorm, title='', cb_title='',
                    show_lab_x=True, aspect='auto', splits_c='gray', lw=0.5,
                    title_font=title_font,
                    **{'norm': divnorm})
-    ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
-                        CB_W / fs[0], axs[3]])
+    ax_cb = f.add_axes([axs[0] + axs[2] + cb_dx / fs[0], axs[1],
+                        cb_w / fs[0], axs[3]])
     clb = add_colorbar(cp, ax_cb, cb_title, cb_ticks, extend=extend,
                        title_font=cb_title_font)
     # clb = plt.colorbar(cp, cax=ax_cb, extend=extend)

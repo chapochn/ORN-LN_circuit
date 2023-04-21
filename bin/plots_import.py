@@ -53,6 +53,7 @@ PLOT_PLOTS = False
 
 PATH_PLOTS = ''
 # PATH_PLOTS = OLF_PATH/ 'plots/plots_paper/new/'
+# PATH_PLOTS = OLF_PATH/ 'plots/plots_paper/20230421_002759/'
 
 if SAVE_PLOTS and PATH_PLOTS == '':
     PATH_PLOTS = FG.create_path(OLF_PATH / 'plots/plots_paper/')
@@ -323,8 +324,8 @@ pdf_opts = {'dpi': 800}
 # it seems not, then it doesn't respect the size you've put
 
 CB_W = 0.1  # related to the colorbar width
-CB_DX = 0.11  # related to the distance to colorbar
-SQ = 0.07  # related to the square size in the imshow plots
+CB_DX = 0.05  # related to the distance to colorbar
+SQ = 0.065  # related to the square size in the imshow plots
 
 # this updates the values for all the plots
 # https://matplotlib.org/stable/tutorials/introductory/customizing.html
@@ -363,14 +364,24 @@ mpl.rcParams['savefig.transparent'] = 1
 
 
 
-cb_title_font = None  # if you don't want any changes
-cb_title_font = {'size':ft_s_lb}
+CB_TITLE_FONT = None  # if you don't want any changes
+CB_TITLE_FONT = {'size':ft_s_lb}
 CB_TITLE_PAD = 1
 
 def add_colorbar_crt(cp, ax, cbtitle='', ticks=None, pad=CB_TITLE_PAD,
-                     extend='neither', title_font=cb_title_font):
+                     extend='neither', title_font=CB_TITLE_FONT):
     return FP.add_colorbar(cp, ax, cbtitle=cbtitle, ticks=ticks, pad_title=pad,
                            extend=extend, title_font=title_font)
+
+def plot_full_activity_crt(df, act_map, divnorm, title='', cb_title='',
+                       cb_ticks=None, pads=[0.55, 0.4, 0.2, 0.2], extend='max',
+                       squeeze_x=0.45, do_vert_spl=True, sq=SQ, cb_w=CB_W, cb_dx=CB_DX,
+                       title_font=None, cb_title_font=CB_TITLE_FONT):
+    return FP.plot_full_activity(df, act_map, divnorm, title=title, cb_title=cb_title,
+                       cb_ticks=cb_ticks, pads=pads, extend=extend,
+                       squeeze_x=squeeze_x, do_vert_spl=do_vert_spl,
+                       sq=sq, cb_w=cb_w, cb_dx=cb_dx, title_font=title_font,
+                       cb_title_font=cb_title_font)
 
 # these options make the plotting much slower unfortunately
 # https://matplotlib.org/stable/tutorials/text/usetex.html

@@ -91,7 +91,7 @@ for s in ['L', 'R']:
     add_colorbar_crt(cp, ax_cb, '\# of synapses', [0, 10, 20])
 
     # rectangle
-    rect = mpl.patches.Rectangle((53 - 0.6, -41.8), 9.2, 62.5, lw=1,
+    rect = mpl.patches.Rectangle((53 - 0.6, -43.2), 9.2, 63.8, lw=1,
                                         clip_on=False, ls='--',
                                         edgecolor='r', facecolor='none')
     ax2.add_patch(rect)
@@ -202,6 +202,11 @@ LNs_name = {'BT': 'Broad Trio (BT, 6)',
             'KS': 'Keystone (KS, 4)',
             'P0': 'Picky 0 (P0, 2)'}
 
+LNs_name = {'BT': 'BT, n=6',
+            'BD': 'BD, n=4',
+            'KS': 'KS, n=4',
+            'P0': 'P0, n=2'}
+
 
 # adding in the background lines showing the variance from a Poisson process.
 LNs_ymax = {'BT': 56,
@@ -230,11 +235,11 @@ for LN, LN_list in LNs_cat.items():
     assert np.array_equal(data.values,data_m.values)
 
     if LN == 'BT':
-        pads = [0.55, 0.12, 0.35, 0.2]
+        pads = [0.5, 0.05, 0.35, 0.05]
     else:
-        pads = [0.12, 0.12, 0.35, 0.2]
+        pads = [0., 0.05, 0.35, 0.05]
 
-    fs, ax1 = FP.calc_fs_ax(pads, 10*SQ, 21*SQ)
+    fs, ax1 = FP.calc_fs_ax(pads, 9*SQ, 21*SQ)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(ax1)
 
@@ -250,7 +255,8 @@ for LN, LN_list in LNs_cat.items():
         ax.plot(data1.iloc[:, i], range(data1.shape[0]), lw=0.5)
     ax.set_xlim(-2, LNs_ymax[LN])
     ax.set_ylim(-0.5, 20.5)
-    ax.set_title(LNs_name[LN])
+    ax.text(LNs_ymax[LN]/2, 0.0, LNs_name[LN])
+    # ax.set_title(LNs_name[LN])
     ax.invert_yaxis()
 
     ax.set_xticks(LNs_yticks[LN])
@@ -259,7 +265,7 @@ for LN, LN_list in LNs_cat.items():
         ax.tick_params(axis='y', left=False, direction='in')
         ax.set_ylabel('ORN')
     else:
-        ax.tick_params(axis='y', left=False, labelleft=False)
+        ax.tick_params(axis='y', left=False,direction='in')
 
 
     ax.yaxis.grid(zorder=0)
@@ -279,6 +285,19 @@ print('done')
 # contains all the LNs
 wLNtex = r'$\mathbf{w}_{\mathrm{LN}}$'
 
+
+def mask_df(df, up=True):
+    df_np = df.values.copy()  # didn't know I needed to do this...
+    if up:
+        tri_idx = np.triu_indices(len(df_np),1)
+    else:
+        tri_idx = np.tril_indices(len(df_np), -1)
+    df_np[tri_idx] = np.nan
+    df_new = df.copy()
+    df_new[:] = df_np
+    return df_new
+
+
 for strm in [0, 1]:
     # Correlation coefficient per category
     cat = {}
@@ -289,23 +308,29 @@ for strm in [0, 1]:
     cat['P0'] = ['P0 L', 'P0 R']
     if strm == 0:
         LNs_sel_LR = LNs_sel_LR_d
-        title = (r'corr. among ORNs$\rightarrow$LN'+ f'\n'
-                 + 'syn. count vectors \{'+ f'{wLNtex}' + '\}')
+        # title = (r'corr. among ORNs$\rightarrow$LN'+ f'\n'
+        #          + 'syn. count vectors \{'+ f'{wLNtex}' + '\}')
+        title = ''
         xylabel = 'ORNs\n' + r'$\rightarrow$'
         ylabel = r'$\mathbf{w}_\mathrm{LN}$'
         xlabel = r'$\mathbf{w}_\mathrm{LN}$'
         # ylabel = r'$\mathbf{w}_\mathrm{LN}$:' + '\nfrom\nORNs\nto'
         # xlabel = r'$\mathbf{w}_\mathrm{LN}$: from ORNs to'
+        # pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
+        pads = (0.45, 0.35, 0.45, 0.1)  # l, r, b, t
     else:
         LNs_sel_LR = LNs_sel_LR_a
         title = (r'corr. among LN$\rightarrow$ORNs' + f'\n'
                  + r'syn. count vectors \{$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$\}')
+        # title = ''
         # xylabel = r'...$\rightarrow$ ORNs'
         xylabel = 'ORNs\n' + r'$\leftarrow$'
         ylabel = r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$'
         xlabel = r'$\mathbf{w}_\mathrm{LN}^\mathrm{fb}$'
         # ylabel = 'to\nORNs\nfrom'
         # xlabel = 'to ORNs from'
+        # pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
+        pads = (0.55, 0.35, 0.5, 0.35)  # l, r, b, t
 
     con_ff_sel = con_strms3.loc[:, strm]
     con_ff_sel = con_ff_sel.loc[:, LNs_sel_LR]
@@ -317,13 +342,15 @@ for strm in [0, 1]:
     #     con_ff_sel.columns = LNs_sel_LR_short
     con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
     grammian = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
+    grammian_plt = mask_df(grammian)
 
     # pads = (0.5, 0.45, 0.5, 0.2)  # l, r, b, t
-    pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
+    # pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
+    # pads = (0.45, 0.35, 0.45, 0.1)  # l, r, b, t
     _, fs, axs = FP.calc_fs_ax_df(grammian, pads, sq=SQ)
     f = plt.figure(figsize=fs)
     ax1 = f.add_axes(axs)
-    cp = FP.imshow_df(grammian, ax1, cmap=corr_cmap, vlim=1,
+    cp = FP.imshow_df(grammian_plt, ax1, cmap=corr_cmap, vlim=1,
                       splits_x=[6, 10, 14], splits_y=[6, 10, 14], ha='right',
                       show_lab_x=True, title=title, x_offset=0.5, rot=70)
     # ax1.set_xticks(np.arange(len(grammian.T)) + 0.5)  # the +0.5 is needed
@@ -365,20 +392,32 @@ for strm in [0, 1]:
         else:
             gram_cat.loc[c1, c2] = np.mean(FG.rectify(mat))
 
-
+    gram_cat_plt = mask_df(gram_cat, up=False)
     # plotting
     # pads = (0.5, 0.3, 0.5, 0.5)  # l, r, b, t
-    pads = (0.25, 0.25, 0.45, 0.5)  # l, r, b, t
+    # pads = (0.25, 0.25, 0.45, 0.5)  # l, r, b, t
+    pads = (0.05, 0.15, 0.05, 0.15)  # l, r, b, t
     _, fs, axs = FP.calc_fs_ax_df(gram_cat, pads, sq=SQ*1.5)
     f = plt.figure(figsize=fs)
     ax1 = f.add_axes(axs)
-
-    FP.imshow_df(gram_cat, ax1, cmap=corr_cmap, vlim=1,
-                 splits_x=[1, 2, 3], splits_y=[1, 2, 3], rot=50,
-                 title = r'mean corr. coef. $r$' + '\nwithin and '
-                                                    'across\n LN types'
+    title = r'mean corr. coef. $r$' + '\nwithin and across\n LN types'
+    title = ''
+    # spls = [1, 2, 3]
+    spls = []
+    FP.imshow_df(gram_cat_plt, ax1, cmap=corr_cmap, vlim=1,
+                 splits_x=spls, splits_y=spls, rot=50,
+                 title = title, show_lab_x=True, show_lab_y=True
                  )
     ax1.set(xlabel='', ylabel='')
+    ax1.yaxis.tick_right()
+    ax1.tick_params('y', right=False, direction='in')
+    ax1.xaxis.tick_top()
+    ax1.tick_params('x', top=False, direction='in')
+    # plotting the splits
+    n = len(gram_cat)
+    for s in range(1,n):
+        ax1.plot([s-0.5, s-0.5], [-0.5, s+1-0.5], c='w', lw=1)
+        ax1.plot([s-1 - 0.5, n - 0.5], [s - 0.5, s - 0.5], c='w', lw=1)
 
     file = (f'{PP_CONN}/{CELL_TYPE}_con{strm}_cn_grammian_cat')
     FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
@@ -402,7 +441,8 @@ grammian = FG.get_corr(con_ff_sel_cn, con_fb_sel_cn)
 
 # pads = (0.8, 0.45, 0.8, 0.2)  # l, r, b, t
 # pads = (0.6, 0.35, 0.45, 0.2)  # l, r, b, t
-pads = (0.6, 0.35, 0.52, 0.35)  # l, r, b, t
+pads = (0.6, 0.35, 0.5, 0.35)  # l, r, b, t
+pads = (0.55, 0.35, 0.5, 0.35)  # l, r, b, t
 _, fs, axs = FP.calc_fs_ax_df(grammian, pads, sq=SQ)
 f = plt.figure(figsize=fs)
 ax1 = f.add_axes(axs)
@@ -437,10 +477,11 @@ print('done')
 d_h = 0.15
 strm = 0
 # xlabel = 'from ORNs to'
-xlabel = r'ORNs$\rightarrow$LN synaptic count vector $\mathbf{w}_\mathrm{LN}$'
+# xlabel = r'ORNs$\rightarrow$LN synaptic count vector $\mathbf{w}_\mathrm{LN}$'
+xlabel = r'$\mathbf{w}_\mathrm{LN}$'
 # ylabel = 'from\nORNs\nto'
 ylabel = r'$\mathbf{w}_\mathrm{LN}$'
-pads = [0.40, 0.45, 0.37, 0.35]  # l, r, b, t
+pads = [0.40, 0.40, 0.35, 0.2]  # l, r, b, t
 title = {'L': 'left', 'R': 'right'}
 side = 'L'
 # Correlation coefficient per category
@@ -470,8 +511,8 @@ ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
 cp = FP.imshow_df(df1, ax1, cmap=corr_cmap, vlim=1, x_offset=0.5,
-                  rot=70, ha='right')
-ax1.set_title('left side', pad=2)
+                  rot=60, ha='right')
+ax1.set_title('left', pad=2)
 ax1.set_ylabel(ylabel)
 # ax1.set_ylabel(ylabel, rotation=0, fontsize=ft_s_tk, labelpad=3,
 #                va='center', ha='right')
@@ -482,26 +523,86 @@ ax1.set_ylabel(ylabel)
 #              annotation_clip=False)
 
 cp = FP.imshow_df(df2, ax2, cmap=corr_cmap, vlim=1, x_offset=0.5,
-                  show_lab_y=False, rot=70, ha='right')
-ax2.set_title('right side', pad=2)
+                  show_lab_y=False, rot=60, ha='right')
+ax2.set_title('right', pad=2)
 
 # ax2.set_xlabel(xlabel, rotation=0, fontsize=ft_s_tk, labelpad=2,
 #                rotation_mode='default', ha='center', va='top')
 # ax2.annotate('', xy=(-12, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
 #              annotation_clip=False)
-f.text(0.5, 0., xlabel, rotation=0, fontsize=ft_s_lb, va='bottom',
+f.text(0.5, 0.05, xlabel, rotation=0, fontsize=ft_s_lb, va='bottom',
        ha='center')
 # ax1.xaxis.set_label_coords(0.5, -1.2)
 # ax1.yaxis.set_label_coords(-1.2, 0.5)
 
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
-plt.suptitle(r'connectome, corr. among $\{\mathbf{w}_\mathrm{LN}\}$')
+# plt.suptitle(r'connectome, corr. among $\{\mathbf{w}_\mathrm{LN}\}$')
 file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
 print('done')
+
+# %%
+# # left and right combined in a single matrix! - makes it look confusing
+# strm = 0
+# # xlabel = 'from ORNs to'
+# xlabel = r'ORNs$\rightarrow$LN synaptic count vector $\mathbf{w}_\mathrm{LN}$'
+# xlabel =''
+# # ylabel = 'from\nORNs\nto'
+# ylabel = r'$\mathbf{w}_\mathrm{LN}$'
+# pads = [0.40, 0.45, 0.37, 0.2]  # l, r, b, t
+# title = {'L': 'left', 'R': 'right'}
+# side = 'L'
+# # Correlation coefficient per category
+# LNs_sel1 = LNs_sel_d_side[side]
+#
+# con_ff_sel = con_strms3.loc[:, strm]
+# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
+# con_ff_sel.columns = LNs_sel_short
+# con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
+# df1 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
+# side = 'R'
+# # Correlation coefficient per category
+# LNs_sel1 = LNs_sel_d_side[side]
+#
+# con_ff_sel = con_strms3.loc[:, strm]
+# con_ff_sel = con_ff_sel.loc[:, LNs_sel1]
+# con_ff_sel.columns = LNs_sel_short
+# con_ff_sel_cn = FG.get_ctr_norm(con_ff_sel)
+# df2 = FG.get_corr(con_ff_sel_cn, con_ff_sel_cn)
+#
+# df1_np = df1.values.copy()
+# df2_np = df2.values.copy()
+# tri_idx = np.triu_indices(len(df1_np),1)
+# df1_np[tri_idx] = df2_np[tri_idx]
+# df1[:] = df1_np
+#
+# _, fs, axs = FP.calc_fs_ax_df(df1, pads, sq=SQ)
+#
+# f = plt.figure(figsize=fs)
+# ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0],
+#                     axs[1], CB_W / fs[0], axs[3]])
+# ax = f.add_axes(axs)
+#
+# cp = FP.imshow_df(df1, ax, cmap=corr_cmap, vlim=1, x_offset=0.5,
+#                   rot=70, ha='right', )
+# ax.set_ylabel(ylabel)
+# ax.set_xlabel(ylabel)
+# ax.set_title('left; right', pad=2)
+#
+# # f.text(0.5, 0., xlabel, rotation=0, fontsize=ft_s_lb, va='bottom',
+# #        ha='center')
+# # ax1.xaxis.set_label_coords(0.5, -1.2)
+# # ax1.yaxis.set_label_coords(-1.2, 0.5)
+#
+# add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
+# file = f'{PP_CONN}/{CELL_TYPE}_con{strm}LR_cn_grammian2'
+# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+#
+# print('done')
 
 # %%
 # #############################################################################
@@ -527,7 +628,7 @@ df2.columns = LNs_sel_short
 df2.columns.name = 'Postsynaptic LN'
 
 
-pads = [0.4, 0.4, 0.41, 0.45]
+pads = [0.4, 0.35, 0.4, 0.3]
 d_h = 0.15  # delta height between the 2 imshows
 fs, axs1, axs2, axs_cb = FP.calc_fs_ax_2plts(df1, df2, pads, d_h, SQ, CB_DX,
                                              CB_W)
@@ -537,11 +638,11 @@ ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
 cp = FP.imshow_df(df1, ax1, vlim=[0, 110], show_lab_x=False)
-ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
+ax1.set_title('left', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
 cp = FP.imshow_df(df2, ax2, vlim=[0, 110], x_offset=0.5, rot=70, ha='right')
-ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
+ax2.set_title('right', pad=2)#, fontsize=ft_s_lb)
 
 # y label
 f.text(0.01, 0.55, 'Presynaptic LN', rotation=90,
@@ -549,7 +650,8 @@ f.text(0.01, 0.55, 'Presynaptic LN', rotation=90,
 
 clb = add_colorbar_crt(cp, ax_cb, '\# syn.', [0, 50, 100])
 # clb.ax.set_title(, pad=2, fontsize=ft_s_tk)
-plt.suptitle("LN-LN connections\n synaptic counts " + r"$\mathbf{M}$")
+# plt.suptitle("LN-LN \n syn. counts " + r"$\mathbf{M}$")
+plt.suptitle(r"$\mathbf{M}$")
 file = f'{PP_CONN}/con_M_a-d.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
@@ -561,7 +663,7 @@ print('done')
 # axon merged into 1 cell and changed padding at the bottom and at the top
 
 xlabel = r'$\mathbf{w}_\mathrm{LN}$'
-ylabel = r'ORNs$\rightarrow$LN synaptic count vector $\mathbf{w}_\mathrm{LN}$'
+ylabel = r'ORNs$\rightarrow$LN syn. cnt. vect. $\mathbf{w}_\mathrm{LN}$'
 
 s = 'L'
 con_ff_sel = con_S[s].loc[ORNs_side[s], LNs_sel_d_side[s]]
@@ -584,7 +686,7 @@ df2.columns = LNs_sel_short
 
 print(np.max(df1.values), np.max(df2.values))
 
-pads = [0.5, 0.5, 0.41, 0.45]
+pads = [0.15, 0.35, 0.4, 0.3]
 d_h = 0.15  # delta height between the 2 imshows
 fs, axs1, axs2, axs_cb = FP.calc_fs_ax_2plts(df1, df2, pads, d_h, SQ, CB_DX,
                                              CB_W)
@@ -593,12 +695,13 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-FP.imshow_df(df1 / 1000, ax1, vlim=[0, 15], show_lab_x=False)
-ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
+FP.imshow_df(df1 / 1000, ax1, vlim=[0, 15], show_lab_x=False, show_lab_y=False)
+ax1.set_title('left', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df(df2 / 1000, ax2, vlim=[0, 15], x_offset=0.5, rot=70, ha='right')
-ax2.set_title('right side', pad=2)#, fontsize=ft_s_lb)
+cp = FP.imshow_df(df2 / 1000, ax2, vlim=[0, 15], x_offset=0.5, rot=70,
+                  ha='right', show_lab_y=False)
+ax2.set_title('right', pad=2)#, fontsize=ft_s_lb)
 ax2.set_xlabel(xlabel)
 # ax2.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
@@ -607,18 +710,20 @@ ax2.set_xlabel(xlabel)
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
 #              annotation_clip=False)
 
-f.text(0.1, 0.5, ylabel, rotation=90, fontsize=ft_s_lb,
-       va='center',ha='right')
+f.text(0.01, 0.5, ylabel, rotation=90, fontsize=ft_s_lb,
+       va='center',ha='left')
 # f.text(0.15, 0.55, 'from\nORNs\nto', rotation=0, fontsize=ft_s_tk, va='center',
 #        ha='right')
 
-clb = add_colorbar_crt(cp, ax_cb, '', [0, 10])
+# clb = add_colorbar_crt(cp, ax_cb, '', [0, 10])
+clb = add_colorbar_crt(cp, ax_cb, r'(\# syn.)$^2$', [0, 10])
 clb.set_ticklabels([0, r'$10^4$'])
-clb.ax.set_title(r'(\# syn.)$^2$', pad=2, fontsize=ft_s_tk)
+# clb.ax.set_title(r'(\# syn.)$^2$', pad=2, fontsize=ft_s_tk)
 # clb.ax.set_title('1e3', pad=2, fontsize=ft_s_tk)
-plt.suptitle(r'ORNs$\rightarrow$LN dot products' + '\n'
-                                                   r'$\mathbf{W}^\mathrm{\top}\mathbf{W} = $'+
-             r'$\{\mathbf{w}_\mathrm{LNi}^\mathrm{\top}\mathbf{w}_\mathrm{LNj}\}$')
+# plt.suptitle(r'ORNs$\rightarrow$LN dot products' + '\n'
+#                                                    r'$\mathbf{W}^\mathrm{\top}\mathbf{W} = $'+
+#              r'$\{\mathbf{w}_\mathrm{LNi}^\mathrm{\top}\mathbf{w}_\mathrm{LNj}\}$')
+plt.suptitle(r'$\mathbf{W}^\mathrm{\top}\mathbf{W}$')
 
 file = f'{PP_CONN}/con_WtW_d.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
@@ -657,7 +762,7 @@ df2.columns = LNs_sel_short
 print(np.max(df1.values), np.max(df2.values))
 
 # pads = [0.5, 0.5, 0.41, 0.45]
-pads = [0.5, 0.5, 0.41, 0.32]
+pads = [0.07, 0.35, 0.4, 0.3]
 d_h = 0.15  # delta height between the 2 imshows
 fs, axs1, axs2, axs_cb = FP.calc_fs_ax_2plts(df1, df2, pads, d_h, SQ, CB_DX,
                                              CB_W)
@@ -666,12 +771,13 @@ ax1 = f.add_axes(axs1)
 ax2 = f.add_axes(axs2)
 ax_cb = f.add_axes(axs_cb)
 
-cp = FP.imshow_df(df1, ax1, vlim=[0, 90], show_lab_x=False)
-ax1.set_title('left side', pad=2)#, fontsize=ft_s_lb)
+cp = FP.imshow_df(df1, ax1, vlim=[0, 90], show_lab_x=False, show_lab_y=False)
+ax1.set_title('left', pad=2)#, fontsize=ft_s_lb)
 
 # bottom plot
-cp = FP.imshow_df(df2, ax2, vlim=[0, 90], x_offset=0.5, rot=70, ha='right')
-ax2.set_title('right side', pad=2) #  , fontsize=ft_s_lb)
+cp = FP.imshow_df(df2, ax2, vlim=[0, 90], x_offset=0.5, rot=70, ha='right',
+                  show_lab_y=False)
+ax2.set_title('right', pad=2) #  , fontsize=ft_s_lb)
 ax2.set_xlabel(xylabel)
 # ax2.annotate('', xy=(-2, 8 + 3.1), xytext=(9, 8 + 3.1), xycoords='data',
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
@@ -680,11 +786,11 @@ ax2.set_xlabel(xylabel)
 #              arrowprops={'arrowstyle': '-', 'lw': 0.5},
 #              annotation_clip=False)
 
-f.text(0.1, 0.5, xylabel, rotation=90, fontsize=ft_s_lb, va='center',
-       ha='right')
+# f.text(0.01, 0.5, xylabel, rotation=90, fontsize=ft_s_lb, va='center',
+#        ha='left')
 
-clb = add_colorbar_crt(cp, ax_cb, '', [0, 40, 80])
-clb.ax.set_title('\# syn.', pad=2, fontsize=ft_s_tk)
+clb = add_colorbar_crt(cp, ax_cb, '\# syn.', [0, 40, 80])
+# clb.ax.set_title('\# syn.', pad=2, fontsize=ft_s_tk)
 plt.suptitle(r'$(\mathbf{W}^\mathrm{\top} \mathbf{W})^{1/2}$')
 
 file = f'{PP_CONN}/con_sqrtWtW_d.'
@@ -725,7 +831,7 @@ print(cc_real)  # 0.73
 # the only thing that is important that it matches is the bottom in order
 # to compare with the M and WTW plots
 b = 0.35
-pads = (0.4, 0.1, b, 0.15)
+pads = (0.4, 0.05, b, 0.15)
 # then, what about the actual size of the graph?
 
 fs, ax1 = FP.calc_fs_ax(pads, 15*SQ, 15*SQ)
@@ -741,8 +847,8 @@ FP.plot_scatter(ax, M_entries[n_pts:], W_entries[n_pts:],
                 pca_line_scale2=0.68, show_cc=False, s=5, c='teal',
                 label='right', alpha=0.7, lw=0)
 ax.legend(loc='upper left')
-ax.text(0.65, 0.11, r'$r$' + " = %0.2f" % cc_real, transform=ax.transAxes)
-ax.text(0.65, 0.03, "pv = %0.0e" % 0.006, transform=ax.transAxes)
+ax.text(0.6, 0.11, r'$r$' + " = %0.2f" % cc_real, transform=ax.transAxes)
+ax.text(0.6, 0.03, "pv = %0.0e" % 0.006, transform=ax.transAxes)
 ax.set(ylim=(None , None), xlim=(-5, None))
 
 file = f'{PP_CONN}/con_sqrtWtW_M_scatter'
@@ -776,15 +882,17 @@ Ws_nnc = pd.DataFrame(pd.read_hdf(RESULTS_PATH / 'W_NNC-8.hdf'))
 # Plotting the previous graphs on a single figure
 k = 8
 lab_y = {-1: True, -0.45: False, 0: False, 1: False}
-pads = [0.3, 0.075, 0.37, 0.35]
+pads = [0.4, 0.075, 0.15, 0.02]
 title = {-1: '0.1', -0.45: '0.35', 0: '1', 1: '10'}
+sq_crt = SQ/1.7
 n_ax = len(title)
-fs, axs = FP.calc_fs_ax(pads, gw=SQ * k * n_ax + (n_ax-1) * 2 * SQ, gh=SQ * k)
+fs, axs = FP.calc_fs_ax(pads, gw=sq_crt * k * n_ax + (n_ax-1) * 2 * sq_crt, gh=sq_crt * k)
 f = plt.figure(figsize=fs)
-axs_coords = {-1: [axs[0], axs[1], SQ * k / fs[0], axs[3]],
-              -0.45:[axs[0] + SQ * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
-              0: [axs[0] + SQ * 2 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]],
-              1: [axs[0] + SQ * 3 * (k + 2)/fs[0], axs[1], SQ * k / fs[0], axs[3]]}
+
+axs_coords = {-1: [axs[0], axs[1], sq_crt * k / fs[0], axs[3]],
+              -0.45:[axs[0] + sq_crt * (k + 2)/fs[0], axs[1], sq_crt * k / fs[0], axs[3]],
+              0: [axs[0] + sq_crt * 2 * (k + 2)/fs[0], axs[1], sq_crt * k / fs[0], axs[3]],
+              1: [axs[0] + sq_crt * 3 * (k + 2)/fs[0], axs[1], sq_crt * k / fs[0], axs[3]]}
 for s in lab_y.keys():
     rho = 10**s
     pps_local = f'{title[s]}o'
@@ -801,26 +909,34 @@ for s in lab_y.keys():
 
 
     ax = f.add_axes(axs_coords[s])
-    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=lab_y[s],
-                      show_lab_x=True, cmap=corr_cmap, rot=0)
-    ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2)
-    ax.set_xticks(np.arange(8), np.arange(1, 9))
+    cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_y=False,
+                      show_lab_x=False, cmap=corr_cmap, rot=0)
+    # ax.text(-.5, 8, title[s], va='bottom', ha='left')
+    if s == -1:
+        ax.text(-.5, 7.5, r'$\rho$ = ' + f'{title[s]}', va='bottom', ha='left')
+        # ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2)
+    else:
+        ax.text(-.5, 7.5, title[s], va='bottom', ha='left')
+        # ax.set_title(title[s], pad=2)
+    # ax.set_xticks(np.arange(8), np.arange(1, 9))
     # ax.set_xticklabels()
     # ax.set_xlabel(r'NNC-8, $\mathbf{w}_k$', labelpad=1, rotation_mode='default',
     #               ha='center')
     if lab_y[s]:
-        ax.set_yticks(np.arange(8))
-        ax.set_yticklabels(np.arange(1, 9))
+        # ax.set_yticks(np.arange(8))
+        # ax.set_yticklabels(np.arange(1, 9))
         ax.set_ylabel(r'$\mathbf{w}_k$', labelpad=6, va='center')
+        # ax.set_xticks(np.arange(8), np.arange(1, 9))
     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
     #                     CB_W / fs[0], axs[3]])
     # clb = add_colorbar_crt(cp, ax_cb, '', [-1, 0, 1])
     print(W_nncT.sum(axis=1))
     # print(W_nncT[idx].sum(axis=1))
-plt.suptitle(r'NNC-8 model, corr. among $\{\mathbf{w}_k\}$')
+# plt.suptitle(r'NNC-8 model, corr. among $\{\mathbf{w}_k\}$')
 # f.text(0.54, 0.1, r'$\mathbf{w}_k$', rotation=0, fontsize=ft_s_lb, va='bottom',
 #        ha='center')
-f.text(0.54, 0.1, r'ORNs$\rightarrow$LN conn. weight vector $\mathbf{w}_k$',
+# f.text(0.58, 0.05, r'ORNs$\rightarrow$LN conn. weight vect. $\mathbf{w}_k$',
+f.text(0.58, 0.05, r'NNC-8, $\mathbf{w}_k$',
        rotation=0, fontsize=ft_s_lb, va='bottom',
        ha='center')
 file = f'{PP_CON_PRED}/ORN_act_NNC{k}_corrW_all'
@@ -828,6 +944,71 @@ FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
 print('done')
+
+
+# %%
+# # Same as above, but smaller and vertically
+# k = 8
+# lab_x = {-1: False, -0.45: False, 0: False, 1: True}
+# pads = [0.3, 0.075, 0.37, 0.2]
+# title = {-1: '0.1', -0.45: '0.35', 0: '1', 1: '10'}
+# n_ax = len(title)
+# sq_crt = SQ/2
+# gw_crt = SQ/2 * k
+# # axs : [left, bottom, width, height], in percentage of fig size
+# # fs: figure size: width, height
+# fs, axs = FP.calc_fs_ax(pads, gw=gw_crt , gh=gw_crt * n_ax + (n_ax-1) * sq_crt*2)
+# f_w, f_h = fs
+#
+# f = plt.figure(figsize=fs)
+# axs_coords = {1: [axs[0], axs[1], axs[2], gw_crt / f_h], # lowest one
+#               0: [axs[0] , axs[1] + sq_crt * (k + 2)/f_h, axs[2], gw_crt / f_h],
+#               -0.45: [axs[0] , axs[1] + sq_crt * 2 * (k + 2)/f_h, axs[2], gw_crt / f_h],
+#               -1: [axs[0] , axs[1] + sq_crt * 3 * (k + 2)/f_h, axs[2], gw_crt / f_h]}
+# for s in lab_x.keys():
+#     rho = 10**s
+#     pps_local = f'{title[s]}o'
+#     print('rho:', rho)
+#     W_nncT = Ws_nnc.loc[:, (s*10, 1)].values.T
+#
+#     links = sch.linkage(np.corrcoef(W_nncT), method='average', optimal_ordering=True)
+#     new_order = sch.leaves_list(links)
+#     df = pd.DataFrame(np.corrcoef(W_nncT[new_order]))
+#     #
+#     # CG = sns.clustermap(np.corrcoef(W_nncT), cmap=corr_cmap, vmin=-1, vmax=1)
+#     # idx = CG.dendrogram_col.reordered_ind
+#     # df = pd.DataFrame(np.corrcoef(W_nncT[idx]))
+#
+#
+#     ax = f.add_axes(axs_coords[s])
+#     cp = FP.imshow_df(df, ax, vlim=[-1, 1], show_lab_x=lab_x[s],
+#                       show_lab_y=True, cmap=corr_cmap, rot=0)
+#     ax.set_title(r'$\rho$ = ' + f'{title[s]}', pad=2)
+#     # ax.set_yticks(np.arange(8), np.arange(1, 9))
+#     ax.set_yticks([])
+#     # ax.set_xticklabels()
+#     # ax.set_xlabel(r'NNC-8, $\mathbf{w}_k$', labelpad=1, rotation_mode='default',
+#     #               ha='center')
+#     if lab_x[s]:
+#         ax.set_xticks(np.arange(8))
+#         ax.set_xticklabels(np.arange(1, 9))
+#         ax.set_xlabel(r'$\mathbf{w}_k$', labelpad=6, va='center')
+#     # ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX / fs[0], axs[1],
+#     #                     CB_W / fs[0], axs[3]])
+#     # clb = add_colorbar_crt(cp, ax_cb, '', [-1, 0, 1])
+#     print(W_nncT.sum(axis=1))
+#     # print(W_nncT[idx].sum(axis=1))
+# # plt.suptitle(r'NNC-8 model, corr. among $\{\mathbf{w}_k\}$')
+# # f.text(0.54, 0.1, r'$\mathbf{w}_k$', rotation=0, fontsize=ft_s_lb, va='bottom',
+# #        ha='center')
+# f.text(0.1, 0.1, r'ORNs$\rightarrow$LN conn. weight vector $\mathbf{w}_k$',
+#        rotation=90, fontsize=ft_s_lb, va='bottom',
+#        ha='center')
+# file = f'{PP_CON_PRED}/ORN_act_NNC{k}_corrW_all2'
+# FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+# FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+#
+# print('done')
 
 # %%
 # #############################################################################
@@ -882,9 +1063,9 @@ x = corr_W_nnc_s.index.unique('rho')/10
 y = corr_W_nnc_s.groupby('rho').mean()
 e = corr_W_nnc_s.groupby('rho').std()
 
-pads = (0.4, 0.1, 0.35, 0.1)
+pads = (0.4, 0.5, 0.3, 0.03)
 # fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*10)
-fs, axs = FP.calc_fs_ax(pads, SQ*12, SQ*12)  # pads, gw, gh
+fs, axs = FP.calc_fs_ax(pads, SQ*14, SQ*6)  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 ax.plot(x, y, lw=1, c='k')
@@ -898,7 +1079,7 @@ ax.set_xticks([-1, x_special, 0, 1], [0.1, rho_special, 1, 10])
 ax.set_ylim(0, 0.4)
 ax.set_ylabel(r'$\overline{r}_+$')
 ax.set_xlabel(r'$\rho$')
-plt.legend(loc='upper right')
+plt.legend(loc='lower left', bbox_to_anchor=[1.05, 0.05])
 file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
         f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-8_W-corr')
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)

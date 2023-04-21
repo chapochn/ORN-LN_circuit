@@ -61,10 +61,11 @@ x = np.linspace(0, 6, 100)
 rhos = {0.1: 'C1', 0.2: 'C2', 0.4: 'C3', 1: 'C4', 2: 'C5', 10: 'C6',
         50: 'C7'}
 
+n_sq = 10
 
-pads = (0.37, 0.15, 0.3, 0.2)
+pads = (0.37, 0.15, 0.27, 0.2)
 # graph_width = pads[0] + pads[1] + 15 * SQ
-fs, axs = FP.calc_fs_ax(pads, 15 * SQ, 15 * SQ)
+fs, axs = FP.calc_fs_ax(pads, n_sq * SQ, n_sq * SQ)
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 ax.plot(x, x, c='C0')
@@ -73,7 +74,7 @@ rhos_sel = [0.1, 0.2, 0.4, 1, 2, 10]
 for rho in rhos_sel:
     ax.plot(x, FOC.damp_sx(x, 1, rho=rho), c=rhos[rho])
     ax.text(6.2, FOC.damp_sx(6, 1, rho=rho), rho)
-ax.text(6.2, 6.8, r'$\rho:$')
+ax.text(6.2, 7, r'$\rho:$')
 ax.set(ylabel=r'axon, PCA SD ($\sigma_Y$)',
        xlabel=r'soma, PCA SD ($\sigma_X$)',
        xticks=[0, 3, 6], yticks=[0, 3, 6])
@@ -90,8 +91,9 @@ x_end = 100
 x = np.logspace(-1.5, 2, 100)
 # rhos = [0.1, 1, 10, 50]
 pads = (0.37, 0.15, 0.3, 0.2)
+pads = (0.2, 0.2, 0.27, 0.2)
 
-fs, axs = FP.calc_fs_ax(pads, 15 * SQ, 15 * SQ)
+fs, axs = FP.calc_fs_ax(pads, n_sq * SQ, n_sq * SQ)
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 ax.loglog(x, x, c='C0')
@@ -100,18 +102,20 @@ rhos_sel = [0.1, 1, 10, 50]
 for rho in rhos_sel:
     ax.loglog(x, FOC.damp_sx(x, 1, rho=rho), c=rhos[rho])
     ax.text(x_end + 50, FOC.damp_sx(x_end, 1, rho=rho), rho)
-ax.text(x_end + 50, x_end + 200, r'$\rho:$')
+ax.text(x_end + 50, x_end + 300, r'$\rho:$')
 
 x = np.logspace(-0.8, 0.9, 100)
 ax.loglog(x, 10*x, ls='--', lw=1, c='k')
-ax.text(1, 12, r'$\sigma_Y\propto \sigma_X$', ha='right', va='bottom')
+ax.text(0.1, 5, r'$\sigma_Y\propto \sigma_X$', ha='left', va='bottom',
+        rotation=45)
 
 x = np.logspace(0.2, 2, 100)
-ax.loglog(x, 0.02*x**(1/3), ls='--', lw=1, c='k')
-ax.text(9, 0.06, r'$\sigma_Y\propto \sigma_X^{1/3}$',
-        ha='left', va='top')
+ax.loglog(x, 0.04*x**(1/3), ls='--', lw=1, c='k')
+ax.text(4, 0.01, r'$\sigma_Y\propto \sigma_X^{1/3}$',
+        ha='left', va='bottom', rotation=16)
 
-ax.set(ylabel=r'axon, PCA SD ($\sigma_Y$)',
+ax.set(ylabel='',
+       # ylabel=r'axon, PCA SD ($\sigma_Y$)',
        xlabel=r'soma, PCA SD ($\sigma_X$)',
        xticks=[0.1, 1, 10, 100], yticks=[0.1, 1, 10, 100],
        xticklabels=[0.1, 1, 10, 100],
@@ -197,11 +201,10 @@ for data, label in [(X, 'X'), (Z_NNC, 'NNC'), (Z_LC, 'LC')]:
     else:
         xlabel = ''
         pad_down = 0.1
-    f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
+    f, ax, _ = plot_full_activity_crt(df, act_map, divnorm, title, cb_title,
                                      cb_ticks, pads=[pad_l, pad_r, pad_down, pad_up],
                                      extend='neither',
-                                     squeeze=squeeze, do_vert_spl=False, SQ=SQ, CB_DX=0.06,
-                                     cb_title_font=cb_title_font)
+                                     squeeze_x=squeeze, do_vert_spl=False)
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=xlabel)
 
     file = f'{PP_THEORY}/dataset{data_i}_{label}.'
@@ -402,8 +405,8 @@ Ll1 = f'LC' + Y_str
 # now plotting the variances of the uncentered PCA instead of singular values
 def plot_sv1(datas, order=None):
     x_i = np.arange(1, 3)
-    pads = (0.37, 0.4, 0.3, 0.2)
-    fs, axs = FP.calc_fs_ax(pads, 10*SQ, 15*SQ)
+    pads = (0.25, 0.1, 0.27, 0.6)
+    fs, axs = FP.calc_fs_ax(pads, 6*SQ, 10*SQ)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
     for data in datas:
@@ -418,8 +421,7 @@ def plot_sv1(datas, order=None):
         order = np.arange(len(handles))
     leg = ax.legend([handles[idx] for idx in order],
                     [labels[idx] for idx in order],
-                    bbox_to_anchor=(1.5, 1.10), loc='upper right',
-                    handlelength=2)
+                    bbox_to_anchor=(-.2, 1.05), loc='lower left')
     return f
 
 
@@ -479,9 +481,9 @@ for data_i in [1, 2]:
     X = np.load(file)
     df = pd.DataFrame(X)
     D, N = X.shape
-    f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
+    f, ax, _ = plot_full_activity_crt(df, act_map, divnorm, title, cb_title,
                                      cb_ticks, pads=[0.2, 0.4, 0.3, pad_up], extend='neither',
-                                     squeeze=0.1, do_vert_spl=False, SQ=SQ*0.9)
+                                     squeeze_x=0.1, do_vert_spl=False)
     ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel=f'sample (T={N})')
 
     file = f'{PP_WrhoK}/dataset{data_i}.'
@@ -554,11 +556,11 @@ for data_i in [1, 2]:
 
 
         divnorm = mpl.colors.Normalize(0, df.values.max())
-        f, ax, _ = FP.plot_full_activity(df.iloc[new_order], act_map, divnorm,
+        f, ax, _ = plot_full_activity_crt(df.iloc[new_order], act_map, divnorm,
                                          title, cb_title,
                                          cb_ticks, pads=[0.2, 0.4, 0.3, pad_up],
-                                         extend='neither', squeeze=0.1,
-                                         do_vert_spl=False, SQ=SQ*9/10)
+                                         extend='neither', squeeze_x=0.1,
+                                         do_vert_spl=False)
         ax.set(xticks=[], yticks=[], ylabel=ylabel, xlabel='sample')
 
         file = f'{PP_WrhoK}/dataset{data_i}_K{K}_rho{rho}_Z.'

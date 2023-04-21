@@ -37,6 +37,21 @@ FROM act_odors_ORN_vs_con_ORN-LN_recon.py
 # ################################# IMPORTS ###################################
 from plots_import import *
 
+# old version
+# def highlight_cell(x,y, ax=None, linewidth=0.5, **kwargs):
+#     rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, linewidth=linewidth, **kwargs)
+#     ax = ax or plt.gca()
+#     ax.add_patch(rect)
+#     return rect
+
+# making cross or line
+def highlight_cell(x,y, ax=None, f=1, linewidth=0.5, **kwargs):
+    # rect = plt.Rectangle((x-.5, y+.5), 1,-1/2, fill=True, linewidth=linewidth, **kwargs)
+    ax = ax or plt.gca()
+    # ax.add_patch(rect)
+    ax.plot([x -0.5, x+0.5], [y-f*0.5, y+f*0.5], linewidth=linewidth, **kwargs)
+    # return rect
+
 # %%
 # ################################  RELOADS  ##################################
 importlib.reload(FO)
@@ -76,10 +91,9 @@ cb_title = '$\Delta F/F_0$'
 # cb_title = r'$\Delta$'
 cb_ticks = [-1, 0, 2, 4, 6]
 # cb_ticks = [-1, -0.1, 0, 0.1, 1, 8]  # for the log scale
-pads = [0.55, 0.4, 1.32, 0.2]
-f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
-                                 pads=pads, cb_title_font=cb_title_font,
-                                 squeeze=0.5)
+pads = [0.5, 0.4, 1.32, 0.2]
+f, ax, _ = plot_full_activity_crt(df, act_map, divnorm, title, cb_title, cb_ticks,
+                                 pads=pads, squeeze_x=0.5)
 # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
 ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
        ylabel='ORN', xlabel='stimulus (odor, dilution)')
@@ -88,15 +102,18 @@ file = f'{PP_ACT}/ORN_act.'
 FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 
-f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title,
-                                 cb_ticks, cb_title_font=cb_title_font,
-                                 squeeze=0.5)
-# ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
-ax.set(xticks=[], ylabel='ORN', xlabel='stimulus (odor, dilution)')
 
-file = f'{PP_ACT}/ORN_act_nolabels.'
-FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
+pads = [0.5, 0.4, 0.15, 0.3]
+for sq, i in [[0.5, '1'], [0.27, '']]:
+    print(sq, i)
+    f, ax, _ = plot_full_activity_crt(df, act_map, divnorm, title, cb_title,
+                                     cb_ticks, pads=pads, squeeze_x=sq)
+    # ax.set(xticks=[], ylabel='ORNs', xlabel='odors at different dilutions')
+    ax.set(xticks=[], ylabel='ORN', xlabel='stimulus (odor, dilution)')
+
+    file = f'{PP_ACT}/ORN_act_nolabels{i}.'
+    FP.save_plot(f, f'{file}png', SAVE_PLOTS, **png_opts)
+    FP.save_plot(f, f'{file}pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
 
 # %%
@@ -115,16 +132,17 @@ df = act_m.loc[ORN_order, idx].copy()
 ORN_list = [name[4:] for name in df.index]
 df.index = ORN_list
 # scaling between 0 and 1
-df = df - np.min(df)
-df = df/np.max(df)
+df = df - df.min()  # changed this because it seems default behavrior
+# of np.min changed when applied to pandas array
+df = df/df.max()
 
-
+pads = [0.5, 0.4, 0.15, 0.2]
 title = f'Scaled ORN soma activity patterns {Xdatatex}'
 cb_title = ''
 cb_ticks = [0, 0.5, 1]
-f, ax, _ = FP.plot_full_activity(df, act_map, divnorm, title, cb_title, cb_ticks,
-                                 extend='neither', cb_title_font=cb_title_font,
-                                 squeeze=0.5)
+f, ax, _ = plot_full_activity_crt(df, act_map, divnorm, title, cb_title, cb_ticks,
+                                 extend='neither',
+                                 squeeze_x=0.5, pads=pads)
 ax.set(xticks=[], ylabel='ORN', xlabel='stimulus (odor, dilution)')
 
 file = f'{PP_ACT}/ORN_act_scaled_max.'
@@ -143,7 +161,7 @@ ORN_order = par_act.ORN_order
 
 
 # plotting the PC strength
-pads = (0.4, 0.1, 0.35, 0.2)
+pads = (0.4, 0.2, 0.35, 0.2)
 fs, axs = FP.calc_fs_ax(pads, 18*SQ, 15*SQ)
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
@@ -153,7 +171,7 @@ var = pd.Series(np.diag(SVD['s'])**2, index=SVD['s'].index)
 perc_var_explained = var/np.sum(var)*100
 ax.plot(perc_var_explained, '.-', lw=0.5, markersize=3, c='k')
 ax.grid()
-ax.set(ylabel='% variance explained', xlabel='principal component',
+ax.set(ylabel='\% variance explained', xlabel='principal component',
        xticks=[1, 5, 10, 15, 21],
        title=f'PCA of ORN activity {Xdatatex}')
 
@@ -241,11 +259,13 @@ for k in [4, 5]:
     W[k] = Ws[conc, pps, meth, '', '']/scal
     W[k] = W[k].loc[ORN_order]
 print('done')
-# %%
+
 if scal == 1:
     order_LN = {4: [3, 1, 4, 2], 5: [3, 4, 1, 5, 2]}
 else:
     order_LN = {4: [4, 2, 1, 3], 5: [2, 5, 3, 4, 1]}
+
+# %%
 
 for k in [4, 5]:
     # plotting the actual PC vectors, as imshow
@@ -312,7 +332,7 @@ print('done')
 # importlib.reload(FP)
 ORN_order = par_act.ORN_order
 # ORN_order = par_act.ORN
-pads = (0.4, 0.3, 0.55, 0.15)
+pads = (0.3, 0.25, 0.45, 0.15)
 fs, axs = FP.calc_fs_ax(pads, 21*SQ, 11*SQ)
 
 # side = 'L'
@@ -326,10 +346,11 @@ ORN_list = [name[4:] for name in ORN_order]
 
 conc = 4
 
-ylim2 = (-0.2, 5.3)
+ylim2 = (-0.2, 5.5)
 ylim = (-2, 45)
 c1 = 'k'
-c2 = 'g'
+c2 = 'sienna'
+c2 = 'chocolate'
 i = 2
 odors = ['2-acetylpyridine', 'isoamyl acetate', '2-heptanone']
 f = plt.figure(figsize=fs)
@@ -339,7 +360,8 @@ act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
 ax, ax2, lns = FP.plot_line_2yax(ax, con_w.values, act_vect.values,
                                  None, None, ORN_list, 'ORN',
                                  c1=c1, c2=c2, m1=',', m2=',',
-                                 label1=r'\# of syn. ORN$\rightarrow$BT',
+                                 # label1=r'\# of syn. ORN$\rightarrow$BT',
+                                 label1='',
                                  label2='ORN $\Delta F/F_0$')
 # ax.set_xticks(np.arange(len(ORN_list)))
 # ax.set_xticklabels(ORN_list, rotation=70, ha='right')
@@ -348,7 +370,7 @@ act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
 ln3 = ax2.plot(act_vect.values, c=c2, label=odor, ls='dashed')
 lns = lns + ln3
 ax2.set_ylim(ylim2)
-ax2.set_xlim((-1, 21))
+ax2.set_xlim((-0.5, 20.5))
 ax.set_ylim(ylim)
 ax.set_yticks([0, 20, 40])
 ax2.set_yticks([0, 2, 4])
@@ -357,6 +379,47 @@ leg = ax.legend(lns, labs, ncol=3, loc='lower center',
                 bbox_to_anchor=(0.5, 1.01, 0, 0.), handlelength=2)
 
 file = f'{PP_ODOR_CON}/{LN}_2odors-{conc}_2axplot'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+importlib.reload(FP)
+# same as above, but rotated
+pads = (0.05, 0.15, 0.3, 0.3)
+fs, axs = FP.calc_fs_ax(pads, 11*SQ, 21*SQ)
+f = plt.figure(figsize=fs)
+ax = f.add_axes(axs)
+odor = odors[i]
+act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
+ax, ax2, lns = FP.plot_line_2xax(ax, con_w.values, act_vect.values,
+                                 None, None, ORN_list, '',
+                                 c1=c1, c2=c2, m1=',', m2=',',
+                                 # label1=r'\# of syn. ORN$\rightarrow$BT',
+                                 label1='',
+                                 label2='ORN $\Delta F/F_0$')
+odor = odors[0]
+act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
+ln3 = ax2.plot(act_vect.values, np.arange(len(act_vect.values)), c=c2, label=odor, ls='dashed')
+lns = lns + ln3
+ax2.set_xlim(ylim2)
+ax2.set_ylim((20.5, -0.5))
+ax.set_xlim(ylim)
+ax.set_xticks([0, 20, 40])
+ax2.set_xticks([0, 2, 4])
+
+# potentially adding PCA...
+# makes it overcharged...
+# SVD = FG.get_svd_df(act_m)
+# act_vect = SVD['U'].loc[:, 1]
+# ORN_order = par_act.ORN_order
+# act_vect = -act_vect.loc[ORN_order]*12
+# ln4 = ax2.plot(act_vect.values, np.arange(len(act_vect.values)), c='red', label=odor, ls='-')
+
+
+# labs = ['\# syn.', 'odor A', 'odor B']
+# leg = ax.legend(lns, labs, ncol=3, loc='lower center',
+#                 bbox_to_anchor=(0.5, 1.01, 0, 0.), handlelength=2)
+
+file = f'{PP_ODOR_CON}/{LN}_2odors-{conc}_2axplot_rot'
 FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
@@ -375,8 +438,9 @@ file = (f'{CELL_TYPE}_con{STRM}_vs_'
 pvals = pd.read_hdf(RESULTS_PATH / file)
 
 
-pads = {0: (0.15, 0.15, 0.55, 0.2), 1: (0.15, 0.15, 0.55, 0.2),
-        2: (0.15, 0.15, 0.55, 0.2)}
+pads = {0: (0.05, 0.02, 0.02, 0.12), 1: (0.15, 0.15, 0.55, 0.2),
+        2: (0.25, 0.02, 0.02, 0.12)}
+
 
 # side = 'L'
 # LN = f'Broad T1 {side}'
@@ -389,27 +453,39 @@ scl1 = [0, 0.3, 0.3]
 scl2 = [0, 0.8, 0.8]
 # title = odors
 title = ['odor B', 'odor C', 'odor A']
+y_pos = [0.8, 1, 1]
 for i, odor in enumerate(odors):
 
-    fs, axs = FP.calc_fs_ax(pads[i], 11*SQ, 11*SQ)
+    fs, axs = FP.calc_fs_ax(pads[i], 5.5*SQ, 5.5*SQ)
     f = plt.figure(figsize=fs)
     ax = f.add_axes(axs)
 
     act_vect = act_m.loc[ORN_order, (odor, conc)].copy()
-    FP.plot_scatter(ax, con_w.values, act_vect.values, '\# of synapses',
-                    '', c1, c2, xticks=[0, 20, 40],
+    FP.plot_scatter(ax, con_w.values, act_vect.values, '\# of syn.',
+                    '$\Delta F/F_0$', c1, c2, xticks=[0, 20, 40],
                     yticks=[0, 2, 4], clip_on=False,
                     pca_line_scale1=scl1[i], pca_line_scale2=scl2[i],
-                    s=5, c='indigo', pvalue=None, show_cc=False)
+                    s=2, c='indigo', pvalue=None, show_cc=False)
     # corr coef and pvalues:
     corr_coef = np.corrcoef(con_w.values, act_vect.values)[0, 1]
-    ax.text(0.01, 1, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes,
+    # ax.text(0.01, 1, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes,
+    #         va='top')
+    ax.text(0.01, y_pos[i], title[i], transform=ax.transAxes,
             va='top')
-    ax.text(0.01, 0.9, "pv = %0.1g" % pvals.loc[LN, (odor, conc)],
-            transform=ax.transAxes, va='top')
+    # ax.text(0.01, 0.9, "pv = %0.1g" % pvals.loc[LN, (odor, conc)],
+    #         transform=ax.transAxes, va='top')
+    ax.xaxis.tick_top()
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['top'].set_visible(True)
+    if title[i] == 'odor B':
+        ax.set_yticklabels([])
+        ax.set_ylabel('')
+    # ax.tick_params(axis='x', bottom=False, top=True)
+    # if title[i] == 'odor A':
+    #     ax.set_xticks([0, 20, 40])
+    #     ax.set_xticklabels([])
 
-
-    ax.set_title(title[i], color=c2)
+    # ax.set_title(title[i], color=c2)
     ax.set_xlim(ylim)
     ax.set_ylim(ylim2)
     FP.set_aspect_ratio(ax, 1)
@@ -438,8 +514,9 @@ data_cc = data_cc.reset_index(level=['par1', 'par2'], drop=True)
 data_cc_pv = pd.DataFrame(pd.read_hdf(file_cc_pv))[STRM]
 data_cc_pv = data_cc_pv.reset_index(level=['par1', 'par2'], drop=True)
 
-
-
+c1 = 'k'
+c2 = 'red'
+# the following function can be used to plot other LNs
 def plot_2lines(LN, LN_label, vect, vect_label, ylims,
                 yticks1=[0, 20, 40], yticks2=[0, 0.5]):
     ORN_order = par_act.ORN_order
@@ -458,8 +535,7 @@ def plot_2lines(LN, LN_label, vect, vect_label, ylims,
 
     ylim2 = ylims[1]
     ylim = ylims[0]
-    c1 = 'k'
-    c2 = 'g'
+
 
     ax, ax2, lns = FP.plot_line_2yax(ax, con_w.values, vect.values,
                                      None, None, ORN_list, 'ORN',
@@ -500,12 +576,43 @@ FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 
 
+
+importlib.reload(FP)
+# same as above, but rotated
+pads = (0.05, 0.15, 0.3, 0.3)
+fs, axs = FP.calc_fs_ax(pads, 11*SQ, 21*SQ)
+f = plt.figure(figsize=fs)
+ax = f.add_axes(axs)
+odor = odors[i]
+ax, ax2, lns = FP.plot_line_2xax(ax, con_w.values, act_vect.values,
+                                 None, None, ORN_list, '',
+                                 c1=c1, c2=c2, m1=',', m2=',',
+                                 # label1=r'\# of syn. ORN$\rightarrow$BT',
+                                 label1='',
+                                 label2='PCA 1')
+ax2.set_xlim(ylims[1])
+ax2.set_ylim((20.5, -0.5))
+ax.set_xlim(ylims[0])
+ax.set_xticks([0, 20, 40])
+ax2.set_xticks([0, 0.5])
+
+
+# labs = ['\# syn.', 'odor A', 'odor B']
+# leg = ax.legend(lns, labs, ncol=3, loc='lower center',
+#                 bbox_to_anchor=(0.5, 1.01, 0, 0.), handlelength=2)
+
+file = f'{PP_COMP_CON}/{LN}_PCA1_2axplot_rot'
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+
+
+
 # ########## scatter plot ##########
 
 # importlib.reload(FP)
 c1 = 'k'
-c2 = 'g'
-pads = [0.4, 0.15, 0.55, 0.1]
+c2 = 'r'
+pads = [0.32, 0.02, 0.02, 0.12]
 
 LN = f'Broad T M M'
 con_w = con_strms3[0][LN]
@@ -518,23 +625,27 @@ act_vect = -act_vect.loc[ORN_order]
 scl1 = 0.5
 scl2 = 0.7
 
-fs, axs = FP.calc_fs_ax(pads, 11 * SQ, 11 * SQ)
+fs, axs = FP.calc_fs_ax(pads, 5.5 * SQ, 5.5 * SQ)
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 
 FP.plot_scatter(ax, con_w.values, act_vect.values,
                 r'\# of syn. ORNs$\rightarrow$BT',
-                'ORN activity PCA 1     ', c1, c2, xticks=[0, 20, 40],
+                'PCA 1', c1, c2, xticks=[0, 20, 40],
                 yticks=[0, 0.5], show_cc=False,
                 pca_line_scale1=scl1, pca_line_scale2=scl2,
-                c='indigo', s=5)
+                c='indigo', s=2)
 corr_coef = np.corrcoef(con_w.values, act_vect.values)[0, 1]
 assert np.abs(corr_coef - data_cc.loc[('o', 'SVD', 1), LN]) < 1e-10
 # ax.text(0.65, 0.05, r'$r$'+" = %0.2f" % corr_coef, transform=ax.transAxes)
-ax.text(0.01, 1, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes,
-        va='top')
-ax.text(0.01, 0.9, "pv = %0.1g" % data_cc_pv.loc[('o', 'SVD', 1), LN],
-        transform=ax.transAxes, va='top')
+# ax.text(0.01, 1, r'$r$' + " = %0.2f" % corr_coef, transform=ax.transAxes,
+#         va='top')
+# ax.text(0.01, 0.9, "pv = %0.1g" % data_cc_pv.loc[('o', 'SVD', 1), LN],
+#         transform=ax.transAxes, va='top')
+
+ax.xaxis.tick_top()
+ax.spines['bottom'].set_visible(False)
+ax.spines['top'].set_visible(True)
 # ax.set_title('PCA 1', color=c1)
 ax.set_xlim(-2, 45)
 ax.set_ylim(-0.02, 0.55)
@@ -548,7 +659,7 @@ FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
 FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
 print('done')
 
-# %%
+ # %%
 # #############################################################################
 # #############################################################################
 # #############################################################################
@@ -560,11 +671,7 @@ print('done')
 import statsmodels.stats.multitest as mt
 
 # https://stackoverflow.com/questions/56654952/how-to-mark-cells-in-matplotlib-pyplot-imshow-drawing-cell-borders
-def highlight_cell(x,y, ax=None, linewidth=0.5, **kwargs):
-    rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, linewidth=linewidth, **kwargs)
-    ax = ax or plt.gca()
-    ax.add_patch(rect)
-    return rect
+
 
 # ordering of the concentration so that it is as before, maybe quicker way of doing it
 odor_order = par_act.odor_order
@@ -614,10 +721,12 @@ ax.set(xticks=np.arange(2, len(idx), 5), xticklabels=odor_order,
        xlabel=f'ORN activation pattern {Xttex} in response to a stimulus (odor, dilution)',
        ylabel=wLNtex)
 for (y, x) in np.argwhere(pvals.values < 0.05):
-    highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+    highlight_cell(x, y, ax=ax, linewidth=0.2, color="k")
 
 for (y, x) in np.argwhere(pvals_fdr.values < 0.05):
-    highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
+    highlight_cell(x, y, ax=ax, linewidth=0.2, color="k")
+    highlight_cell(x, y, ax=ax, f=-1, linewidth=0.2, color="k")
+    # highlight_cell(x, y, ax=ax, linewidth=0.75, color="black")
 
 # doesn't do anything like I want
 # x_lin = np.arange(pvals.shape[1])
@@ -664,8 +773,8 @@ df = cors.loc[:, idx]
 
 # plotting
 splx = np.arange(5, len(idx), 5)
-pads = (0.55, 0.4, 0.2, 0.2)
-fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.5, SQ*len(df))  # pads, gw, gh
+pads = (0.5, 0.4, 0.2, 0.2)
+fs, axs = FP.calc_fs_ax(pads, SQ*len(df.T)*0.27, SQ*len(df))  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 cp = FP.imshow_df(df, ax, vlim=[-1, 1], cmap=corr_cmap, splits_x=splx,
@@ -681,13 +790,16 @@ ax.set_ylabel(wLNtypetex)
 #             annotation_clip=False)
 
 for (y, x) in np.argwhere(pvals.loc[LNs_MM].values < 0.05):
-    highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+    highlight_cell(x, y, ax=ax, linewidth=0.2, color="k")
 
 for (y, x) in np.argwhere(pvals_fdr.loc[LNs_MM].values < 0.05):
-    highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
+    highlight_cell(x, y, ax=ax, linewidth=0.2, color="k")
+    highlight_cell(x, y, ax=ax, f=-1, linewidth=0.2, color="k")
+    # highlight_cell(x, y, ax=ax, linewidth=0.75, color="black")
 
-plt.title(f'Correlation between ORN activity patterns {Xdatatex}'
-          r' and ORNs$\rightarrow$LN synaptic count vectors \{'+ f'{wLNtypetex}' + '\}')
+# plt.title(f'Correlation between ORN activity patterns {Xdatatex}'
+plt.title(f'Corr. {Xdatatex}'
+          r' vs ORNs$\rightarrow$LN syn. count vectors \{'+ f'{wLNtypetex}' + '\}')
 ax_cb = f.add_axes([axs[0] + axs[2] + CB_DX/fs[0], axs[1], CB_W/fs[0], axs[3]])
 add_colorbar_crt(cp, ax_cb, r'$r$', [-1, 0, 1])
 
@@ -717,8 +829,8 @@ print('done')
 #
 #
 # %%
-pads = (0.4, 0.1, 0.55, 0.15)
-fs, axs = FP.calc_fs_ax(pads, SQ*15, SQ*11)  # pads, gw, gh
+pads = (0.4, 0.1, 0.55, 0.3)
+fs, axs = FP.calc_fs_ax(pads, SQ*11, SQ*11)  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 ax.plot([-10, 180], [0, 0], c='gray', lw=0.5)
@@ -757,11 +869,7 @@ print('done')
 import statsmodels.stats.multitest as mt
 
 # https://stackoverflow.com/questions/56654952/how-to-mark-cells-in-matplotlib-pyplot-imshow-drawing-cell-borders
-def highlight_cell(x,y, ax=None, linewidth=0.5, **kwargs):
-    rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, linewidth=linewidth, **kwargs)
-    ax = ax or plt.gca()
-    ax.add_patch(rect)
-    return rect
+
 
 # ordering of the concentration so that it is as before, maybe quicker way of doing it
 odor_order = par_act.odor_order
@@ -814,10 +922,13 @@ ax.set(xticks=[],
        xlabel=f'ORN activation pattern {Xttex} in response to a stimulus (odor, dilution)',
        ylabel='$\mathbf{w}_k$')
 for (y, x) in np.argwhere(pvals.values < 0.05):
-    highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+    # highlight_cell(x, y, ax=ax, linewidth=0.5, color="green")
+    highlight_cell(x, y, ax=ax, linewidth=0.2, color="k")
 
 for (y, x) in np.argwhere(pvals_fdr.values < 0.05):
-    highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
+    highlight_cell(x, y, ax=ax, linewidth=0.2, color="k")
+    highlight_cell(x, y, ax=ax, f=-1, linewidth=0.2, color="k")
+    # highlight_cell(x, y, ax=ax, linewidth=0.75, color="yellow")
 
 # doesn't do anything like I want
 # x_lin = np.arange(pvals.shape[1])
@@ -1135,7 +1246,7 @@ xlabel = {'raw': '$\mathbf{w}_\mathrm{LN}$',
          'M':'$\mathbf{w}_\mathrm{LNtype}$'}
 splx = {'raw': [6, 6+4, 10+4], 'M': [1, 2, 3]}
 LNs_k = {'raw': LNs_sel_LR_d, 'M': LNs_MM}
-sqs = {'raw': 1.1 * SQ, 'M': 2.2 * SQ}
+sqs = {'raw': 1.1 * SQ, 'M': 2 * SQ}
 pads = [0.4, 0.45, 0.35, 0.2] # for the correlation plot
 pads1 = [0.4, 0.5, 0.35, 0.2] # for the pv plot
 print('done')
@@ -1285,34 +1396,7 @@ corr_grp = corr.groupby(['rho', 'rep']).max()
 y_mean = corr_grp.groupby('rho').mean()
 y_std = corr_grp.groupby('rho').std()
 print('done')
-# %%
-pads = (0.4, 0.1, 0.35, 0.04)
-fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*10)  # pads, gw, gh
-f = plt.figure(figsize=fs)
-ax = f.add_axes(axs)
-for i in range(4):
-    # x = (corr.index.unique('rho')+(i-1.5)/10)/10
-    x = (corr.index.unique('rho'))/10
-    # ax.errorbar(x, y_mean[LNs_M[i]], yerr=y_std[LNs_M[i]],
-    # label=LNs_short[i],
-    #             lw=1)
-    y = y_mean[LNs_M[i]]
-    e = y_std[LNs_M[i]]
-    ax.plot(x, y, lw=1, label=LNs_short[i])
-    ax.fill_between(x, y-e, y+e, alpha=0.5)
-ax.set_yticks([0, 0.4, 0.8])
-ax.set_xticks([-1, 0, 1], [0.1, 1, 10])
-ax.set_ylim(0, 0.8)
-ax.set_ylabel(r'corr. coef. $r$')
-ax.set_xlabel(r'model inhibition strength $\rho$')
 
-plt.legend(ncol=4, bbox_to_anchor=[0.5, 0.05], loc='lower center')
-
-file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
-        f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-4_rho-range')
-FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
-FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
-print('done')
 # %%
 
 # Now i want to calculate the p values for each individual case
@@ -1335,6 +1419,35 @@ for rho in pv_fdr.index.unique('rho'):
 pvs_grp = pv_fdr.groupby(['rho', 'rep']).min()
 n_cells_signif = (pvs_grp < 0.05).sum(axis=1)
 print('done')
+
+# %%
+pads = (0.4, 0.1, 0.30, 0.05)
+fs, axs = FP.calc_fs_ax(pads, SQ*13, SQ*8)  # pads, gw, gh
+f = plt.figure(figsize=fs)
+ax = f.add_axes(axs)
+for i in range(4):
+    # x = (corr.index.unique('rho')+(i-1.5)/10)/10
+    x = (corr.index.unique('rho'))/10
+    # ax.errorbar(x, y_mean[LNs_M[i]], yerr=y_std[LNs_M[i]],
+    # label=LNs_short[i],
+    #             lw=1)
+    y = y_mean[LNs_M[i]]
+    e = y_std[LNs_M[i]]
+    ax.plot(x, y, lw=1, label=LNs_short[i])
+    ax.fill_between(x, y-e, y+e, alpha=0.5)
+ax.set_yticks([0, 0.4, 0.8])
+ax.set_xticks([-1, 0, 1], [0.1, 1, 10])
+ax.set_ylim(0, 0.8)
+ax.set_ylabel(r'corr. coef. $r$')
+ax.set_xlabel(r'model inh. strength $\rho$')
+
+plt.legend(ncol=2, bbox_to_anchor=[0.95, 0.02], loc='lower right')
+
+file = (f'{PP_CON_PRED}/{CELL_TYPE}_con{STRM}_vs_act'
+        f'-{act_pps1}-{act_pps2}-{ACT_PPS}_NNC-4_rho-range')
+FP.save_plot(f, file + '.png', SAVE_PLOTS, **png_opts)
+FP.save_plot(f, file + '.pdf', SAVE_PLOTS, **pdf_opts)
+print('done')
 # %%
 
 x = pv_fdr.index.unique('rho')
@@ -1344,8 +1457,8 @@ e = n_cells_signif.groupby('rho').std()
 # plt.errorbar(x, y_mean, yerr=y_std, label=LNs_M[i])
 # plt.show()
 
-pads = (0.4, 0.1, 0.085, 0.1)
-fs, axs = FP.calc_fs_ax(pads, SQ*18, SQ*3.5)  # pads, gw, gh
+pads = (0.4, 0.1, 0.1, 0.1)
+fs, axs = FP.calc_fs_ax(pads, SQ*13, SQ*3.5)  # pads, gw, gh
 f = plt.figure(figsize=fs)
 ax = f.add_axes(axs)
 x = corr.index.unique('rho')/10

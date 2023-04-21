@@ -505,9 +505,9 @@ ax = f.add_axes(axs)
 axx = FP.plot_double_series_unevenX(ax, x, df1, df2, 'magenta', 'b',
                                     r'RCF max deviation (\enspace)', r'$-\log_{10}$(p-value) (\enspace)',
                                     ylim1=(0, 0.37), ylim2=(0, 2.5))
-axx[1].plot([7.85], [2.155], ls='None', marker='+', color='b', markersize=5,
+axx[1].plot([8], [2.25], ls='None', marker='+', color='b', markersize=5,
             clip_on=False)
-axx[0].plot([-4.3], [0.345], ls='None', marker='.', color='magenta',
+axx[0].plot([-4.6], [0.355], ls='None', marker='.', color='magenta',
             markersize=5, clip_on=False)
 axx[0].set_yticks([0, 0.1, 0.2, 0.3])
 axx[1].set_yticks([0, 1, 2])
