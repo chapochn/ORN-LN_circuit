@@ -6,7 +6,7 @@ antennal lobe of the Drosophila larva:
 ### Nikolai M. Chapochnikov, Cengiz Pehlevan, Dmitri B. Chklovskii
 
 
-https://www.biorxiv.org/content/10.1101/2021.09.24.461723v1
+https://doi.org/10.1073/pnas.2117484120
 
 Please cite this paper if you use the code.
 
