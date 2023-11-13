@@ -208,7 +208,8 @@ def olf_gd_offline(X: np.ndarray, k: int, rtol: float = 1e-6,
     k: number of LNs
     rtol: relative tolerance
     max_iter: maximum number of iterations
-    rectY, rectZ: whether to rectify Y and/or Z
+    rectY, rectZ: whether to rectify Y and/or Z. Rectifying Y and Z
+        corresponds to the NNC, not rectifying Y and Z corresponds to the LC
     init: initialization for the Y and Z matrices, options are: random,
         full, full_rand, pca, pre_init (from the CD algorithm), given
     Y0, Z0: used if init is given, the initial matrices used

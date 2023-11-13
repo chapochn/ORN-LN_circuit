@@ -53,7 +53,7 @@ for data_i, dx in [(1, 0), (2, 0.4)]:
     data_path.mkdir(exist_ok=True)
     file = data_path / f'dataset_{D}D_{n_clusters}clusters.npy'
     try:
-        X = np.load(file/'asdf')
+        X = np.load(file)
         print('dataset already exists, it is loaded')
     except:
         print('dataset does not exist yet, it will be created and saved')
@@ -158,7 +158,7 @@ for data_i, rho, K in itertools.product([1, 2], [0.1, 1, 10], [2, 3]):
 #%%
 # #############################################################################
 # #############################################################################
-# ###############   FOR FIGURES 6, showing the effect of NNC and LC   #########
+# ###############   FOR FIGURE 5, showing the effect of NNC and LC    #########
 # ###############   showing clustering by NNC        ##########################
 # #############################################################################
 # #############################################################################
