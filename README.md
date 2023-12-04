@@ -1,5 +1,5 @@
 This repository contains all the code to reproduce the analysis and figures
-of the following paper, which analyses and models the ORN-LN circuit in the 
+of the following paper and letter, which analyses and models the ORN-LN circuit in the 
 antennal lobe of the Drosophila larva:
 
 ## Normative and mechanistic model of an adaptive circuit for efficient encoding and feature extraction
@@ -54,3 +54,14 @@ plots in the paper in the folder "plots/plots_paper".
 
 NOTE: because some simulations are non-deterministic, the generated plots might
 slightly differ from the plots in the paper.
+
+## Reply to Castro et al.: Do connectomes possess markers of activity-dependent synaptic plasticity?
+### Nikolai M. Chapochnikov, Cengiz Pehlevan, Dmitri B. Chklovskii
+
+Code for this letter is in bin/Barnes_data
+
+https://www.pnas.org/doi/10.1073/pnas.2317056120
+
+Please cite this paper if you use the code.
+
+Code author: Nikolai M. Chapochnikov
